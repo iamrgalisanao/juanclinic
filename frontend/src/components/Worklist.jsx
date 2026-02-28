@@ -5,37 +5,43 @@ const Worklist = ({ orders, loading }) => {
         <div className="overflow-x-auto">
             <table className="w-full text-left">
                 <thead>
-                    <tr className="text-slate-500 text-sm border-b border-white/10">
-                        <th className="pb-4 font-medium">Order ID</th>
-                        <th className="pb-4 font-medium">Patient</th>
-                        <th className="pb-4 font-medium">Type</th>
-                        <th className="pb-4 font-medium">Priority</th>
-                        <th className="pb-4 font-medium">Status</th>
+                    <tr className="text-slate-400 text-[10px] font-bold uppercase tracking-[0.15em] border-b border-slate-100">
+                        <th className="pb-4">Order ID</th>
+                        <th className="pb-4">Patient</th>
+                        <th className="pb-4">Type</th>
+                        <th className="pb-4">Priority</th>
+                        <th className="pb-4 text-right">Status</th>
                     </tr>
                 </thead>
-                <tbody className="divide-y divide-white/5">
+                <tbody className="divide-y divide-slate-50">
                     {loading ? (
-                        <tr><td colSpan="5" className="py-8 text-center text-slate-500">Syncing clinical worklist...</td></tr>
+                        <tr><td colSpan="5" className="py-12 text-center text-slate-400 text-xs font-medium">Syncing clinical worklist...</td></tr>
                     ) : orders.length === 0 ? (
-                        <tr><td colSpan="5" className="py-8 text-center text-slate-500">No pending orders found.</td></tr>
+                        <tr><td colSpan="5" className="py-12 text-center text-slate-400 text-xs font-medium">No pending orders found.</td></tr>
                     ) : orders.map(o => (
-                        <tr key={o.id} className="hover:bg-white/5 transition-colors group">
-                            <td className="py-4 text-slate-400 text-sm font-mono">#ORD-{o.id.toString().padStart(4, '0')}</td>
-                            <td className="py-4 font-semibold">
-                                {o.patient ? `${o.patient.first_name} ${o.patient.last_name}` : 'Unknown'}
+                        <tr key={o.id} className="hover:bg-slate-50/50 transition-colors group">
+                            <td className="py-5 text-slate-400 text-[11px] font-mono">#ORD-{o.id.toString().padStart(4, '0')}</td>
+                            <td className="py-5">
+                                <span className="font-bold text-sm text-slate-900">
+                                    {o.patient ? `${o.patient.first_name} ${o.patient.last_name}` : 'Unknown Patient'}
+                                </span>
                             </td>
-                            <td className="py-4">
-                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${o.order_type === 'LAB' ? 'bg-purple-500/20 text-purple-400' : 'bg-blue-500/20 text-blue-400'}`}>
+                            <td className="py-5">
+                                <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider ${o.order_type === 'LAB'
+                                        ? 'bg-purple-50 text-purple-600 border border-purple-100'
+                                        : 'bg-blue-50 text-blue-600 border border-blue-100'
+                                    }`}>
                                     {o.order_type}
                                 </span>
                             </td>
-                            <td className="py-4">
-                                <span className={`text-[10px] font-bold ${o.priority === 'STAT' ? 'text-red-400 animate-pulse' : 'text-slate-400'}`}>
+                            <td className="py-5">
+                                <span className={`text-[10px] font-black uppercase tracking-widest ${o.priority === 'STAT' ? 'text-rose-500 animate-pulse' : 'text-slate-400'
+                                    }`}>
                                     {o.priority}
                                 </span>
                             </td>
-                            <td className="py-4">
-                                <span className="px-2 py-1 rounded-md bg-white/5 text-slate-300 text-[10px] font-bold border border-white/10">
+                            <td className="py-5 text-right">
+                                <span className="px-3 py-1 rounded-full bg-slate-100 text-slate-500 text-[9px] font-black uppercase tracking-wider border border-slate-200">
                                     {o.status}
                                 </span>
                             </td>

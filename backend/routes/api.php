@@ -21,5 +21,6 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 Route::apiResource('tenants', \App\Http\Controllers\Api\TenantController::class);
 Route::apiResource('patients', \App\Http\Controllers\Api\PatientController::class);
 Route::apiResource('orders', \App\Http\Controllers\Api\OrderController::class);
+Route::apiResource('appointments', \App\Http\Controllers\Api\AppointmentController::class);
 Route::post('hl7/ingest', [\App\Http\Controllers\Api\HL7Controller::class, 'store']);
 

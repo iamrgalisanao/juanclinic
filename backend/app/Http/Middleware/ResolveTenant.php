@@ -15,11 +15,21 @@ class ResolveTenant
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // For development, we'll allow setting tenant via header or session
-        $tenantId = $request->header('X-Tenant-ID') ?: $request->session()->get('tenant_id');
+        $tenantId = $request->header('X-Tenant-ID');
+
+        if (!$tenantId && $request->hasSession()) {
+            $tenantId = $request->session()->get('tenant_id');
+        }
 
         if ($tenantId) {
-            session(['tenant_id' => $tenantId]);
+            $tenant = \App\Models\Tenant::find($tenantId);
+            if ($tenant) {
+                app()->instance('tenant', $tenant);
+
+                if ($request->hasSession()) {
+                    session(['tenant_id' => $tenantId]);
+                }
+            }
         }
 
         return $next($request);
