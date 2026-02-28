@@ -1,0 +1,31 @@
+# Project Level Ignore
+.DS_Store
+.idea
+.vscode
+.tmp
+
+# Backend Laravel
+backend/vendor/
+backend/node_modules/
+backend/.env
+backend/database/*.sqlite
+backend/public/storage
+backend/storage/*.key
+backend/storage/framework/cache/data/*
+backend/storage/framework/sessions/*
+backend/storage/framework/testing/*
+backend/storage/framework/views/*
+backend/storage/logs/*
+
+# Frontend React
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/pnpm-debug.log*
