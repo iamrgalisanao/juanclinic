@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getPatients, getDoctors, getAppointments, createAppointment, updateAppointment, deleteAppointment } from '../services/api';
 import {
     Plus,
     ChevronLeft,
@@ -8,6 +9,7 @@ import {
     User,
     MoreVertical,
     CheckCircle2,
+    XCircle,
     Timer,
     X,
     Activity,
@@ -15,7 +17,7 @@ import {
     FlaskConical
 } from 'lucide-react';
 
-const Appointments = () => {
+const Appointments = ({ activeTenant }) => {
     const [currentDate, setCurrentDate] = useState(new Date());
 
     const formatDate = (date) => {
@@ -40,44 +42,48 @@ const Appointments = () => {
     // Mock Data State -> DB State
     const [appointments, setAppointments] = useState([]);
     const [patientsList, setPatientsList] = useState([]);
-
-    const API_URL = 'http://localhost:8000/api';
-    const HEADERS = { 'Accept': 'application/json', 'Content-Type': 'application/json', 'X-Tenant-ID': 1 };
+    const [doctorsList, setDoctorsList] = useState([]);
+    const [notification, setNotification] = useState(null); // { type: 'success'|'error', message: string }
 
     const fetchAppointments = async () => {
         try {
-            const res = await fetch(`${API_URL}/appointments`, { headers: HEADERS });
-            if (res.ok) {
-                const data = await res.json();
-                setAppointments(data.map(dbA => ({
-                    id: dbA.id,
-                    patient_id: dbA.patient_id,
-                    patient: dbA.patient ? `${dbA.patient.first_name} ${dbA.patient.last_name}` : 'Unknown Patient',
-                    doctor_id: dbA.doctor_id,
-                    doctor: dbA.notes || '', // Store doctor name in notes for MVP mock
-                    date: dbA.appointment_date.split('T')[0],
-                    hour: parseInt(dbA.start_time.split(':')[0], 10),
-                    type: dbA.visit_type,
-                    status: dbA.status
-                })));
-            }
+            const data = await getAppointments();
+            setAppointments(data.map(dbA => ({
+                id: dbA.id,
+                patient_id: dbA.patient_id,
+                patient: dbA.patient ? `${dbA.patient.first_name} ${dbA.patient.last_name}` : 'Unknown Patient',
+                doctor_id: dbA.doctor_id,
+                doctor: dbA.doctor ? dbA.doctor.name : 'Unknown Doctor',
+                date: dbA.appointment_date.split('T')[0],
+                hour: parseInt(dbA.start_time.split(':')[0], 10),
+                type: dbA.visit_type,
+                status: dbA.status
+            })));
         } catch (err) { console.error('Failed to fetch appointments', err); }
     };
 
     useEffect(() => {
         const fetchPatients = async () => {
             try {
-                const res = await fetch(`${API_URL}/patients`, { headers: HEADERS });
-                if (res.ok) {
-                    const data = await res.json();
-                    setPatientsList(data);
-                }
+                const data = await getPatients();
+                setPatientsList(data);
             } catch (err) { console.error('Failed to fetch patients', err); }
         };
 
-        fetchPatients();
-        fetchAppointments();
-    }, []);
+        const fetchDoctors = async () => {
+            try {
+                const data = await getDoctors();
+                setDoctorsList(data);
+            } catch (err) { console.error('Failed to fetch doctors', err); }
+        };
+
+        if (activeTenant) {
+            console.log(`Switching to Tenant: ${activeTenant.id} - Fetching clinical data...`);
+            fetchPatients();
+            fetchDoctors();
+            fetchAppointments();
+        }
+    }, [activeTenant?.id]);
 
     const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const hours = Array.from({ length: 10 }, (_, i) => i + 8); // 8 AM to 5 PM
@@ -128,6 +134,11 @@ const Appointments = () => {
         setPickerWeek('');
     };
 
+    const showNotify = (type, message) => {
+        setNotification({ type, message });
+        setTimeout(() => setNotification(null), 3000);
+    };
+
     const getWeekOfMonth = (date) => {
         const firstDayOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
         const pastDaysOfMonth = date.getDate() - 1;
@@ -153,22 +164,23 @@ const Appointments = () => {
         }
     };
 
-    const formatHour = (hour) => {
-        return hour > 12 ? `${hour - 12}:00 PM` : `${hour}:00 AM`;
+    const formatHour = (h) => {
+        const period = h >= 12 ? 'PM' : 'AM';
+        const displayHour = h % 12 === 0 ? 12 : h % 12;
+        return `${displayHour}:00 ${period}`;
     };
 
-    const formatHourRange = (hour) => {
-        const start = hour > 12 ? hour - 12 : hour;
-        const startSuffix = hour >= 12 ? 'PM' : 'AM';
-        const nextHour = hour + 1;
-        const end = nextHour > 12 ? nextHour - 12 : nextHour;
-        const endSuffix = nextHour >= 12 ? 'PM' : 'AM';
+    const formatHourRange = (h) => {
+        const sPeriod = h >= 12 ? 'PM' : 'AM';
+        const sHour = h % 12 === 0 ? 12 : h % 12;
+        const nextH = h + 1;
+        const ePeriod = (nextH >= 12 && nextH < 24) ? 'PM' : 'AM';
+        const eHour = nextH % 12 === 0 ? 12 : nextH % 12;
 
-        if (startSuffix === endSuffix) {
-            return `${start}-${end} ${startSuffix}`;
-        } else {
-            return `${start} ${startSuffix} - ${end} ${endSuffix}`;
+        if (sPeriod === ePeriod) {
+            return `${sHour}-${eHour} ${sPeriod}`;
         }
+        return `${sHour} ${sPeriod} - ${eHour} ${ePeriod}`;
     };
 
     // --- Drag and Drop Logic ---
@@ -192,14 +204,10 @@ const Appointments = () => {
         const apptId = parseInt(e.dataTransfer.getData('apptId'), 10);
 
         try {
-            await fetch(`${API_URL}/appointments/${apptId}`, {
-                method: 'PUT',
-                headers: HEADERS,
-                body: JSON.stringify({
-                    appointment_date: dropDateStr,
-                    start_time: `${String(dropHour).padStart(2, '0')}:00:00`,
-                    end_time: `${String(dropHour + 1).padStart(2, '0')}:00:00`
-                })
+            await updateAppointment(apptId, {
+                appointment_date: dropDateStr,
+                start_time: `${String(dropHour).padStart(2, '0')}:00:00`,
+                end_time: `${String(dropHour + 1).padStart(2, '0')}:00:00`
             });
             fetchAppointments();
         } catch (err) { console.error("Failed to move appointment", err); }
@@ -233,7 +241,7 @@ const Appointments = () => {
 
         const payload = {
             patient_id: formData.get('patient_id'),
-            notes: formData.get('doctorName'), // mock doctor_name via notes mapping
+            doctor_id: formData.get('doctor_id'),
             visit_type: formData.get('type'),
             status: formData.get('status'),
             appointment_date: formData.get('date'),
@@ -243,20 +251,17 @@ const Appointments = () => {
 
         try {
             if (editingAppt) {
-                await fetch(`${API_URL}/appointments/${editingAppt.id}`, {
-                    method: 'PUT',
-                    headers: HEADERS,
-                    body: JSON.stringify(payload)
-                });
+                await updateAppointment(editingAppt.id, payload);
+                showNotify('success', 'Appointment updated successfully');
             } else {
-                await fetch(`${API_URL}/appointments`, {
-                    method: 'POST',
-                    headers: HEADERS,
-                    body: JSON.stringify(payload)
-                });
+                await createAppointment(payload);
+                showNotify('success', 'New appointment booked');
             }
             fetchAppointments();
-        } catch (err) { console.error("Failed to save appointment", err); }
+        } catch (err) {
+            console.error("Failed to save appointment", err);
+            showNotify('error', 'Failed to save appointment');
+        }
 
         setShowModal(false);
     };
@@ -264,12 +269,13 @@ const Appointments = () => {
     const handleDelete = async () => {
         if (!editingAppt) return;
         try {
-            await fetch(`${API_URL}/appointments/${editingAppt.id}`, {
-                method: 'DELETE',
-                headers: HEADERS
-            });
+            await deleteAppointment(editingAppt.id);
+            showNotify('success', 'Appointment cancelled');
             fetchAppointments();
-        } catch (err) { console.error("Failed to delete appointment", err); }
+        } catch (err) {
+            console.error("Failed to delete appointment", err);
+            showNotify('error', 'Failed to cancel appointment');
+        }
         setShowModal(false);
     };
 
@@ -289,6 +295,15 @@ const Appointments = () => {
                     <span>Book Appointment</span>
                 </button>
             </div>
+
+            {/* Notification Toast */}
+            {notification && (
+                <div className={`fixed top-8 right-8 z-[100] px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 animate-slide-in-right ${notification.type === 'success' ? 'bg-his-green-500 text-white' : 'bg-rose-500 text-white'
+                    }`}>
+                    {notification.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <XCircle className="w-5 h-5" />}
+                    <span className="text-sm font-bold tracking-tight">{notification.message}</span>
+                </div>
+            )}
 
             {/* Calendar Grid Section */}
             <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden select-none">
@@ -439,14 +454,17 @@ const Appointments = () => {
                                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
                                         <Stethoscope className="w-3 h-3 text-blue-500" /> Assigner / Doctor
                                     </label>
-                                    <input
-                                        type="text"
-                                        name="doctorName"
+                                    <select
+                                        name="doctor_id"
                                         required
-                                        defaultValue={editingAppt?.doctor || ''}
-                                        placeholder="e.g. Dr. Connor"
-                                        className="w-full bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold rounded-xl px-4 py-3 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none placeholder:font-medium placeholder:text-slate-300"
-                                    />
+                                        defaultValue={editingAppt?.doctor_id || ''}
+                                        className="w-full bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold rounded-xl px-4 py-3 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none appearance-none"
+                                    >
+                                        <option value="" disabled>Select a Doctor</option>
+                                        {doctorsList.map(d => (
+                                            <option key={d.id} value={d.id}>{d.name}</option>
+                                        ))}
+                                    </select>
                                 </div>
                             </div>
 

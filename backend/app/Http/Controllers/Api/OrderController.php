@@ -37,7 +37,24 @@ class OrderController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        $order = \App\Models\Order::findOrFail($id);
+
+        $validated = $request->validate([
+            'status' => 'required|in:PENDING,IN_PROGRESS,COMPLETED,CANCELLED',
+        ]);
+
+        $order->update($validated);
+
+        // Audit Log for status change
+        \App\Models\AuditLog::create([
+            'tenant_id' => $order->tenant_id,
+            'action' => 'ORDER_STATUS_UPDATE',
+            'resource_type' => 'Order',
+            'resource_id' => $order->id,
+            'payload' => ['new_status' => $validated['status']],
+        ]);
+
+        return $order;
     }
 
     /**

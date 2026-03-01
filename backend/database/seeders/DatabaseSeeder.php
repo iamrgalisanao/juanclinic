@@ -16,6 +16,18 @@ class DatabaseSeeder extends Seeder
             TenantSeeder::class,
             PatientSeeder::class,
         ]);
+
+        \App\Models\User::factory()->create([
+            'name' => 'Dr. Sarah Connor',
+            'email' => 'sarah@clinic.com',
+            'password' => bcrypt('password')
+        ]);
+
+        \App\Models\User::factory()->create([
+            'name' => 'Dr. Gregory House',
+            'email' => 'house@clinic.com',
+            'password' => bcrypt('password')
+        ]);
     }
 
 }

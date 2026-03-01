@@ -1,6 +1,6 @@
 import React from 'react';
 
-const Worklist = ({ orders, loading }) => {
+const Worklist = ({ orders, loading, onStatusUpdate }) => {
     return (
         <div className="overflow-x-auto">
             <table className="w-full text-left">
@@ -28,8 +28,8 @@ const Worklist = ({ orders, loading }) => {
                             </td>
                             <td className="py-5">
                                 <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider ${o.order_type === 'LAB'
-                                        ? 'bg-purple-50 text-purple-600 border border-purple-100'
-                                        : 'bg-blue-50 text-blue-600 border border-blue-100'
+                                    ? 'bg-purple-50 text-purple-600 border border-purple-100'
+                                    : 'bg-blue-50 text-blue-600 border border-blue-100'
                                     }`}>
                                     {o.order_type}
                                 </span>
@@ -41,9 +41,20 @@ const Worklist = ({ orders, loading }) => {
                                 </span>
                             </td>
                             <td className="py-5 text-right">
-                                <span className="px-3 py-1 rounded-full bg-slate-100 text-slate-500 text-[9px] font-black uppercase tracking-wider border border-slate-200">
-                                    {o.status}
-                                </span>
+                                <select
+                                    value={o.status}
+                                    onChange={(e) => onStatusUpdate(o.id, e.target.value)}
+                                    className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider border transition-all outline-none cursor-pointer ${o.status === 'PENDING' ? 'bg-slate-100 text-slate-500 border-slate-200' :
+                                        o.status === 'IN_PROGRESS' ? 'bg-amber-50 text-amber-600 border-amber-100' :
+                                            o.status === 'COMPLETED' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                                                'bg-rose-50 text-rose-600 border-rose-100'
+                                        }`}
+                                >
+                                    <option value="PENDING">Pending</option>
+                                    <option value="IN_PROGRESS">Processing</option>
+                                    <option value="COMPLETED">Completed</option>
+                                    <option value="CANCELLED">Cancelled</option>
+                                </select>
                             </td>
                         </tr>
                     ))}

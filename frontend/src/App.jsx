@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getPatients, getTenants, setTenantToken, getOrders, ingestHL7 } from './services/api';
+import { getPatients, getTenants, setTenantToken, getOrders, ingestHL7, updateOrder } from './services/api';
 import Sidebar from './components/Sidebar';
 import TopBar from './components/TopBar';
 import StatCard from './components/StatCard';
@@ -16,7 +16,27 @@ function App() {
     const [activeTenant, setActiveTenant] = useState(null);
     const [loading, setLoading] = useState(true);
     const [showRegister, setShowRegister] = useState(false);
-    const [activeView, setActiveView] = useState('dashboard');
+    const [activeView, setActiveView] = useState(() => {
+        const hash = window.location.hash.replace('#', '');
+        return ['dashboard', 'messages', 'message', 'appointments', 'appointment', 'patients', 'doctors', 'reports'].includes(hash) ? hash : 'dashboard';
+    });
+
+    // Hash sync: State -> URL
+    useEffect(() => {
+        window.location.hash = activeView;
+    }, [activeView]);
+
+    // Hash sync: URL -> State (Back/Forward buttons)
+    useEffect(() => {
+        const handleHashChange = () => {
+            const hash = window.location.hash.replace('#', '');
+            if (hash && hash !== activeView) {
+                setActiveView(hash);
+            }
+        };
+        window.addEventListener('hashchange', handleHashChange);
+        return () => window.removeEventListener('hashchange', handleHashChange);
+    }, [activeView]);
 
     useEffect(() => {
         fetchInitialData();
@@ -219,7 +239,15 @@ function App() {
                                                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                                                         </button>
                                                     </div>
-                                                    <Worklist orders={orders} loading={loading} />
+                                                    <Worklist
+                                                        orders={orders}
+                                                        loading={loading}
+                                                        onStatusUpdate={async (id, status) => {
+                                                            await updateOrder(id, { status });
+                                                            const orderData = await getOrders();
+                                                            setOrders(orderData);
+                                                        }}
+                                                    />
                                                 </div>
                                             </div>
 
@@ -284,7 +312,7 @@ function App() {
                                 return <Messages />;
                             case 'appointments':
                             case 'appointment':
-                                return <Appointments />;
+                                return <Appointments activeTenant={activeTenant} />;
                             default:
                                 return (
                                     <div className="flex items-center justify-center p-20 bg-white rounded-[2.5rem] border border-his-slate-100 shadow-sleek">
