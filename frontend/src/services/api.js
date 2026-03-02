@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE = 'http://localhost:8000/api';
+const API_BASE = 'http://localhost:8001/api';
 
 const api = axios.create({
     baseURL: API_BASE,
@@ -13,8 +13,17 @@ export const setTenantToken = (tenantId) => {
     api.defaults.headers.common['X-Tenant-ID'] = tenantId;
 };
 
+export const setSimulatedUser = (userId) => {
+    api.defaults.headers.common['X-Simulated-User'] = userId;
+};
+
 export const getPatients = async () => {
     const response = await api.get('/patients');
+    return response.data;
+};
+
+export const getPatientHistory = async (patientId) => {
+    const response = await api.get(`/patients/${patientId}/history`);
     return response.data;
 };
 
@@ -67,6 +76,28 @@ export const deleteAppointment = async (id) => {
 // Doctors / Staff API
 export const getDoctors = async () => {
     const response = await api.get('/users');
+    return response.data;
+};
+
+// Messaging API
+export const getMessageThreads = async () => {
+    const response = await api.get('/messages');
+    return response.data;
+};
+
+export const getMessageHistory = async (conversationId) => {
+    const response = await api.get(`/messages/${conversationId}`);
+    return response.data;
+};
+
+export const sendMessage = async (data) => {
+    // data: { conversation_id, content } OR { receiver_id, content }
+    const response = await api.post('/messages', data);
+    return response.data;
+};
+
+export const createGroupChat = async (name, userIds) => {
+    const response = await api.post('/messages/groups', { name, user_ids: userIds });
     return response.data;
 };
 

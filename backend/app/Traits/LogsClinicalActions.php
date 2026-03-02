@@ -25,7 +25,7 @@ trait LogsClinicalActions
     protected static function logAction($action, $model)
     {
         AuditLog::create([
-            'tenant_id' => $model->tenant_id ?? app('tenant')->id ?? 0,
+            'tenant_id' => $model->tenant_id ?? (app()->bound('tenant') ? app('tenant')->id : 0),
             'user_id' => Auth::id(),
             'action' => $action,
             'resource_type' => get_class($model),

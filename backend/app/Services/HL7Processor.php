@@ -54,13 +54,13 @@ class HL7Processor
         if (isset($orderData['patient_id']) && isset($orderData['order_type'])) {
             $order = Order::create($orderData);
 
-            // Audit Log
+            // Audit Log (Specific event for raw HL7 message ingestion)
             AuditLog::create([
                 'tenant_id' => $tenantId,
-                'action' => 'HL7_IMPORT',
-                'resource_type' => 'Order',
-                'resource_id' => $order->id,
-                'payload' => ['raw' => $rawMessage],
+                'event' => 'HL7_IMPORT',
+                'auditable_type' => 'Order',
+                'auditable_id' => $order->id,
+                'new_values' => ['raw' => $rawMessage],
             ]);
 
             return $order;

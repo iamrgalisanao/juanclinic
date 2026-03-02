@@ -9,11 +9,35 @@ class OrderController extends Controller
 {
     public function index()
     {
+        $this->authorize('viewAny', \App\Models\Order::class);
         return \App\Models\Order::with('patient')->get();
+    }
+
+    /**
+     * Specialized worklist for Technicians and Approvers.
+     */
+    public function worklist(Request $request)
+    {
+        $user = $request->user();
+        $query = \App\Models\Order::with('patient');
+
+        if ($user->role === 'TECH') {
+            $query->whereIn('status', ['PENDING', 'IN_PROGRESS']);
+        } elseif ($user->role === 'DIAGNOSTIC_APPROVER') {
+            $query->where('status', 'PRELIMINARY');
+        } elseif ($user->role === 'ADMIN') {
+            // Admin sees everything
+        } else {
+            return response()->json([], 200);
+        }
+
+        return $query->get();
     }
 
     public function store(Request $request)
     {
+        $this->authorize('create', \App\Models\Order::class);
+
         $validated = $request->validate([
             'patient_id' => 'required|exists:patients,id',
             'order_type' => 'required|in:LAB,RAD',
@@ -29,7 +53,9 @@ class OrderController extends Controller
      */
     public function show(string $id)
     {
-        //
+        $order = \App\Models\Order::findOrFail($id);
+        $this->authorize('view', $order);
+        return $order->load(['performer', 'approver', 'patient']);
     }
 
     /**
@@ -39,22 +65,28 @@ class OrderController extends Controller
     {
         $order = \App\Models\Order::findOrFail($id);
 
+        // Authorize the specific update action
+        $this->authorize('update', $order);
+
         $validated = $request->validate([
-            'status' => 'required|in:PENDING,IN_PROGRESS,COMPLETED,CANCELLED',
+            'status' => 'sometimes|in:PENDING,IN_PROGRESS,PRELIMINARY,COMPLETED,CANCELLED',
+            'result_data' => 'sometimes|array',
         ]);
+
+        // Automatic Attribution logic for Electronic Sign-off
+        if (isset($validated['status'])) {
+            if ($validated['status'] === 'PRELIMINARY') {
+                $validated['performed_by'] = $request->user()->id;
+                $validated['performed_at'] = now();
+            } elseif ($validated['status'] === 'COMPLETED') {
+                $validated['approved_by'] = $request->user()->id;
+                $validated['approved_at'] = now();
+            }
+        }
 
         $order->update($validated);
 
-        // Audit Log for status change
-        \App\Models\AuditLog::create([
-            'tenant_id' => $order->tenant_id,
-            'action' => 'ORDER_STATUS_UPDATE',
-            'resource_type' => 'Order',
-            'resource_id' => $order->id,
-            'payload' => ['new_status' => $validated['status']],
-        ]);
-
-        return $order;
+        return $order->load(['performer', 'approver']);
     }
 
     /**

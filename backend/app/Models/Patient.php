@@ -6,9 +6,11 @@ use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+use App\Traits\AuditLogTrait;
+
 class Patient extends Model
 {
-    use HasFactory, BelongsToTenant;
+    use HasFactory, BelongsToTenant, AuditLogTrait;
 
     protected $fillable = [
         'tenant_id',
@@ -25,4 +27,14 @@ class Patient extends Model
         'dob' => 'date',
         'metadata' => 'array',
     ];
+
+    public function orders()
+    {
+        return $this->hasMany(Order::class);
+    }
+
+    public function appointments()
+    {
+        return $this->hasMany(Appointment::class);
+    }
 }

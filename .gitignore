@@ -4,6 +4,8 @@
 .vscode
 .tmp
 
+**/.phpunit.result.cache
+
 # Backend Laravel
 backend/vendor/
 backend/node_modules/
@@ -29,3 +31,5 @@ frontend/npm-debug.log*
 frontend/yarn-debug.log*
 frontend/yarn-error.log*
 frontend/pnpm-debug.log*
+
+

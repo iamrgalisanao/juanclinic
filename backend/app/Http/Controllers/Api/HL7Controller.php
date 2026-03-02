@@ -22,7 +22,7 @@ class HL7Controller extends Controller
         ]);
 
         // Get tenant from context (already set by middleware)
-        $tenantId = app('tenant')->id;
+        $tenantId = app()->bound('tenant') ? app('tenant')->id : null;
 
         $order = $this->processor->process($request->hl7_message, $tenantId);
 
