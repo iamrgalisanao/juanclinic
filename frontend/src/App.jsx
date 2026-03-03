@@ -48,8 +48,10 @@ function App() {
         if (!currentUser) return;
 
         // Skip if everything is already synced
+        // If activeTenant is null but user has a tenant_id, we MUST not return yet
         if (syncLockRef.current.userEmail === currentUser.email &&
-            syncLockRef.current.tenantId === activeTenant?.id) {
+            syncLockRef.current.tenantId === activeTenant?.id &&
+            (activeTenant || !currentUser.tenant_id)) {
             return;
         }
 
@@ -118,10 +120,14 @@ function App() {
         try {
             const tenantData = await getTenants();
             setTenants(tenantData);
-            // setSimulatedUser is already handled in useEffect [currentUser, tenants]
-            // handleTenantChange is also already handled in useEffect [currentUser, tenants]
+
+            // If current user has no associated tenant (System Admin), stop loading immediately
+            if (!currentUser?.tenant_id) {
+                setLoading(false);
+            }
         } catch (err) {
             console.error("Initialization failed", err);
+            setLoading(false);
         }
     };
 
