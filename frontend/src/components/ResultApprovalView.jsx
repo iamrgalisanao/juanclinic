@@ -70,7 +70,7 @@ const ResultApprovalView = ({ order, onDecision, onCancel }) => {
 
                 <div className="mt-8 flex items-center gap-4">
                     <button
-                        onClick={() => handleDecision('FINAL')}
+						onClick={() => handleDecision('COMPLETED')}
                         disabled={isSubmitting || resultsList.length === 0}
                         className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-300 text-white text-sm font-bold rounded-xl shadow-sm transition-all shadow-emerald-600/20"
                     >

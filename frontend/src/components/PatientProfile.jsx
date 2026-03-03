@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { getPatientHistory } from '../services/api';
+import { getPatientHistory, updatePatient } from '../services/api';
 
 const PatientProfile = ({ patientId, onBack }) => {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [selectedOrder, setSelectedOrder] = useState(null);
+    const [timelineFilter, setTimelineFilter] = useState('ALL'); // ALL | ORDERS | APPOINTMENTS
+    const [isEditing, setIsEditing] = useState(false);
 
     useEffect(() => {
         if (patientId) {
@@ -33,6 +35,12 @@ const PatientProfile = ({ patientId, onBack }) => {
         ...history.appointments.map(a => ({ ...a, type: 'APPOINTMENT', date: a.appointment_at }))
     ].sort((a, b) => new Date(b.date) - new Date(a.date));
 
+    const filteredTimeline = timeline.filter((event) => {
+        if (timelineFilter === 'ORDERS' && event.type !== 'ORDER') return false;
+        if (timelineFilter === 'APPOINTMENTS' && event.type !== 'APPOINTMENT') return false;
+        return true;
+    });
+
     return (
         <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
             {/* Header / Demographics */}
@@ -56,7 +64,10 @@ const PatientProfile = ({ patientId, onBack }) => {
                     </div>
                 </div>
                 <div className="flex gap-3">
-                    <button className="px-6 py-3 bg-white text-slate-600 text-xs font-black rounded-2xl border border-slate-100 hover:bg-slate-50 transition-all uppercase tracking-widest">
+                    <button
+                        onClick={() => setIsEditing(true)}
+                        className="px-6 py-3 bg-white text-slate-600 text-xs font-black rounded-2xl border border-slate-100 hover:bg-slate-50 transition-all uppercase tracking-widest"
+                    >
                         Edit Profile
                     </button>
                     <button className="px-6 py-3 bg-his-green-500 text-white text-xs font-black rounded-2xl shadow-xl shadow-his-green-500/20 hover:bg-his-green-600 transition-all uppercase tracking-widest">
@@ -65,16 +76,129 @@ const PatientProfile = ({ patientId, onBack }) => {
                 </div>
             </header>
 
+            {isEditing && (
+                <section className="bg-white rounded-[2.5rem] p-8 shadow-sleek border border-his-slate-100">
+                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-[0.2em] mb-6">Edit Demographics</h3>
+                    <form
+                        onSubmit={async (e) => {
+                            e.preventDefault();
+                            const formData = new FormData(e.target);
+                            const payload = {
+                                first_name: formData.get('first_name') || undefined,
+                                last_name: formData.get('last_name') || undefined,
+                                dob: formData.get('dob') || undefined,
+                                gender: formData.get('gender') || undefined,
+                                contact: formData.get('contact') || undefined,
+                            };
+                            try {
+                                await updatePatient(patient.id, payload);
+                                await fetchHistory();
+                                setIsEditing(false);
+                            } catch (err) {
+                                console.error('Failed to update patient', err);
+                            }
+                        }}
+                        className="grid grid-cols-1 md:grid-cols-2 gap-6"
+                    >
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">First Name</label>
+                            <input
+                                name="first_name"
+                                defaultValue={patient.first_name}
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold text-slate-900 focus:ring-2 focus:ring-his-green-500/20 focus:border-his-green-500 outline-none"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Last Name</label>
+                            <input
+                                name="last_name"
+                                defaultValue={patient.last_name}
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold text-slate-900 focus:ring-2 focus:ring-his-green-500/20 focus:border-his-green-500 outline-none"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Date of Birth</label>
+                            <input
+                                type="date"
+                                name="dob"
+                                defaultValue={patient.dob}
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold text-slate-900 focus:ring-2 focus:ring-his-green-500/20 focus:border-his-green-500 outline-none"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Gender</label>
+                            <select
+                                name="gender"
+                                defaultValue={patient.gender}
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold text-slate-900 focus:ring-2 focus:ring-his-green-500/20 focus:border-his-green-500 outline-none"
+                            >
+                                <option value="M">Male</option>
+                                <option value="F">Female</option>
+                                <option value="O">Other</option>
+                            </select>
+                        </div>
+                        <div className="space-y-2 md:col-span-2">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Contact</label>
+                            <input
+                                name="contact"
+                                defaultValue={patient.contact}
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold text-slate-900 focus:ring-2 focus:ring-his-green-500/20 focus:border-his-green-500 outline-none"
+                            />
+                        </div>
+                        <div className="md:col-span-2 flex justify-end gap-3 pt-4">
+                            <button
+                                type="button"
+                                onClick={() => setIsEditing(false)}
+                                className="px-6 py-3 bg-slate-100 text-slate-600 text-xs font-black rounded-xl hover:bg-slate-200 transition-all uppercase tracking-widest shadow-sm"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                className="px-6 py-3 bg-his-green-500 text-white text-xs font-black rounded-xl hover:bg-his-green-600 transition-all uppercase tracking-widest shadow-xl shadow-his-green-500/20"
+                            >
+                                Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </section>
+            )}
+
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-10">
                 {/* Timeline */}
                 <div className="xl:col-span-2 space-y-8">
-                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-3 px-4">
-                        <div className="w-2 h-2 rounded-full bg-his-green-500" />
-                        Longitudinal Timeline
-                    </h3>
+                    <div className="flex items-center justify-between px-4">
+                        <h3 className="text-sm font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-3">
+                            <div className="w-2 h-2 rounded-full bg-his-green-500" />
+                            Longitudinal Timeline
+                        </h3>
+                        <div className="flex gap-2 text-[9px] font-black uppercase tracking-widest">
+                            <button
+                                type="button"
+                                onClick={() => setTimelineFilter('ALL')}
+                                className={`px-3 py-1 rounded-full border ${timelineFilter === 'ALL' ? 'bg-his-green-500 text-white border-his-green-500' : 'bg-white text-slate-400 border-his-slate-100'}`}
+                            >
+                                All
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setTimelineFilter('ORDERS')}
+                                className={`px-3 py-1 rounded-full border ${timelineFilter === 'ORDERS' ? 'bg-his-green-500 text-white border-his-green-500' : 'bg-white text-slate-400 border-his-slate-100'}`}
+                            >
+                                Orders
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setTimelineFilter('APPOINTMENTS')}
+                                className={`px-3 py-1 rounded-full border ${timelineFilter === 'APPOINTMENTS' ? 'bg-his-green-500 text-white border-his-green-500' : 'bg-white text-slate-400 border-his-slate-100'}`}
+                            >
+                                Appts
+                            </button>
+                        </div>
+                    </div>
 
                     <div className="space-y-6 relative before:absolute before:left-[23px] before:top-2 before:bottom-2 before:w-[2px] before:bg-his-slate-100">
-                        {timeline.map((event, idx) => (
+                        {filteredTimeline.map((event, idx) => (
                             <div key={idx} className="flex gap-8 group">
                                 <div className={`relative z-10 w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-sm border transition-all duration-500 group-hover:scale-110 ${event.type === 'ORDER' ? 'bg-purple-50 text-purple-600 border-purple-100' : 'bg-blue-50 text-blue-600 border-blue-100'
                                     }`}>
@@ -93,9 +217,22 @@ const PatientProfile = ({ patientId, onBack }) => {
                                             {new Date(event.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                                         </span>
                                     </div>
-                                    <p className="text-xs text-slate-500 leading-relaxed font-medium">
-                                        {event.type === 'ORDER' ? `Order #${event.id} - ${event.status}` : `Appointment scheduled with ${event.doctor?.name || 'Staff'}`}
-                                    </p>
+                                    <div className="flex items-center justify-between mt-1">
+                                        <p className="text-xs text-slate-500 leading-relaxed font-medium">
+                                            {event.type === 'ORDER' ? `Order #${event.id}` : `Appointment with ${event.doctor?.name || 'Staff'}`}
+                                        </p>
+                                        {event.type === 'ORDER' && (
+                                            <span className={`ml-3 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest ${
+                                                event.status === 'COMPLETED'
+                                                    ? 'bg-emerald-50 text-emerald-600'
+                                                    : event.status === 'IN_PROGRESS' || event.status === 'PRELIMINARY'
+                                                        ? 'bg-amber-50 text-amber-600'
+                                                        : 'bg-slate-50 text-slate-400'
+                                            }`}>
+                                                {event.status}
+                                            </span>
+                                        )}
+                                    </div>
 
                                     {event.type === 'ORDER' && event.status === 'COMPLETED' && (
                                         <button

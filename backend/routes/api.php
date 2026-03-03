@@ -27,6 +27,7 @@ Route::group(['middleware' => ['auth:sanctum', 'tenant_user']], function () {
     Route::apiResource('orders', \App\Http\Controllers\Api\OrderController::class)->middleware('role:DOCTOR,ADMIN,TECH,DIAGNOSTIC_APPROVER');
     Route::apiResource('appointments', \App\Http\Controllers\Api\AppointmentController::class)->middleware('role:DOCTOR,ADMIN,FRONT_DESK');
     Route::apiResource('users', \App\Http\Controllers\Api\UserController::class)->middleware('role:ADMIN,DOCTOR,TECH,FRONT_DESK,DIAGNOSTIC_APPROVER');
+    Route::get('audit-logs', [\App\Http\Controllers\Api\AuditLogController::class, 'index'])->middleware('role:ADMIN');
     Route::get('messages', [\App\Http\Controllers\Api\MessageController::class, 'index']);
     Route::post('messages/groups', [\App\Http\Controllers\Api\MessageController::class, 'createGroup']);
     Route::get('messages/{conversation}', [\App\Http\Controllers\Api\MessageController::class, 'show']);

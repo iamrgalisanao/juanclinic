@@ -42,6 +42,11 @@ export const registerPatient = async (patientData) => {
     return response.data;
 };
 
+export const updatePatient = async (patientId, data) => {
+    const response = await api.put(`/patients/${patientId}`, data);
+    return response.data;
+};
+
 export const ingestHL7 = async (hl7Message) => {
     const response = await api.post('/hl7/ingest', { hl7_message: hl7Message });
     return response.data;
@@ -79,6 +84,21 @@ export const getDoctors = async () => {
     return response.data;
 };
 
+export const createDoctor = async (data) => {
+    const response = await api.post('/users', data);
+    return response.data;
+};
+
+export const updateDoctor = async (id, data) => {
+    const response = await api.put(`/users/${id}`, data);
+    return response.data;
+};
+
+export const deleteDoctor = async (id) => {
+    const response = await api.delete(`/users/${id}`);
+    return response.data;
+};
+
 // Messaging API
 export const getMessageThreads = async () => {
     const response = await api.get('/messages');
@@ -98,6 +118,12 @@ export const sendMessage = async (data) => {
 
 export const createGroupChat = async (name, userIds) => {
     const response = await api.post('/messages/groups', { name, user_ids: userIds });
+    return response.data;
+};
+
+// Audit Logs API
+export const getAuditLogs = async (params = {}) => {
+    const response = await api.get('/audit-logs', { params });
     return response.data;
 };
 

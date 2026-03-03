@@ -14,9 +14,10 @@ class HL7Processor
      * 
      * @param string $rawMessage
      * @param int $tenantId
+     * @param string $validationLevel minimal|standard|strict
      * @return Order|null
      */
-    public function process(string $rawMessage, int $tenantId)
+    public function process(string $rawMessage, int $tenantId, string $validationLevel = 'minimal')
     {
         // Simple mock parsing for demonstration
         // HL7 message segments are separated by \r
@@ -27,12 +28,23 @@ class HL7Processor
             'status' => 'PENDING',
         ];
 
+        $mshMeta = [
+            'message_type' => null,
+            'sending_facility' => null,
+            'receiving_facility' => null,
+        ];
+
         foreach ($segments as $segment) {
             $fields = explode("|", $segment);
             $header = $fields[0];
 
             if ($header === 'MSH') {
-                // Header details
+                // Basic MSH parsing
+                // Field 9: Message Type (e.g. ORU^R01, ORM^O01)
+                $mshMeta['message_type'] = $fields[8] ?? null;
+                // Field 4: Sending Facility, Field 6: Receiving Facility
+                $mshMeta['sending_facility'] = $fields[3] ?? null;
+                $mshMeta['receiving_facility'] = $fields[5] ?? null;
             } elseif ($header === 'PID') {
                 // Patient ID mapping
                 $externalId = $fields[3] ?? null;
@@ -51,6 +63,16 @@ class HL7Processor
             }
         }
 
+        // Validation based on configured level
+        if ($validationLevel !== 'minimal') {
+            // Require at least a recognizable message type for standard/strict
+            $allowedTypes = ['ORU^R01', 'ORM^O01'];
+            if (empty($mshMeta['message_type']) || ! in_array($mshMeta['message_type'], $allowedTypes, true)) {
+                Log::warning("HL7 validation failed for tenant {$tenantId}: unsupported or missing message type", $mshMeta);
+                return null;
+            }
+        }
+
         if (isset($orderData['patient_id']) && isset($orderData['order_type'])) {
             $order = Order::create($orderData);
 
@@ -60,7 +82,11 @@ class HL7Processor
                 'event' => 'HL7_IMPORT',
                 'auditable_type' => 'Order',
                 'auditable_id' => $order->id,
-                'new_values' => ['raw' => $rawMessage],
+                'new_values' => [
+                    'raw' => $rawMessage,
+                    'hl7_meta' => $mshMeta,
+                    'validation_level' => $validationLevel,
+                ],
             ]);
 
             return $order;

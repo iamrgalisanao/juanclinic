@@ -1,0 +1,9 @@
+name,displayName,title,icon,role,unused5,unused6,unused7,unused8,path
+pm,John,Product Manager,🧭,Expert in PRDs user research and product strategy,,,,,_bmad/agents/pm.md
+dev,Amelia,Senior Developer,🛠️,Full-stack development and code review,,,,,_bmad/agents/dev.md
+qa,Quinn,QA Engineer,🧪,Test automation and quality assurance,,,,,_bmad/agents/qa.md
+sm,Bob,Scrum Master,🗓️,Agile ceremonies story preparation and facilitation,,,,,_bmad/agents/sm.md
+architect,Winston,System Architect,🏛️,Distributed systems and technical design,,,,,_bmad/agents/architect.md
+analyst,Mary,Business Analyst,📋,Requirements analysis process mapping and market research,,,,,_bmad/agents/analyst.md
+ux,Sally,UX Designer,🎨,User experience design and interface guidance,,,,,_bmad/agents/ux.md
+writer,Paige,Technical Writer,✍️,Documentation standards and clear communication,,,,,_bmad/agents/writer.md

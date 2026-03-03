@@ -22,9 +22,19 @@ class HL7Controller extends Controller
         ]);
 
         // Get tenant from context (already set by middleware)
-        $tenantId = app()->bound('tenant') ? app('tenant')->id : null;
+        $tenant = app()->bound('tenant') ? app('tenant') : null;
+        $tenantId = $tenant?->id;
 
-        $order = $this->processor->process($request->hl7_message, $tenantId);
+        if (! $tenantId) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Tenant context is required for HL7 ingestion.',
+            ], 400);
+        }
+
+        $validationLevel = data_get($tenant->admin_settings, 'hl7.validation.level', 'minimal');
+
+        $order = $this->processor->process($request->hl7_message, $tenantId, $validationLevel);
 
         if ($order) {
             return response()->json([

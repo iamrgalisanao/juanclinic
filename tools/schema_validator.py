@@ -1,7 +1,9 @@
 import json
-import jsonschema
 import sys
 import os
+from datetime import datetime
+
+import jsonschema
 
 # Schemas mapped from gemini.md
 PATIENT_SCHEMA = {
@@ -51,12 +53,16 @@ def validate_payload(data, schema_type="patient", level="minimal"):
         
     # Standard level requirements
     if level in ["standard", "strict"]:
-        if schema_type == "patient":
+        if schema_type == "patient" and "demographics" in data and "dob" in data["demographics"]:
             # Example: DOB must be in the past
-            dob = datetime.strptime(data['demographics']['dob'], "%Y-%m-%d")
-            if dob > datetime.now():
-                print("[ERROR] DOB cannot be in the future (Standard Validation)")
-                return False
+            try:
+                dob = datetime.strptime(data["demographics"]["dob"], "%Y-%m-%d")
+                if dob > datetime.now():
+                    print("[ERROR] DOB cannot be in the future (Standard Validation)")
+                    return False
+            except ValueError:
+                # Let jsonschema handle format/type errors
+                pass
                 
     try:
         jsonschema.validate(instance=data, schema=schema)
@@ -80,5 +86,5 @@ if __name__ == "__main__":
                         sys.exit(1)
             sys.exit(0)
         else:
-            print("[ERROR] Sample file not found.")
+            print("[ERROR] Sample file not found. Run generate_sample_dataset.py first to create sample_patients.json.")
             sys.exit(1)

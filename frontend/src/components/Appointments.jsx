@@ -17,7 +17,7 @@ import {
     FlaskConical
 } from 'lucide-react';
 
-const Appointments = ({ activeTenant }) => {
+const Appointments = ({ activeTenant, currentUser }) => {
     const [currentDate, setCurrentDate] = useState(new Date());
 
     const formatDate = (date) => {
@@ -148,9 +148,11 @@ const Appointments = ({ activeTenant }) => {
     // --- Styling Helpers ---
     const getStatusColor = (status) => {
         switch (status) {
-            case 'COMPLETED': return 'bg-rose-100'; // light pink
-            case 'IN_PROGRESS': return 'bg-orange-50'; // light yellow/orange
-            case 'SCHEDULED': return 'bg-his-green-100/60'; // light green
+            case 'COMPLETED': return 'bg-emerald-50';
+            case 'IN_PROGRESS': return 'bg-amber-50';
+            case 'CHECKED_IN': return 'bg-sky-50';
+            case 'CANCELLED': return 'bg-rose-50';
+            case 'SCHEDULED': return 'bg-his-green-100/60';
             default: return 'bg-slate-50';
         }
     };
@@ -159,10 +161,31 @@ const Appointments = ({ activeTenant }) => {
         switch (status) {
             case 'COMPLETED': return <CheckCircle2 className="w-3 h-3" />;
             case 'IN_PROGRESS': return <Timer className="w-3 h-3" />;
+            case 'CHECKED_IN': return <Activity className="w-3 h-3" />;
+            case 'CANCELLED': return <XCircle className="w-3 h-3" />;
             case 'SCHEDULED': return <Clock className="w-3 h-3" />;
             default: return null;
         }
     };
+
+    const handleStatusChange = async (appt, newStatus) => {
+        try {
+            await updateAppointment(appt.id, { status: newStatus });
+            showNotify('success', `Status updated to ${newStatus.replace('_', ' ')}`);
+            fetchAppointments();
+        } catch (err) {
+            console.error('Failed to update appointment status', err);
+            showNotify('error', 'Failed to update status');
+        }
+    };
+
+    const todayStr = formatDate(new Date());
+    const doctorFilterId = currentUser?.role === 'DOCTOR' ? currentUser.id : null;
+    const todaysAppointments = appointments.filter((a) => {
+        if (a.date !== todayStr) return false;
+        if (doctorFilterId && a.doctor_id !== doctorFilterId) return false;
+        return true;
+    });
 
     const formatHour = (h) => {
         const period = h >= 12 ? 'PM' : 'AM';
@@ -304,6 +327,93 @@ const Appointments = ({ activeTenant }) => {
                     <span className="text-sm font-bold tracking-tight">{notification.message}</span>
                 </div>
             )}
+
+            {/* Todays Schedule Strip */}
+            <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-4 flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Today's Schedule</p>
+                        <p className="text-sm font-black text-slate-900">
+                            {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+                            {currentUser?.role === 'DOCTOR' && (
+                                <span className="text-slate-400 text-xs font-bold ml-2">for {currentUser.name}</span>
+                            )}
+                        </p>
+                    </div>
+                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                        {todaysAppointments.length} appt{todaysAppointments.length === 1 ? '' : 's'} today
+                    </div>
+                </div>
+
+                {todaysAppointments.length === 0 ? (
+                    <div className="text-xs font-medium text-slate-400 py-2">
+                        No appointments scheduled today in this tenant.
+                    </div>
+                ) : (
+                    <div className="flex gap-3 overflow-x-auto pt-1 pb-1 pr-1 -mr-1 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full">
+                        {todaysAppointments.map((appt) => {
+                            const actions = [];
+                            if (appt.status === 'SCHEDULED') {
+                                actions.push({ label: 'Check In', next: 'CHECKED_IN' });
+                            }
+                            if (appt.status === 'CHECKED_IN') {
+                                actions.push({ label: 'Start Visit', next: 'IN_PROGRESS' });
+                            }
+                            if (appt.status === 'IN_PROGRESS') {
+                                actions.push({ label: 'Complete', next: 'COMPLETED' });
+                            }
+                            if (['SCHEDULED', 'CHECKED_IN', 'IN_PROGRESS'].includes(appt.status)) {
+                                actions.push({ label: 'Cancel', next: 'CANCELLED', variant: 'danger' });
+                            }
+
+                            return (
+                                <div
+                                    key={appt.id}
+                                    className={`min-w-[260px] rounded-2xl px-4 py-3 flex flex-col gap-2 border border-slate-100 ${getStatusColor(appt.status)}`}
+                                >
+                                    <div className="flex items-center justify-between gap-2">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-8 h-8 rounded-xl bg-white/70 flex items-center justify-center shadow-sm">
+                                                {getStatusIcon(appt.status)}
+                                            </div>
+                                            <div>
+                                                <p className="text-xs font-black text-slate-900 leading-tight truncate">{appt.patient}</p>
+                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1">
+                                                    <Clock className="w-3 h-3" /> {formatHourRange(appt.hour)}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <span className="text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-full bg-white/70 text-slate-500">
+                                            {appt.status.replace('_', ' ')}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center justify-between gap-2 mt-1">
+                                        <p className="text-[10px] font-medium text-slate-500 truncate flex items-center gap-1">
+                                            <Stethoscope className="w-3 h-3" /> {appt.doctor}
+                                        </p>
+                                        <div className="flex gap-1">
+                                            {actions.map((action) => (
+                                                <button
+                                                    key={action.label}
+                                                    type="button"
+                                                    onClick={() => handleStatusChange(appt, action.next)}
+                                                    className={`px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border transition-all ${
+                                                        action.variant === 'danger'
+                                                            ? 'border-rose-200 text-rose-500 bg-rose-50 hover:bg-rose-100'
+                                                            : 'border-his-green-200 text-his-green-600 bg-white hover:bg-his-green-50'
+                                                    }`}
+                                                >
+                                                    {action.label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
 
             {/* Calendar Grid Section */}
             <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden select-none">

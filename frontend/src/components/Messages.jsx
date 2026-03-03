@@ -4,6 +4,8 @@ import echo from '../services/echo';
 
 const Messages = ({ currentUser }) => {
     const [threads, setThreads] = useState([]);
+    const [threadSearch, setThreadSearch] = useState('');
+    const [threadTypeFilter, setThreadTypeFilter] = useState('ALL'); // ALL | DIRECT | GROUP
     const [activeThread, setActiveThread] = useState(null);
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState('');
@@ -149,18 +151,28 @@ const Messages = ({ currentUser }) => {
 
     if (loading) return <div className="p-20 text-center font-black text-slate-400 animate-pulse">Initializing Secure Comms...</div>;
 
+    const normalizedSearch = threadSearch.trim().toLowerCase();
+    const filteredThreads = threads.filter((thread) => {
+        if (threadTypeFilter === 'GROUP' && thread.type !== 'GROUP') return false;
+        if (threadTypeFilter === 'DIRECT' && thread.type === 'GROUP') return false;
+        if (!normalizedSearch) return true;
+        const haystack = `${thread.name ?? ''} ${thread.last_message ?? ''}`.toLowerCase();
+        return haystack.includes(normalizedSearch);
+    });
+
     const currentThread = threads.find(t => t.id === activeThread) || availableUsers.find(u => u.id === activeThread);
 
     return (
         <div className="flex bg-white rounded-[2.5rem] shadow-sleek border border-his-slate-100 overflow-hidden h-[calc(100vh-200px)]">
             {/* Thread List */}
             <div className="w-80 border-r border-his-slate-50 flex flex-col">
-                <div className="p-8 border-b border-his-slate-50 flex justify-between items-center bg-white/50 sticky top-0 z-20">
-                    <div>
-                        <h2 className="text-xl font-black text-slate-900 tracking-tight">Messages</h2>
-                        <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] mt-2">Internal Chat</p>
-                    </div>
-                    <div className="flex gap-2">
+                <div className="p-8 border-b border-his-slate-50 flex flex-col gap-4 bg-white/50 sticky top-0 z-20">
+                    <div className="flex justify-between items-center">
+                        <div>
+                            <h2 className="text-xl font-black text-slate-900 tracking-tight">Messages</h2>
+                            <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] mt-2">Internal Chat</p>
+                        </div>
+                        <div className="flex gap-2">
                         <button
                             onClick={() => {
                                 setIsCreatingGroup(!isCreatingGroup);
@@ -184,7 +196,41 @@ const Messages = ({ currentUser }) => {
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
                         </button>
                     </div>
+
+                    <div className="flex items-center gap-3">
+                        <input
+                            type="text"
+                            placeholder="Search threads..."
+                            value={threadSearch}
+                            onChange={(e) => setThreadSearch(e.target.value)}
+                            className="flex-1 bg-slate-50 border border-his-slate-100 rounded-xl px-3 py-2 text-[11px] font-medium text-slate-700 focus:ring-2 focus:ring-his-green-500/20 focus:border-his-green-400 outline-none"
+                        />
+                        <div className="flex gap-1 text-[9px] font-black uppercase tracking-widest">
+                            <button
+                                type="button"
+                                onClick={() => setThreadTypeFilter('ALL')}
+                                className={`px-3 py-1 rounded-lg border ${threadTypeFilter === 'ALL' ? 'bg-his-green-500 text-white border-his-green-500' : 'bg-white text-slate-400 border-his-slate-100'}`}
+                            >
+                                All
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setThreadTypeFilter('DIRECT')}
+                                className={`px-3 py-1 rounded-lg border ${threadTypeFilter === 'DIRECT' ? 'bg-his-green-500 text-white border-his-green-500' : 'bg-white text-slate-400 border-his-slate-100'}`}
+                            >
+                                Direct
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setThreadTypeFilter('GROUP')}
+                                className={`px-3 py-1 rounded-lg border ${threadTypeFilter === 'GROUP' ? 'bg-his-green-500 text-white border-his-green-500' : 'bg-white text-slate-400 border-his-slate-100'}`}
+                            >
+                                Groups
+                            </button>
+                        </div>
+                    </div>
                 </div>
+            </div>
 
                 <div className="flex-1 overflow-y-auto relative">
                     {showUserList && (
@@ -260,7 +306,7 @@ const Messages = ({ currentUser }) => {
                         </div>
                     )}
 
-                    {threads.map((thread) => (
+                    {filteredThreads.map((thread) => (
                         <div
                             key={thread.id}
                             onClick={() => setActiveThread(thread.id)}

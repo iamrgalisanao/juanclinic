@@ -11,6 +11,9 @@ import Reports from './components/Reports';
 import Messages from './components/Messages';
 import Appointments from './components/Appointments';
 import PatientProfile from './components/PatientProfile';
+import AuditLogExplorer from './components/AuditLogExplorer';
+import Patients from './components/Patients';
+import Doctors from './components/Doctors';
 
 // Simulated Users (Mapped to DB Seeders)
 const SIMULATED_USERS = [
@@ -87,7 +90,7 @@ function App() {
 
     const [activeView, setActiveView] = useState(() => {
         const hash = window.location.hash.replace('#', '');
-        return ['dashboard', 'worklist', 'messages', 'message', 'appointments', 'appointment', 'patients', 'doctors', 'reports', 'patient_profile'].includes(hash) ? hash : 'dashboard';
+        return ['dashboard', 'worklist', 'messages', 'message', 'appointments', 'appointment', 'patients', 'doctors', 'reports', 'audit', 'patient_profile'].includes(hash) ? hash : 'dashboard';
     });
 
     // Hash sync: State -> URL
@@ -411,12 +414,26 @@ function App() {
                                         return <ClinicalWorklist currentUser={currentUser} activeTenant={activeTenant?.id} />;
                                     case 'reports':
                                         return <Reports />;
+                                    case 'audit':
+                                        return <AuditLogExplorer currentUser={currentUser} />;
+                                    case 'patients':
+                                        return (
+                                            <Patients
+                                                onOpenPatient={(id) => {
+                                                    setSelectedPatient(id);
+                                                    setActiveView('patient_profile');
+                                                }}
+                                                onNewPatient={() => setShowRegister(true)}
+                                            />
+                                        );
+                                    case 'doctors':
+                                        return <Doctors tenants={tenants} currentUser={currentUser} />;
                                     case 'messages':
                                     case 'message':
                                         return <Messages currentUser={currentUser} />;
                                     case 'appointments':
                                     case 'appointment':
-                                        return <Appointments activeTenant={activeTenant} />;
+                                        return <Appointments activeTenant={activeTenant} currentUser={currentUser} />;
                                     case 'patient_profile':
                                         return <PatientProfile patientId={selectedPatient} onBack={() => setActiveView('dashboard')} />;
                                     default:
