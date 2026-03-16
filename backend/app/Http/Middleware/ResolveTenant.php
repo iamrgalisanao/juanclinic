@@ -32,6 +32,7 @@ class ResolveTenant
             }
         }
 
+        // Proceed without binding if no tenant context found
         return $next($request);
     }
 }

@@ -15,6 +15,10 @@ class EnsureUserBelongsToTenant
      */
     public function handle(Request $request, Closure $next): Response
     {
+        if (!app()->bound('tenant')) {
+             return response()->json(['message' => 'Tenant context missing.'], 403);
+        }
+
         $tenant = app('tenant');
         $user = $request->user();
 

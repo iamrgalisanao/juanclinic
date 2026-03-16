@@ -17,11 +17,11 @@ import Doctors from './components/Doctors';
 
 // Simulated Users (Mapped to DB Seeders)
 const SIMULATED_USERS = [
-    { id: 6, name: 'Dr. Sarah Connor', role: 'DOCTOR', tenant_id: 1, email: 'sarah@clinic.com' },
-    { id: 7, name: 'Dr. Gregory House', role: 'DOCTOR', tenant_id: 2, email: 'house@clinic.com' },
-    { id: 9, name: 'Tim Tech', role: 'TECH', tenant_id: 1, email: 'tech@clinic.com' },
-    { id: 10, name: 'Amy Approver', role: 'DIAGNOSTIC_APPROVER', tenant_id: 1, email: 'approver@clinic.com' },
-    { id: 11, name: 'System Admin', role: 'ADMIN', tenant_id: null, email: 'admin@juanclinic.com' }
+    { id: 1, name: 'Dr. Sarah Connor', role: 'DOCTOR', tenant_id: 1, email: 'sarah@clinic.com' },
+    { id: 2, name: 'Dr. Gregory House', role: 'DOCTOR', tenant_id: 2, email: 'house@clinic.com' },
+    { id: 3, name: 'Tim Tech', role: 'TECH', tenant_id: 1, email: 'tech@clinic.com' },
+    { id: 4, name: 'Amy Approver', role: 'DIAGNOSTIC_APPROVER', tenant_id: 1, email: 'approver@clinic.com' },
+    { id: 5, name: 'System Admin', role: 'ADMIN', tenant_id: null, email: 'admin@juanclinic.com' }
 ];
 
 const getInitialSimulatedUser = () => {
