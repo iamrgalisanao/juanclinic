@@ -12,6 +12,12 @@ const Worklist = ({ currentUser, activeTenant }) => {
     }, [currentUser, activeTenant]);
 
     const fetchWorklist = async () => {
+        // Guard: Prevent fetching if the user context is not yet aligned with the tenant
+        if (!activeTenant || (currentUser.tenant_id && currentUser.tenant_id !== activeTenant)) {
+            console.log("Worklist: Skipping fetch due to context mismatch");
+            return;
+        }
+
         setLoading(true);
         try {
             const response = await fetch('http://localhost:8001/api/orders/worklist', {
@@ -31,9 +37,12 @@ const Worklist = ({ currentUser, activeTenant }) => {
         }
     };
 
-    const submitOrderUpdate = async (orderId, payload) => {
+    const submitOrderUpdate = async (orderId, payload, reason = null) => {
+        const finalPayload = { ...payload };
+        if (reason) finalPayload.amendment_reason = reason;
+
         try {
-            await fetch(`http://localhost:8001/api/orders/${orderId}`, {
+            const response = await fetch(`http://localhost:8001/api/orders/${orderId}`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
@@ -41,12 +50,19 @@ const Worklist = ({ currentUser, activeTenant }) => {
                     'X-Tenant-ID': activeTenant,
                     'X-Simulated-User': currentUser.email
                 },
-                body: JSON.stringify(payload)
+                body: JSON.stringify(finalPayload)
             });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || "Update failed");
+            }
+
             setSelectedOrder(null);
             fetchWorklist();
         } catch (error) {
             console.error("Update failed", error);
+            alert(`Update failed: ${error.message}`);
         }
     };
 
@@ -122,13 +138,13 @@ const Worklist = ({ currentUser, activeTenant }) => {
                         {currentUser.role === 'TECH' ? (
                             <ResultEntryForm
                                 order={selectedOrder}
-                                onSubmit={(orderId, resultData) => submitOrderUpdate(orderId, { status: 'PRELIMINARY', result_data: resultData })}
+                                onSubmit={(orderId, resultData, reason) => submitOrderUpdate(orderId, { status: 'PRELIMINARY', result_data: resultData }, reason)}
                                 onCancel={() => setSelectedOrder(null)}
                             />
                         ) : (
                             <ResultApprovalView
                                 order={selectedOrder}
-                                onDecision={(orderId, status) => submitOrderUpdate(orderId, { status, result_data: selectedOrder.result_data })}
+                                onDecision={(orderId, status) => submitOrderUpdate(orderId, { status, result_data: selectedOrder.result_data }, 'Final approval/review')}
                                 onCancel={() => setSelectedOrder(null)}
                             />
                         )}

@@ -22,11 +22,17 @@ Route::apiResource('tenants', \App\Http\Controllers\Api\TenantController::class)
 
 Route::group(['middleware' => ['auth:sanctum', 'tenant_user']], function () {
     Route::apiResource('patients', \App\Http\Controllers\Api\PatientController::class)->middleware('role:DOCTOR,ADMIN,FRONT_DESK');
+    Route::apiResource('clinical-notes', \App\Http\Controllers\Api\ClinicalNoteController::class)->middleware('role:DOCTOR,ADMIN');
     Route::get('patients/{patient}/history', [\App\Http\Controllers\Api\PatientHistoryController::class, 'show'])->middleware('role:DOCTOR,ADMIN');
     Route::get('orders/worklist', [\App\Http\Controllers\Api\OrderController::class, 'worklist'])->middleware('role:ADMIN,TECH,DIAGNOSTIC_APPROVER');
     Route::apiResource('orders', \App\Http\Controllers\Api\OrderController::class)->middleware('role:DOCTOR,ADMIN,TECH,DIAGNOSTIC_APPROVER');
+    Route::apiResource('prescriptions', \App\Http\Controllers\Api\PrescriptionController::class)->middleware('role:DOCTOR,ADMIN');
     Route::apiResource('appointments', \App\Http\Controllers\Api\AppointmentController::class)->middleware('role:DOCTOR,ADMIN,FRONT_DESK');
     Route::apiResource('users', \App\Http\Controllers\Api\UserController::class)->middleware('role:ADMIN,DOCTOR,TECH,FRONT_DESK,DIAGNOSTIC_APPROVER');
+    Route::get('billing/invoices', [\App\Http\Controllers\Api\BillingController::class, 'index'])->middleware('role:ADMIN,FRONT_DESK');
+    Route::post('billing/invoices', [\App\Http\Controllers\Api\BillingController::class, 'storeInvoice'])->middleware('role:ADMIN,FRONT_DESK');
+    Route::get('billing/invoices/{id}', [\App\Http\Controllers\Api\BillingController::class, 'showInvoice'])->middleware('role:ADMIN,FRONT_DESK');
+    Route::post('billing/payments', [\App\Http\Controllers\Api\BillingController::class, 'processPayment'])->middleware('role:ADMIN,FRONT_DESK');
     Route::get('audit-logs', [\App\Http\Controllers\Api\AuditLogController::class, 'index'])->middleware('role:ADMIN');
     Route::get('messages', [\App\Http\Controllers\Api\MessageController::class, 'index']);
     Route::post('messages/groups', [\App\Http\Controllers\Api\MessageController::class, 'createGroup']);

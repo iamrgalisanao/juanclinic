@@ -8,9 +8,11 @@ use Illuminate\Database\Eloquent\Model;
 
 use App\Traits\AuditLogTrait;
 
+use App\Traits\HasAmendments;
+
 class Patient extends Model
 {
-    use HasFactory, BelongsToTenant, AuditLogTrait;
+    use HasFactory, BelongsToTenant, AuditLogTrait, HasAmendments;
 
     protected $fillable = [
         'tenant_id',
@@ -36,5 +38,10 @@ class Patient extends Model
     public function appointments()
     {
         return $this->hasMany(Appointment::class);
+    }
+
+    public function prescriptions()
+    {
+        return $this->hasMany(Prescription::class);
     }
 }

@@ -127,4 +127,21 @@ export const getAuditLogs = async (params = {}) => {
     return response.data;
 };
 
+// Prescription API
+export const getPrescriptions = async (patientId = null) => {
+    const params = patientId ? { patient_id: patientId } : {};
+    const response = await api.get('/prescriptions', { params });
+    return response.data;
+};
+
+export const createPrescription = async (data) => {
+    const response = await api.post('/prescriptions', data);
+    return response.data;
+};
+
+export const updatePrescription = async (id, data) => {
+    const response = await api.put(`/prescriptions/${id}`, data);
+    return response.data;
+};
+
 export default api;

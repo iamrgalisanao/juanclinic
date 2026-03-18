@@ -8,9 +8,11 @@ use Illuminate\Database\Eloquent\Model;
 use App\Traits\BelongsToTenant;
 use App\Traits\AuditLogTrait;
 
+use App\Traits\HasAmendments;
+
 class Order extends Model
 {
-    use HasFactory, BelongsToTenant, AuditLogTrait;
+    use HasFactory, BelongsToTenant, AuditLogTrait, HasAmendments;
 
     protected $fillable = [
         'tenant_id',

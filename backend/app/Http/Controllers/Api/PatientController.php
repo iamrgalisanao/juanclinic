@@ -27,6 +27,19 @@ class PatientController extends Controller
             'metadata' => 'nullable|array',
         ]);
 
+        // CDIM Rule 4.1: Duplicate Patient Detection
+        $duplicate = \App\Models\Patient::where('first_name', $validated['first_name'])
+            ->where('last_name', $validated['last_name'])
+            ->where('dob', $validated['dob'])
+            ->exists();
+
+        if ($duplicate && !$request->has('force_duplicate')) {
+            return response()->json([
+                'message' => 'Potential duplicate patient detected.',
+                'code' => 'DUPLICATE_FOUND'
+            ], 409);
+        }
+
         return \App\Models\Patient::create($validated);
     }
 
@@ -58,7 +71,8 @@ class PatientController extends Controller
             'metadata' => 'nullable|array',
         ]);
 
-        $patient->update($validated);
+        // CDIM Rule 2.1: No Silent Overwrites for identity data
+        $patient->recordAmendment($validated, $validated['amendment_reason']);
 
         return $patient;
     }

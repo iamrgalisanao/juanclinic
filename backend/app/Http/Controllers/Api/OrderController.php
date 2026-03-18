@@ -71,6 +71,7 @@ class OrderController extends Controller
         $validated = $request->validate([
             'status' => 'sometimes|in:PENDING,IN_PROGRESS,PRELIMINARY,COMPLETED,CANCELLED',
             'result_data' => 'sometimes|array',
+            'amendment_reason' => 'required_with:result_data|string|max:255',
         ]);
 
         // Automatic Attribution logic for Electronic Sign-off
@@ -84,7 +85,13 @@ class OrderController extends Controller
             }
         }
 
-        $order->update($validated);
+        // Detect clinical data change (result_data)
+        if (isset($validated['result_data']) && $order->result_data !== $validated['result_data']) {
+            $reason = $request->input('amendment_reason', 'Routine Result Entry/Update');
+            $order->recordAmendment($validated, $reason);
+        } else {
+            $order->update($validated);
+        }
 
         return $order->load(['performer', 'approver']);
     }

@@ -41,6 +41,13 @@ class OrderPolicy
             return in_array($user->role, ['ADMIN', 'DOCTOR']);
         }
 
+        // TECH/APPROVER can only update orders that are PENDING, IN_PROGRESS, or PRELIMINARY
+        if (in_array($user->role, ['TECH', 'DIAGNOSTIC_APPROVER'])) {
+            if ($order->status === 'COMPLETED' || $order->status === 'CANCELLED') {
+                return false;
+            }
+        }
+
         // Status transition logic
         if (request()->has('status')) {
             $newStatus = request()->input('status');
@@ -52,6 +59,11 @@ class OrderPolicy
             if ($newStatus === 'COMPLETED') {
                 return in_array($user->role, ['ADMIN', 'DIAGNOSTIC_APPROVER']);
             }
+        }
+
+        // Allow TECH/APPROVER to update result_data directly
+        if (request()->has('result_data')) {
+            return in_array($user->role, ['ADMIN', 'TECH', 'DIAGNOSTIC_APPROVER']);
         }
 
         return in_array($user->role, ['ADMIN']);

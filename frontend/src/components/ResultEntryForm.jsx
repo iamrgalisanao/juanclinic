@@ -4,6 +4,7 @@ import { PlusIcon, TrashIcon, CheckCircleIcon } from '@heroicons/react/24/outlin
 const ResultEntryForm = ({ order, onSubmit, onCancel }) => {
     // Start with one empty row
     const [rows, setRows] = useState([{ id: Date.now(), key: '', value: '' }]);
+    const [amendmentReason, setAmendmentReason] = useState('Initial result entry');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleAddRow = () => {
@@ -32,7 +33,7 @@ const ResultEntryForm = ({ order, onSubmit, onCancel }) => {
         }, {});
 
         try {
-            await onSubmit(order.id, resultData);
+            await onSubmit(order.id, resultData, amendmentReason);
         } catch (error) {
             console.error("Failed to submit results", error);
             setIsSubmitting(false);
@@ -109,6 +110,18 @@ const ResultEntryForm = ({ order, onSubmit, onCancel }) => {
                         <PlusIcon className="w-4 h-4" />
                         Add Parameter
                     </button>
+                </div>
+
+                <div className="mt-8 pt-6 border-t border-slate-100">
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Amendment / Entry Reason</label>
+                    <input
+                        type="text"
+                        placeholder="e.g., Initial entry, Correcting typo, New observations..."
+                        value={amendmentReason}
+                        onChange={(e) => setAmendmentReason(e.target.value)}
+                        className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-800 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none"
+                        required
+                    />
                 </div>
 
                 <div className="mt-10 pt-6 border-t border-slate-100 flex items-center justify-between">
