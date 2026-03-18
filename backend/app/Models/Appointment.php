@@ -5,11 +5,13 @@ namespace App\Models;
 use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\AuditLogTrait;
+use App\Traits\HasAmendments;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Appointment extends Model
 {
-    use HasFactory, BelongsToTenant;
+    use HasFactory, BelongsToTenant, AuditLogTrait, HasAmendments;
 
     protected $fillable = [
         'tenant_id',

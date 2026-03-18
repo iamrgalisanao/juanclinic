@@ -1,32 +1,23 @@
-# Findings & Constraints
+# JuanClinic HIS - Quality & Compliance Findings
 
-## Tech Stack
-- **Frontend:** ReactJS
-- **Backend:** Laravel PHP
-- **Database:** MySQL
-- **Architecture:** Web-based Multi-Tenancy
+This document is managed by the **JuanClinic Code Scanner** subagent.
 
-## Discovery (from HIS Architecture Doc)
-- **North Star:** A multi-tenant HIS (EMR + LIS + RIS/PACS) enabling clinics to register patients, place clinical/diagnostic orders, performing laboratory/radiology workflows, and deliver validated clinical results. Guarantees strict tenant isolation, full auditability, standards-based interoperability (HL7/FHIR/DICOM), and regulatory compliance.
-- **Integrations:**
-    - **Laboratory Analyzers / Middleware:** HL7 v2 ORU/ORM for automatic result import, status updates, and worklists (e.g., Roche, Abbott).
-- **Source of Truth:** *(Inferred: Multi-tenant database system following HI isolation standards)*
-- **Delivery Payload:** Validated clinical results (likely PDF or HL7/FHIR feeds).
-- **Behavioral Rules:** Strict tenant isolation and healthcare regulatory compliance (e.g., HIPAA/GDPR equivalent).
+## 🟢 Cleared Scans
+- **Branch Verification**: Currently on feature-scoped branch.
+- **Secrets Management**: No hardcoded keys found in `backend/config/`.
 
-## Research Logs
-### GitHub Resources
-- [Health-Care-Management-System-Python-FastAPI](https://github.com/devalentineomonya/Health-Care-Management-System-Python-FastAPI): Modern healthcare platform for patient data and scheduling.
-- [MedicalSystem (Python/PostgreSQL)](https://github.com/bl33h/medicalSystem): Manages doctors, facilities, and supplies.
-- [Clinic-Management-Project (Django)](https://github.com/chazuttu/Clinic-Management-Project): Receptionist and doctor dashboards with online booking.
+## 🔴 Critical Findings
+- **File**: `backend/app/Http/Controllers/Api/PatientController.php`
+- **Issue**: `Patient::all()` lacks explicit tenant scoping. (HIS-Specific: Tenant Isolation)
+- **Status**: **Investigated**. Safe due to `BelongsToTenant` global scope, but flagged for visibility.
+- **File**: `backend/app/Models/User.php`
+- **Issue**: Missing `AuditLogTrait`. (HIS-Specific: Audit Log)
+- **Status**: **RESOLVED**. `AuditLogTrait` added (2026-03-18).
 
-### Industry Best Practices
-- **Prioritize routine tasks**: Automate appointment reminders, prescription refills, and patient intake.
-- **Workflow Automation**: AI scribes for clinical documentation, automated billing, and medical coding are trending for 2026.
-- **Gradual Approach**: Start with small, non-critical workflows to ensure reliability before scaling.
+## 🟡 Warnings
+- **File**: `backend/app/Models/Appointment.php`, `backend/app/Models/Payment.php`
+- **Issue**: Missing `HasAmendments` trait. (Clinical Integrity / Financial Audit)
+- **Status**: **RESOLVED**. `HasAmendments` added (2026-03-18).
 
-## Constraints
-- **Strict Tenant Isolation**: Critical for multi-tenant safety.
-- **Compliance**: HL7, FHIR, DICOM, and healthcare regulations.
-
-
+---
+*Last scanned: 2026-03-18*
