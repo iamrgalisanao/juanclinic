@@ -13,6 +13,7 @@ class Medicine extends Model
         'brand_name',
         'form',
         'strength',
+        'price',
         'is_system',
     ];
 
