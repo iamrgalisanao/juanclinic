@@ -12,6 +12,9 @@ const AuditLogExplorer = ({ currentUser }) => {
 
     useEffect(() => {
         const load = async () => {
+            // Guard: Only fetch if user is Admin
+            if (!currentUser || currentUser.role !== 'ADMIN') return;
+
             try {
                 const [logData, userData] = await Promise.all([
                     getAuditLogs({}),
@@ -26,10 +29,12 @@ const AuditLogExplorer = ({ currentUser }) => {
             }
         };
         load();
-    }, []);
+    }, [currentUser]);
 
     const handleFilter = async (e) => {
         e.preventDefault();
+        if (!currentUser || currentUser.role !== 'ADMIN') return;
+
         setLoading(true);
         try {
             const params = {};

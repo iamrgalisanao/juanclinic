@@ -41,6 +41,7 @@ class Kernel extends HttpKernel
 
         'api' => [
             \App\Http\Middleware\ResolveTenant::class,
+            \App\Http\Middleware\ResolveBranch::class,
             // \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
             \Illuminate\Routing\Middleware\ThrottleRequests::class . ':api',
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
@@ -68,6 +69,7 @@ class Kernel extends HttpKernel
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'role' => \App\Http\Middleware\CheckRole::class,
         'tenant_user' => \App\Http\Middleware\EnsureUserBelongsToTenant::class,
+        'branch_user' => \App\Http\Middleware\EnsureUserBelongsToBranch::class,
         'dev_auth' => \App\Http\Middleware\DevAuthentication::class,
     ];
 }

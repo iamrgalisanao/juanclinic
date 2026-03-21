@@ -8,11 +8,11 @@ use Illuminate\Database\Eloquent\Model;
 trait BelongsToTenant
 {
     /**
-     * The "booted" method of the model.
+     * The "boot" method of the trait.
      *
      * @return void
      */
-    protected static function booted()
+    protected static function bootBelongsToTenant()
     {
         static::addGlobalScope(new TenantScope);
 

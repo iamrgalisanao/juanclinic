@@ -1,10 +1,10 @@
 import React from 'react';
 
-const TopBar = ({ activeTenant, tenants, onTenantChange, currentUser, onUserSwitch, availableUsers, onSidebarToggle }) => {
+const TopBar = ({ activeTenant, tenants, onTenantChange, activeBranch, branches, onBranchChange, currentUser, onUserSwitch, availableUsers, onSidebarToggle }) => {
     return (
         <div className="h-20 md:h-24 flex items-center justify-between px-6 md:px-10 bg-white/90 backdrop-blur-xl border-b border-slate-100 sticky top-0 z-30">
             <div className="flex items-center gap-4 flex-1 mr-4">
-                <button 
+                <button
                     onClick={onSidebarToggle}
                     className="lg:hidden w-10 h-10 flex items-center justify-center rounded-xl bg-his-slate-100 text-slate-500 hover:bg-his-green-50 hover:text-his-green-600 transition-all shrink-0"
                 >
@@ -39,6 +39,27 @@ const TopBar = ({ activeTenant, tenants, onTenantChange, currentUser, onUserSwit
                     >
                         {tenants.map(t => (
                             <option key={t.id} value={t.id} className="bg-white text-slate-900 font-sans normal-case tracking-normal">{t.name}</option>
+                        ))}
+                    </select>
+                </div>
+
+                {/* Branch Switcher */}
+                <div className="flex items-center gap-3 py-2 px-4 bg-blue-50 rounded-2xl border border-blue-100/50">
+                    <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                    <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest leading-none">
+                        {currentUser.branch_id ? 'Fixed Facility' : 'Facility'}
+                    </span>
+                    <select
+                        value={activeBranch?.id || ''}
+                        disabled={!!currentUser.branch_id}
+                        onChange={(e) => {
+                            const branch = branches.find(b => b.id === parseInt(e.target.value));
+                            if (branch) onBranchChange(branch);
+                        }}
+                        className={`bg-transparent border-none text-blue-600 text-[11px] font-black uppercase tracking-widest outline-none py-0.5 ${currentUser.branch_id ? 'cursor-not-allowed opacity-70' : 'cursor-pointer hover:text-blue-700 transition-colors'}`}
+                    >
+                        {branches.map(b => (
+                            <option key={b.id} value={b.id} className="bg-white text-slate-900 font-sans normal-case tracking-normal">{b.name}</option>
                         ))}
                     </select>
                 </div>

@@ -19,8 +19,9 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 
 Route::apiResource('tenants', \App\Http\Controllers\Api\TenantController::class);
+Route::get('branches', [\App\Http\Controllers\Api\BranchController::class, 'index'])->middleware(['auth:sanctum', 'tenant_user']);
 
-Route::group(['middleware' => ['auth:sanctum', 'tenant_user']], function () {
+Route::group(['middleware' => ['auth:sanctum', 'tenant_user', 'branch_user']], function () {
     Route::apiResource('patients', \App\Http\Controllers\Api\PatientController::class)->middleware('role:DOCTOR,ADMIN,FRONT_DESK');
     Route::apiResource('clinical-notes', \App\Http\Controllers\Api\ClinicalNoteController::class)->middleware('role:DOCTOR,ADMIN');
     Route::get('patients/{patient}/history', [\App\Http\Controllers\Api\PatientHistoryController::class, 'show'])->middleware('role:DOCTOR,ADMIN');
@@ -35,6 +36,7 @@ Route::group(['middleware' => ['auth:sanctum', 'tenant_user']], function () {
     Route::get('billing/invoices/{id}', [\App\Http\Controllers\Api\BillingController::class, 'showInvoice'])->middleware('role:ADMIN,FRONT_DESK');
     Route::post('billing/payments', [\App\Http\Controllers\Api\BillingController::class, 'processPayment'])->middleware('role:ADMIN,FRONT_DESK');
     Route::get('audit-logs', [\App\Http\Controllers\Api\AuditLogController::class, 'index'])->middleware('role:ADMIN');
+    Route::get('reports/dashboard', [\App\Http\Controllers\Api\ReportController::class, 'dashboard'])->middleware('role:ADMIN,FRONT_DESK');
     Route::get('messages', [\App\Http\Controllers\Api\MessageController::class, 'index']);
     Route::post('messages/groups', [\App\Http\Controllers\Api\MessageController::class, 'createGroup']);
     Route::get('messages/{conversation}', [\App\Http\Controllers\Api\MessageController::class, 'show']);

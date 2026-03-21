@@ -12,7 +12,7 @@ use App\Traits\HasAmendments;
 
 class Patient extends Model
 {
-    use HasFactory, BelongsToTenant, AuditLogTrait, HasAmendments;
+    use HasFactory, BelongsToTenant, AuditLogTrait, HasAmendments, \App\Traits\BelongsToBranch;
 
     protected $fillable = [
         'tenant_id',
@@ -22,13 +22,22 @@ class Patient extends Model
         'dob',
         'gender',
         'contact',
-        'metadata'
+        'metadata',
+        'branch_id',
     ];
 
     protected $casts = [
         'dob' => 'date',
         'metadata' => 'array',
     ];
+
+    /**
+     * Get the branch where the patient was registered.
+     */
+    public function branch()
+    {
+        return $this->belongsTo(Branch::class);
+    }
 
     public function orders()
     {

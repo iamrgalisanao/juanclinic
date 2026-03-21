@@ -10,10 +10,11 @@ use App\Traits\HasAmendments;
 
 class Payment extends Model
 {
-    use HasFactory, BelongsToTenant, AuditLogTrait, HasAmendments;
+    use HasFactory, BelongsToTenant, AuditLogTrait, HasAmendments, \App\Traits\BelongsToBranch;
 
     protected $fillable = [
         'tenant_id',
+        'branch_id',
         'invoice_id',
         'amount',
         'payment_method', // CASH, CARD, INSURANCE

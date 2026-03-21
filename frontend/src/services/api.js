@@ -13,6 +13,14 @@ export const setTenantToken = (tenantId) => {
     api.defaults.headers.common['X-Tenant-ID'] = tenantId;
 };
 
+export const setBranchToken = (branchId) => {
+    if (branchId) {
+        api.defaults.headers.common['X-Branch-ID'] = branchId;
+    } else {
+        delete api.defaults.headers.common['X-Branch-ID'];
+    }
+};
+
 export const setSimulatedUser = (userId) => {
     api.defaults.headers.common['X-Simulated-User'] = userId;
 };
@@ -34,6 +42,11 @@ export const getOrders = async () => {
 
 export const getTenants = async () => {
     const response = await api.get('/tenants');
+    return response.data;
+};
+
+export const getBranches = async () => {
+    const response = await api.get('/branches');
     return response.data;
 };
 
@@ -174,7 +187,7 @@ export const downloadAttachment = async (id, fileName) => {
     const response = await api.get(`/attachments/${id}/download`, {
         responseType: 'blob',
     });
-    
+
     // Create a link to download the blob
     const url = window.URL.createObjectURL(new Blob([response.data]));
     const link = document.createElement('a');
@@ -214,6 +227,12 @@ export const createInvoice = async (data) => {
 
 export const processPayment = async (data) => {
     const response = await api.post('/billing/payments', data);
+    return response.data;
+};
+
+// Reports API
+export const getDashboardReports = async () => {
+    const response = await api.get('/reports/dashboard');
     return response.data;
 };
 

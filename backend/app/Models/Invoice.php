@@ -10,10 +10,11 @@ use App\Traits\HasAmendments;
 
 class Invoice extends Model
 {
-    use HasFactory, BelongsToTenant, AuditLogTrait, HasAmendments;
+    use HasFactory, BelongsToTenant, AuditLogTrait, HasAmendments, \App\Traits\BelongsToBranch;
 
     protected $fillable = [
         'tenant_id',
+        'branch_id',
         'patient_id',
         'order_id', // Link to Lab/Rad order
         'invoice_number',

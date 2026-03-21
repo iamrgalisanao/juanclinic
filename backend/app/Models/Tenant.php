@@ -15,4 +15,12 @@ class Tenant extends Model
     protected $casts = [
         'admin_settings' => 'array',
     ];
+
+    /**
+     * Get the branches for the tenant.
+     */
+    public function branches()
+    {
+        return $this->hasMany(Branch::class);
+    }
 }

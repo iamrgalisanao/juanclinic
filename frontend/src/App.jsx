@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { getPatients, getTenants, setTenantToken, getOrders, ingestHL7, updateOrder, setSimulatedUser, getAuditLogs, getPrescriptions } from './services/api';
+import { getPatients, getTenants, setTenantToken, getOrders, ingestHL7, updateOrder, setSimulatedUser, getAuditLogs, getPrescriptions, getBranches, setBranchToken } from './services/api';
 import { setEchoAuthHeader } from './services/echo';
 import Sidebar from './components/Sidebar';
 import TopBar from './components/TopBar';
@@ -21,11 +21,11 @@ import CashierDashboard from './components/CashierDashboard';
 
 // Simulated Users (Mapped to DB Seeders)
 const SIMULATED_USERS = [
-    { id: 1, name: 'Dr. Sarah Connor', role: 'DOCTOR', tenant_id: 1, email: 'sarah@clinic.com' },
-    { id: 2, name: 'Dr. Gregory House', role: 'DOCTOR', tenant_id: 2, email: 'house@clinic.com' },
-    { id: 3, name: 'Tim Tech', role: 'TECH', tenant_id: 1, email: 'tech@clinic.com' },
-    { id: 4, name: 'Amy Approver', role: 'DIAGNOSTIC_APPROVER', tenant_id: 1, email: 'approver@clinic.com' },
-    { id: 5, name: 'System Admin', role: 'ADMIN', tenant_id: null, email: 'admin@juanclinic.com' }
+    { id: 1, name: 'Dr. Sarah Connor', role: 'DOCTOR', tenant_id: 1, branch_id: 1, email: 'sarah@clinic.com' },
+    { id: 2, name: 'Dr. Gregory House', role: 'DOCTOR', tenant_id: 2, branch_id: 3, email: 'house@clinic.com' },
+    { id: 3, name: 'Tim Tech', role: 'TECH', tenant_id: 1, branch_id: 2, email: 'tech@clinic.com' },
+    { id: 4, name: 'Amy Approver', role: 'DIAGNOSTIC_APPROVER', tenant_id: 1, branch_id: null, email: 'approver@clinic.com' },
+    { id: 5, name: 'System Admin', role: 'ADMIN', tenant_id: null, branch_id: null, email: 'admin@juanclinic.com' }
 ];
 
 const getInitialSimulatedUser = () => {
@@ -39,10 +39,11 @@ function App() {
     const [orders, setOrders] = useState([]);
     const [tenants, setTenants] = useState([]);
     const [activeTenant, setActiveTenant] = useState(null);
+    const [branches, setBranches] = useState([]);
+    const [activeBranch, setActiveBranch] = useState(null);
     const [loading, setLoading] = useState(true);
     const [showRegister, setShowRegister] = useState(false);
     const [selectedPatient, setSelectedPatient] = useState(null);
-    const [auditLogs, setAuditLogs] = useState([]);
     const [prescriptions, setPrescriptions] = useState([]);
     const [currentUser, setCurrentUser] = useState(getInitialSimulatedUser);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -64,30 +65,39 @@ function App() {
 
         const handleSync = async () => {
             if (syncLockRef.current.isSyncing) return;
-            syncLockRef.current.isSyncing = true;
-            setIsTransitioning(true);
 
-            try {
-                let targetTenant = activeTenant;
+            let targetTenant = activeTenant;
 
-                // Auto-align if user has a tenant and we aren't there yet
-                if (currentUser.tenant_id && tenants.length > 0) {
-                    const matched = tenants.find(t => t.id === currentUser.tenant_id);
-                    if (matched && activeTenant?.id !== matched.id) {
-                        targetTenant = matched;
-                    }
+            // Auto-align if user has a tenant and we aren't there yet
+            if (currentUser.tenant_id && tenants.length > 0) {
+                const matched = tenants.find(t => t.id === currentUser.tenant_id);
+                if (matched && activeTenant?.id !== matched.id) {
+                    targetTenant = matched;
                 }
+            }
 
-                if (targetTenant) {
-                    // Update header BEFORE any other data fetching occurs
+            // If we are already synced to the target, just clear the transition state
+            if (targetTenant?.id === syncLockRef.current.tenantId) {
+                setIsTransitioning(false);
+                return;
+            }
+
+            // Only sync if actual change is needed
+            if (targetTenant) {
+                syncLockRef.current.isSyncing = true;
+                setIsTransitioning(true);
+                try {
                     setTenantToken(targetTenant.id);
                     await handleTenantChange(targetTenant);
                     syncLockRef.current.tenantId = targetTenant.id;
+                } catch (err) {
+                    console.error("Sync failed", err);
+                } finally {
+                    syncLockRef.current.isSyncing = false;
+                    setIsTransitioning(false);
                 }
-            } catch (err) {
-                console.error("Sync failed", err);
-            } finally {
-                syncLockRef.current.isSyncing = false;
+            } else {
+                // If no target tenant (e.g. Admin or no match found), still clear transition
                 setIsTransitioning(false);
             }
         };
@@ -107,18 +117,9 @@ function App() {
 
     // Hash sync: URL -> State (Back/Forward buttons)
     useEffect(() => {
-        if (activeView === 'audit') fetchAuditLogs();
         if (activeView === 'pharmacy') fetchPrescriptions();
     }, [activeView, activeTenant]);
 
-    const fetchAuditLogs = async () => {
-        try {
-            const data = await getAuditLogs();
-            setAuditLogs(data);
-        } catch (error) {
-            console.error('Error fetching audit logs:', error);
-        }
-    };
 
     const fetchPrescriptions = async () => {
         try {
@@ -137,13 +138,9 @@ function App() {
         try {
             const tenantData = await getTenants();
             setTenants(tenantData);
-
-            // If current user has no associated tenant (System Admin), stop loading immediately
-            if (!currentUser?.tenant_id) {
-                setLoading(false);
-            }
         } catch (err) {
             console.error("Initialization failed", err);
+        } finally {
             setLoading(false);
         }
     };
@@ -153,6 +150,21 @@ function App() {
         setActiveTenant(tenant);
         setTenantToken(tenant.id);
         try {
+            // Fetch branches for this tenant
+            const branchData = await getBranches();
+            setBranches(branchData);
+
+            // Set initial branch based on user or first available
+            let initialBranch = null;
+            if (currentUser.branch_id) {
+                initialBranch = branchData.find(b => b.id === currentUser.branch_id);
+            }
+            if (!initialBranch && branchData.length > 0) {
+                initialBranch = branchData[0];
+            }
+            setActiveBranch(initialBranch);
+            setBranchToken(initialBranch?.id);
+
             // Role-based fetching to prevent 403s
             const fetchPromises = [getOrders()];
             if (['ADMIN', 'DOCTOR', 'FRONT_DESK'].includes(currentUser.role)) {
@@ -167,9 +179,28 @@ function App() {
                 setPatients([]); // Clear patients if no access
             }
         } catch (err) {
-            console.error("Failed to fetch tenant data", err);
+            console.error("Failed to fetch tenant/branch data", err);
             setPatients([]);
             setOrders([]);
+            setBranches([]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleBranchChange = async (branch) => {
+        setLoading(true);
+        setActiveBranch(branch);
+        setBranchToken(branch.id);
+        try {
+            const [orderData, patientData] = await Promise.all([
+                getOrders(),
+                ['ADMIN', 'DOCTOR', 'FRONT_DESK'].includes(currentUser.role) ? getPatients() : Promise.resolve([])
+            ]);
+            setOrders(orderData);
+            setPatients(patientData);
+        } catch (err) {
+            console.error("Failed to fetch branch data", err);
         } finally {
             setLoading(false);
         }
@@ -202,7 +233,7 @@ function App() {
         <div className="flex bg-[#F8FAFC] min-h-screen font-sans text-slate-900 scroll-smooth relative overflow-x-hidden">
             {/* Mobile Sidebar Backdrop */}
             {isSidebarOpen && (
-                <div 
+                <div
                     className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 lg:hidden animate-in fade-in duration-300"
                     onClick={() => setIsSidebarOpen(false)}
                 />
@@ -225,6 +256,9 @@ function App() {
                     activeTenant={activeTenant}
                     tenants={tenants}
                     onTenantChange={handleTenantChange}
+                    activeBranch={activeBranch}
+                    branches={branches}
+                    onBranchChange={handleBranchChange}
                     currentUser={currentUser}
                     onSidebarToggle={() => setIsSidebarOpen(!isSidebarOpen)}
                     onUserSwitch={(user) => {
@@ -240,7 +274,7 @@ function App() {
                 />
 
                 <div className="p-10 space-y-10 max-w-[1600px] mx-auto">
-                    {(!activeTenant || loading || isTransitioning) ? (
+                    {(loading || isTransitioning) ? (
                         <div className="flex flex-col items-center justify-center p-20 bg-white rounded-[2.5rem] shadow-sleek">
                             <div className="w-16 h-16 border-4 border-his-green-500 border-t-transparent rounded-full animate-spin mb-6" />
                             <h3 className="text-xl font-black text-slate-900 tracking-tight italic">
@@ -455,7 +489,7 @@ function App() {
                                     case 'worklist':
                                         return <ClinicalWorklist currentUser={currentUser} activeTenant={activeTenant?.id} />;
                                     case 'reports':
-                                        return <Reports />;
+                                        return <Reports activeTenant={activeTenant?.id} activeBranch={activeBranch?.id} />;
                                     case 'audit':
                                         return <AuditLogExplorer currentUser={currentUser} />;
                                     case 'patients':

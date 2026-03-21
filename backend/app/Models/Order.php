@@ -12,7 +12,7 @@ use App\Traits\HasAmendments;
 
 class Order extends Model
 {
-    use HasFactory, BelongsToTenant, AuditLogTrait, HasAmendments;
+    use HasFactory, BelongsToTenant, AuditLogTrait, HasAmendments, \App\Traits\BelongsToBranch;
 
     protected $fillable = [
         'tenant_id',
@@ -26,6 +26,7 @@ class Order extends Model
         'performed_at',
         'approved_by',
         'approved_at',
+        'branch_id',
     ];
 
     protected $casts = [
@@ -34,6 +35,14 @@ class Order extends Model
         'performed_at' => 'datetime',
         'approved_at' => 'datetime',
     ];
+
+    /**
+     * Get the branch for the order.
+     */
+    public function branch()
+    {
+        return $this->belongsTo(Branch::class);
+    }
 
     /**
      * Get the technician who performed the order.

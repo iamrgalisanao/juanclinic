@@ -26,7 +26,16 @@ class User extends Authenticatable
         'password',
         'role',
         'tenant_id',
+        'branch_id',
     ];
+
+    /**
+     * Get the branch the user belongs to.
+     */
+    public function branch()
+    {
+        return $this->belongsTo(Branch::class);
+    }
 
     /**
      * The attributes that should be hidden for serialization.
