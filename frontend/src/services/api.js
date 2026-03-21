@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE = 'http://localhost:8001/api';
+const API_BASE = 'http://localhost:8000/api';
 
 const api = axios.create({
     baseURL: API_BASE,
@@ -230,9 +230,62 @@ export const processPayment = async (data) => {
     return response.data;
 };
 
+// Referrals API
+export const getReferrals = async () => {
+    const response = await api.get('/referrals');
+    return response.data;
+};
+
+export const createReferral = async (data) => {
+    const response = await api.post('/referrals', data);
+    return response.data;
+};
+
+export const acceptReferral = async (id) => {
+    const response = await api.put(`/referrals/${id}/accept`);
+    return response.data;
+};
+
+export const revokeReferral = async (id) => {
+    const response = await api.delete(`/referrals/${id}`);
+    return response.data;
+};
+
+// Clinical Templates & Notes API
+export const getClinicalTemplates = async () => {
+    const response = await api.get('/clinical-templates');
+    return response.data;
+};
+
+export const getClinicalNotes = async (patientId) => {
+    const response = await api.get('/clinical-notes', { params: { patient_id: patientId } });
+    return response.data;
+};
+
+export const createClinicalNote = async (data) => {
+    const response = await api.post('/clinical-notes', data);
+    return response.data;
+};
+
 // Reports API
-export const getDashboardReports = async () => {
-    const response = await api.get('/reports/dashboard');
+export const getDashboardReports = async (params = {}) => {
+    const response = await api.get('/reports/dashboard', { params });
+    return response.data;
+};
+
+export const getBranchBenchmarking = async (params = {}) => {
+    const response = await api.get('/reports/benchmarking', { params });
+    return response.data;
+};
+
+// Offline Sync
+export const pullSync = async (lastSyncAt) => {
+    const response = await api.get('/sync/pull', { params: { last_sync_at: lastSyncAt } });
+    return response.data;
+};
+
+export const pushSync = async (queue) => {
+    const response = await api.post('/sync/push', { queue });
     return response.data;
 };
 

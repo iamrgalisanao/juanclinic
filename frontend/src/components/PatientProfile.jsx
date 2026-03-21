@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { getPatientHistory, updatePatient } from '../services/api';
 import PrescriptionForm from './PrescriptionForm';
 import AttachmentManager from './AttachmentManager';
+import ReferralForm from './ReferralForm';
+import ClinicalNotesManager from './ClinicalNotesManager';
 
 const PatientProfile = ({ patientId, onBack }) => {
     const [data, setData] = useState(null);
@@ -12,6 +14,7 @@ const PatientProfile = ({ patientId, onBack }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showPrescriptionForm, setShowPrescriptionForm] = useState(false);
+    const [showReferralForm, setShowReferralForm] = useState(false);
     const [activeTab, setActiveTab] = useState('TIMELINE'); // TIMELINE | ATTACHMENTS | NOTES
 
     useEffect(() => {
@@ -97,7 +100,7 @@ const PatientProfile = ({ patientId, onBack }) => {
                             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7" /></svg>
                         </button>
                         <div className="absolute right-0 top-full mt-2 w-full sm:w-56 bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 opacity-0 invisible group-hover/menu:opacity-100 group-hover/menu:visible transition-all z-30">
-                            <button 
+                            <button
                                 onClick={() => setShowPrescriptionForm(true)}
                                 className="w-full text-left px-6 py-3 text-[10px] font-black text-slate-600 uppercase tracking-widest hover:bg-his-green-50 hover:text-his-green-600 transition-colors flex items-center gap-3"
                             >
@@ -107,6 +110,13 @@ const PatientProfile = ({ patientId, onBack }) => {
                             <button className="w-full text-left px-6 py-3 text-[10px] font-black text-slate-600 uppercase tracking-widest hover:bg-his-green-50 hover:text-his-green-600 transition-colors flex items-center gap-3">
                                 <div className="w-2 h-2 rounded-full bg-blue-400" />
                                 Diagnostic Order (LAB)
+                            </button>
+                            <button
+                                onClick={() => setShowReferralForm(true)}
+                                className="w-full text-left px-6 py-3 text-[10px] font-black text-slate-600 uppercase tracking-widest hover:bg-amber-50 hover:text-amber-600 transition-colors flex items-center gap-3"
+                            >
+                                <div className="w-2 h-2 rounded-full bg-amber-400" />
+                                Cross-Tenant Referral
                             </button>
                         </div>
                     </div>
@@ -120,7 +130,7 @@ const PatientProfile = ({ patientId, onBack }) => {
                         onSubmit={async (e) => {
                             e.preventDefault();
                             if (isSubmitting) return;
-                            
+
                             setIsSubmitting(true);
                             const formData = new FormData(e.target);
                             const payload = {
@@ -219,7 +229,7 @@ const PatientProfile = ({ patientId, onBack }) => {
                     </div>
                     <span className="px-3 py-1 bg-white text-slate-400 text-[9px] font-black rounded-full border border-slate-100 uppercase tracking-widest w-fit">Privacy level: standard</span>
                 </div>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                     <div className="bg-white p-5 md:p-6 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between group hover:border-his-green-500/30 transition-all">
                         <div className="flex items-center gap-4">
@@ -231,7 +241,7 @@ const PatientProfile = ({ patientId, onBack }) => {
                                 <p className="text-[9px] md:text-[10px] font-bold text-slate-400 mt-0.5">Discontinue processing for specific purposes.</p>
                             </div>
                         </div>
-                        <button 
+                        <button
                             onClick={() => window.confirm("Initiate Right to Object request? This will require administrative approval.")}
                             className="px-4 py-2 bg-his-slate-50 text-slate-400 text-[9px] md:text-[10px] font-black rounded-xl hover:bg-slate-100 transition-all border border-slate-100 min-h-[44px]"
                         >
@@ -249,7 +259,7 @@ const PatientProfile = ({ patientId, onBack }) => {
                                 <p className="text-[9px] md:text-[10px] font-bold text-slate-400 mt-0.5">Request removal of PHI data from system.</p>
                             </div>
                         </div>
-                        <button 
+                        <button
                             onClick={() => window.confirm("CRITICAL: Initiate Right to Erasure? This launches a formal data removal workflow under RA 10173.")}
                             className="px-4 py-2 bg-rose-50 text-rose-400 text-[9px] md:text-[10px] font-black rounded-xl hover:bg-rose-100 transition-all border border-rose-100 min-h-[44px]"
                         >
@@ -260,7 +270,7 @@ const PatientProfile = ({ patientId, onBack }) => {
             </section>
 
             {showPrescriptionForm && (
-                <PrescriptionForm 
+                <PrescriptionForm
                     patientId={patient.id}
                     prescription={selectedPrescription}
                     onSuccess={() => {
@@ -272,6 +282,19 @@ const PatientProfile = ({ patientId, onBack }) => {
                         setShowPrescriptionForm(false);
                         setSelectedPrescription(null);
                     }}
+                />
+            )}
+
+            {showReferralForm && (
+                <ReferralForm
+                    patientId={patient.id}
+                    onSuccess={() => {
+                        setShowReferralForm(false);
+                        fetchHistory();
+                        // Inform user that the referral was initiated
+                        alert("Referral initiated successfully. The target clinic can now review it in their dashboard.");
+                    }}
+                    onClose={() => setShowReferralForm(false)}
                 />
             )}
 
@@ -287,6 +310,12 @@ const PatientProfile = ({ patientId, onBack }) => {
                     className={`pb-4 px-4 text-[11px] font-black uppercase tracking-widest transition-all relative ${activeTab === 'ATTACHMENTS' ? 'text-blue-500 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-blue-500' : 'text-slate-400 hover:text-slate-600'}`}
                 >
                     Clinical Folders
+                </button>
+                <button
+                    onClick={() => setActiveTab('NOTES')}
+                    className={`pb-4 px-4 text-[11px] font-black uppercase tracking-widest transition-all relative ${activeTab === 'NOTES' ? 'text-purple-500 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-purple-500' : 'text-slate-400 hover:text-slate-600'}`}
+                >
+                    Clinical Notes & Encounters
                 </button>
             </div>
 
@@ -335,11 +364,10 @@ const PatientProfile = ({ patientId, onBack }) => {
                             <div className="space-y-6 relative before:absolute before:left-[19px] md:before:left-[23px] before:top-2 before:bottom-2 before:w-[2px] before:bg-his-slate-100">
                                 {filteredTimeline.map((event, idx) => (
                                     <div key={idx} className="flex gap-4 md:gap-8 group">
-                                        <div className={`relative z-10 w-10 h-10 md:w-12 md:h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-sm border transition-all duration-500 group-hover:scale-110 ${
-                                            event.type === 'ORDER' ? 'bg-purple-50 text-purple-600 border-purple-100' : 
+                                        <div className={`relative z-10 w-10 h-10 md:w-12 md:h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-sm border transition-all duration-500 group-hover:scale-110 ${event.type === 'ORDER' ? 'bg-purple-50 text-purple-600 border-purple-100' :
                                             event.type === 'APPOINTMENT' ? 'bg-blue-50 text-blue-600 border-blue-100' :
-                                            'bg-emerald-50 text-emerald-600 border-emerald-100'
-                                        }`}>
+                                                'bg-emerald-50 text-emerald-600 border-emerald-100'
+                                            }`}>
                                             {event.type === 'ORDER' && (
                                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
                                             )}
@@ -353,9 +381,9 @@ const PatientProfile = ({ patientId, onBack }) => {
                                         <div className="flex-1 bg-white rounded-3xl p-4 md:p-6 border border-his-slate-50 shadow-sm group-hover:shadow-md transition-all duration-300">
                                             <div className="flex flex-col sm:flex-row justify-between sm:items-start mb-2 gap-2">
                                                 <h4 className="font-black text-slate-900 text-[13px] md:text-sm">
-                                                    {event.type === 'ORDER' ? `Order: ${event.order_type}` : 
-                                                     event.type === 'APPOINTMENT' ? 'Clinic Appointment' : 
-                                                     `Prescription: ${event.medication_name}`}
+                                                    {event.type === 'ORDER' ? `Order: ${event.order_type}` :
+                                                        event.type === 'APPOINTMENT' ? 'Clinic Appointment' :
+                                                            `Prescription: ${event.medication_name}`}
                                                 </h4>
                                                 <span className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                                                     {new Date(event.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
@@ -363,18 +391,17 @@ const PatientProfile = ({ patientId, onBack }) => {
                                             </div>
                                             <div className="flex items-center justify-between mt-1">
                                                 <p className="text-[11px] md:text-xs text-slate-500 leading-relaxed font-medium">
-                                                    {event.type === 'ORDER' ? `ID #${event.id}` : 
-                                                     event.type === 'APPOINTMENT' ? `With ${event.doctor?.name || 'Staff'}` :
-                                                     `${event.dosage} • ${event.frequency}`}
+                                                    {event.type === 'ORDER' ? `ID #${event.id}` :
+                                                        event.type === 'APPOINTMENT' ? `With ${event.doctor?.name || 'Staff'}` :
+                                                            `${event.dosage} • ${event.frequency}`}
                                                 </p>
                                                 {(event.type === 'ORDER' || event.type === 'PRESCRIPTION') && (
-                                                    <span className={`ml-3 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest ${
-                                                        event.status === 'COMPLETED' || event.status === 'ACTIVE'
-                                                            ? 'bg-emerald-50 text-emerald-600'
-                                                            : event.status === 'IN_PROGRESS' || event.status === 'PRELIMINARY'
-                                                                ? 'bg-amber-50 text-amber-600'
-                                                                : 'bg-slate-50 text-slate-400'
-                                                    }`}>
+                                                    <span className={`ml-3 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest ${event.status === 'COMPLETED' || event.status === 'ACTIVE'
+                                                        ? 'bg-emerald-50 text-emerald-600'
+                                                        : event.status === 'IN_PROGRESS' || event.status === 'PRELIMINARY'
+                                                            ? 'bg-amber-50 text-amber-600'
+                                                            : 'bg-slate-50 text-slate-400'
+                                                        }`}>
                                                         {event.status}
                                                     </span>
                                                 )}
@@ -520,6 +547,12 @@ const PatientProfile = ({ patientId, onBack }) => {
                 {activeTab === 'ATTACHMENTS' && (
                     <div className="lg:col-span-3">
                         <AttachmentManager patientId={patient.id} />
+                    </div>
+                )}
+
+                {activeTab === 'NOTES' && (
+                    <div className="lg:col-span-3">
+                        <ClinicalNotesManager patientId={patient.id} patient={patient} />
                     </div>
                 )}
             </div>

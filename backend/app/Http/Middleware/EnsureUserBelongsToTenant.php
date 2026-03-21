@@ -15,17 +15,18 @@ class EnsureUserBelongsToTenant
      */
     public function handle(Request $request, Closure $next): Response
     {
+        $user = $request->user();
+
+        // Allow Global Admins with null tenant_id to access any tenant as global admins
+        if ($user && $user->role === 'ADMIN' && is_null($user->tenant_id)) {
+            return $next($request);
+        }
+
         if (!app()->bound('tenant')) {
-             return response()->json(['message' => 'Tenant context missing.'], 403);
+            return response()->json(['message' => 'Tenant context missing.'], 403);
         }
 
         $tenant = app('tenant');
-        $user = $request->user();
-
-        // Allow Admins with null tenant_id to access any tenant as global admins
-        if ($user->role === 'ADMIN' && is_null($user->tenant_id)) {
-            return $next($request);
-        }
 
         if (!$tenant || $user->tenant_id != $tenant->id) {
             \Log::warning("Tenant access denied: User ID {$user->id} (tenant {$user->tenant_id}) attempted to access Tenant " . ($tenant ? $tenant->id : 'null'));

@@ -26,11 +26,11 @@
 ## Phase 5: Enterprise Scaling & Tier 2 Hardening (ACTIVE)
 
 ### Tier 2 Compliance Hardening
-- [ ] **Dynamic Management Reports**: Transition `Reports.jsx` from simulated to live clinical/revenue data.
-- [ ] **Physical Branch/Entity Layer**: Formalize sub-branching/facility mapping within a single tenant context.
+- [x] **Dynamic Management Reports**: Transition `Reports.jsx` from simulated to live clinical/revenue data.
+- [x] **Physical Branch/Entity Layer**: Formalize sub-branching/facility mapping within a single tenant context.
 
 ### Enterprise Features
-- [ ] **Cross-tenant Referrals (Consent-based)**: Secure clinical data sharing between separate facilities.
-- [ ] **Advanced Analytics**: Cross-branch performance benchmarking and custom reporting.
-- [ ] **Specialty Clinical Forms**: Pediatric growth charts and specialty specific encounter templates.
-- [ ] **Offline Sync**: CLINICAL CONTINUITY mode for tablet/mobile context.
+- [x] **Cross-tenant Referrals (Consent-based)**: Secure clinical data sharing between separate facilities.
+- [x] **Advanced Analytics**: Cross-branch performance benchmarking and custom reporting.
+- [x] **Specialty Clinical Forms**: Pediatric growth charts and specialty specific encounter templates.
+- [x] **Offline Sync**: CLINICAL CONTINUITY mode for tablet/mobile context.

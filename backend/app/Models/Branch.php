@@ -34,4 +34,14 @@ class Branch extends Model
     {
         return $this->belongsTo(Tenant::class);
     }
+
+    public function patients()
+    {
+        return $this->hasMany(Patient::class);
+    }
+
+    public function orders()
+    {
+        return $this->hasMany(Order::class);
+    }
 }

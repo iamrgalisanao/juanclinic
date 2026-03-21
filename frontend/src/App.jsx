@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getPatients, getTenants, setTenantToken, getOrders, ingestHL7, updateOrder, setSimulatedUser, getAuditLogs, getPrescriptions, getBranches, setBranchToken } from './services/api';
 import { setEchoAuthHeader } from './services/echo';
+import { startAutoSync } from './services/syncService';
 import Sidebar from './components/Sidebar';
 import TopBar from './components/TopBar';
 import StatCard from './components/StatCard';
@@ -18,6 +19,7 @@ import MedicineManagement from './views/MedicineManagement';
 import InteractiveGuide from './components/InteractiveGuide';
 import PharmacyWorklist from './components/PharmacyWorklist';
 import CashierDashboard from './components/CashierDashboard';
+import Referrals from './components/Referrals';
 
 // Simulated Users (Mapped to DB Seeders)
 const SIMULATED_USERS = [
@@ -105,9 +107,17 @@ function App() {
         handleSync();
     }, [currentUser, tenants, activeTenant]);
 
+    // Handle Offline Sync Lifecycle
+    useEffect(() => {
+        if (activeTenant?.id) {
+            const stopSync = startAutoSync(activeTenant.id);
+            return () => stopSync && stopSync();
+        }
+    }, [activeTenant]);
+
     const [activeView, setActiveView] = useState(() => {
         const hash = window.location.hash.replace('#', '');
-        return ['dashboard', 'worklist', 'messages', 'message', 'appointments', 'appointment', 'patients', 'doctors', 'reports', 'audit', 'patient_profile', 'pharmacy', 'billing', 'clinical_notes', 'medicine_management'].includes(hash) ? hash : 'dashboard';
+        return ['dashboard', 'worklist', 'messages', 'message', 'appointments', 'appointment', 'patients', 'doctors', 'reports', 'audit', 'patient_profile', 'pharmacy', 'billing', 'clinical_notes', 'medicine_management', 'referrals'].includes(hash) ? hash : 'dashboard';
     });
 
     // Hash sync: State -> URL
@@ -335,7 +345,7 @@ function App() {
                                                     />
                                                     <StatCard
                                                         title="Total Invoices"
-                                                        value="$1,234"
+                                                        value="₱1,234"
                                                         percentage="5.1"
                                                         isUp={true}
                                                         icon="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"
@@ -495,6 +505,7 @@ function App() {
                                     case 'patients':
                                         return (
                                             <Patients
+                                                activeTenant={activeTenant}
                                                 onOpenPatient={(id) => {
                                                     setSelectedPatient(id);
                                                     setActiveView('patient_profile');
@@ -530,6 +541,8 @@ function App() {
                                         );
                                     case 'patient_profile':
                                         return <PatientProfile patientId={selectedPatient} onBack={() => setActiveView('dashboard')} />;
+                                    case 'referrals':
+                                        return <Referrals activeTenant={activeTenant} activeBranch={activeBranch} />;
                                     default:
                                         return (
                                             <div className="flex items-center justify-center p-20 bg-white rounded-[2.5rem] border border-his-slate-100 shadow-sleek">
@@ -559,7 +572,11 @@ function App() {
                                 </svg>
                             </button>
                         </div>
-                        <RegisterPatientForm onPatientAdded={onPatientAdded} onClose={() => setShowRegister(false)} />
+                        <RegisterPatientForm
+                            onPatientAdded={onPatientAdded}
+                            onClose={() => setShowRegister(false)}
+                            activeTenant={activeTenant}
+                        />
                     </div>
                 </div>
             )}

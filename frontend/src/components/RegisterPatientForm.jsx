@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { registerPatient } from '../services/api';
+import { addToSyncQueue, saveToLocal } from '../services/db';
 
-const RegisterPatientForm = ({ onPatientAdded, onClose }) => {
+const RegisterPatientForm = ({ onPatientAdded, onClose, activeTenant }) => {
     const [step, setStep] = useState(1);
     const [formData, setFormData] = useState({
         first_name: '',
@@ -23,11 +24,38 @@ const RegisterPatientForm = ({ onPatientAdded, onClose }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
+
+        const tenantId = activeTenant?.id;
+
         try {
-            const response = await registerPatient(formData);
-            onPatientAdded(response.data);
+            if (navigator.onLine) {
+                const response = await registerPatient(formData);
+                onPatientAdded(response.data);
+                // Also cache locally for faster subsequent loads
+                await saveToLocal('patients', { ...response.data, tenant_id: tenantId });
+            } else {
+                throw new Error('Offline');
+            }
         } catch (err) {
-            console.error(err);
+            console.warn('Sync registration failed, queuing for later:', err);
+
+            // Create a temporary local record for immediate UI update
+            const tempPatient = {
+                ...formData,
+                id: 'TEMP-' + Date.now(),
+                tenant_id: tenantId,
+                updated_at: new Date().toISOString(),
+                is_pending_sync: true
+            };
+
+            // Save to Local DB
+            await saveToLocal('patients', tempPatient);
+
+            // Add to Sync Queue
+            await addToSyncQueue(tenantId, 'POST', '/patients', formData);
+
+            onPatientAdded(tempPatient);
+            alert('Offline Mode: Patient saved locally and will sync when online.');
         } finally {
             setLoading(false);
         }
@@ -51,8 +79,8 @@ const RegisterPatientForm = ({ onPatientAdded, onClose }) => {
                     <div key={s.id} className="relative z-10 flex flex-col items-center gap-3 group translate-z-0">
                         <div
                             className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-500 border-4 ${step >= s.id
-                                    ? 'bg-his-green-500 border-white text-white shadow-xl shadow-his-green-500/20'
-                                    : 'bg-white border-his-slate-50 text-slate-300'
+                                ? 'bg-his-green-500 border-white text-white shadow-xl shadow-his-green-500/20'
+                                : 'bg-white border-his-slate-50 text-slate-300'
                                 }`}
                         >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

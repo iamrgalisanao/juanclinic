@@ -24,6 +24,7 @@ Route::get('branches', [\App\Http\Controllers\Api\BranchController::class, 'inde
 Route::group(['middleware' => ['auth:sanctum', 'tenant_user', 'branch_user']], function () {
     Route::apiResource('patients', \App\Http\Controllers\Api\PatientController::class)->middleware('role:DOCTOR,ADMIN,FRONT_DESK');
     Route::apiResource('clinical-notes', \App\Http\Controllers\Api\ClinicalNoteController::class)->middleware('role:DOCTOR,ADMIN');
+    Route::get('clinical-templates', [\App\Http\Controllers\Api\ClinicalTemplateController::class, 'index'])->middleware('role:DOCTOR,ADMIN');
     Route::get('patients/{patient}/history', [\App\Http\Controllers\Api\PatientHistoryController::class, 'show'])->middleware('role:DOCTOR,ADMIN');
     Route::get('orders/worklist', [\App\Http\Controllers\Api\OrderController::class, 'worklist'])->middleware('role:ADMIN,TECH,DIAGNOSTIC_APPROVER');
     Route::apiResource('orders', \App\Http\Controllers\Api\OrderController::class)->middleware('role:DOCTOR,ADMIN,TECH,DIAGNOSTIC_APPROVER');
@@ -35,8 +36,11 @@ Route::group(['middleware' => ['auth:sanctum', 'tenant_user', 'branch_user']], f
     Route::post('billing/invoices', [\App\Http\Controllers\Api\BillingController::class, 'storeInvoice'])->middleware('role:ADMIN,FRONT_DESK');
     Route::get('billing/invoices/{id}', [\App\Http\Controllers\Api\BillingController::class, 'showInvoice'])->middleware('role:ADMIN,FRONT_DESK');
     Route::post('billing/payments', [\App\Http\Controllers\Api\BillingController::class, 'processPayment'])->middleware('role:ADMIN,FRONT_DESK');
+    Route::apiResource('referrals', \App\Http\Controllers\Api\ReferralController::class);
+    Route::put('referrals/{referral}/accept', [\App\Http\Controllers\Api\ReferralController::class, 'accept']);
     Route::get('audit-logs', [\App\Http\Controllers\Api\AuditLogController::class, 'index'])->middleware('role:ADMIN');
     Route::get('reports/dashboard', [\App\Http\Controllers\Api\ReportController::class, 'dashboard'])->middleware('role:ADMIN,FRONT_DESK');
+    Route::get('reports/benchmarking', [\App\Http\Controllers\Api\ReportController::class, 'benchmarking'])->middleware('role:ADMIN,FRONT_DESK');
     Route::get('messages', [\App\Http\Controllers\Api\MessageController::class, 'index']);
     Route::post('messages/groups', [\App\Http\Controllers\Api\MessageController::class, 'createGroup']);
     Route::get('messages/{conversation}', [\App\Http\Controllers\Api\MessageController::class, 'show']);
@@ -47,6 +51,10 @@ Route::group(['middleware' => ['auth:sanctum', 'tenant_user', 'branch_user']], f
     Route::delete('attachments/{id}', [\App\Http\Controllers\Api\AttachmentController::class, 'destroy'])->middleware('role:DOCTOR,ADMIN,TECH');
     Route::get('pharmacy/worklist', [\App\Http\Controllers\Api\PharmacyController::class, 'worklist'])->middleware('role:ADMIN,TECH');
     Route::post('pharmacy/dispense/{id}', [\App\Http\Controllers\Api\PharmacyController::class, 'dispense'])->middleware('role:ADMIN,TECH');
+
+    // Offline Sync Endpoints
+    Route::get('sync/pull', [\App\Http\Controllers\Api\SyncController::class, 'pull']);
+    Route::post('sync/push', [\App\Http\Controllers\Api\SyncController::class, 'push']);
 });
 
 Route::post('hl7/ingest', [\App\Http\Controllers\Api\HL7Controller::class, 'store']);

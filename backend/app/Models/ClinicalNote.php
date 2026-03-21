@@ -16,10 +16,20 @@ class ClinicalNote extends Model
         'tenant_id',
         'patient_id',
         'author_id',
-        'note_type', // SOAP, PROGRESS, DISCHARGE
+        'template_id',
+        'note_type', // SOAP, PROGRESS, DISCHARGE, TEMPLATE
         'content',
         'status', // DRAFT, SIGNED
     ];
+
+    protected $casts = [
+        'content' => 'array',
+    ];
+
+    public function template()
+    {
+        return $this->belongsTo(ClinicalTemplate::class, 'template_id');
+    }
 
     public function patient()
     {

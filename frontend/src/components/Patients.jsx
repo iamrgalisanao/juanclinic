@@ -1,24 +1,34 @@
 import React, { useEffect, useState } from 'react';
 import { getPatients } from '../services/api';
+import { getFromLocal } from '../services/db';
 
-const Patients = ({ onOpenPatient, onNewPatient }) => {
+const Patients = ({ onOpenPatient, onNewPatient, activeTenant }) => {
     const [patients, setPatients] = useState([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
 
     useEffect(() => {
         const load = async () => {
+            setLoading(true);
             try {
-                const data = await getPatients();
-                setPatients(data);
+                if (navigator.onLine) {
+                    const data = await getPatients();
+                    setPatients(data);
+                } else {
+                    throw new Error('Offline');
+                }
             } catch (err) {
-                console.error('Failed to load patients', err);
+                console.warn('Failed to load patients from API, falling back to local DB:', err);
+                if (activeTenant?.id) {
+                    const localData = await getFromLocal('patients', activeTenant.id);
+                    setPatients(localData);
+                }
             } finally {
                 setLoading(false);
             }
         };
         load();
-    }, []);
+    }, [activeTenant]);
 
     const normalizedSearch = search.trim().toLowerCase();
     const filteredPatients = patients.filter((p) => {
