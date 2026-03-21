@@ -23,8 +23,14 @@
 - [x] **Multi-Branch Entity Layer & Cashiering Module**
 - [x] **Patient Document Uploads (Clinical Attachments)**
 
-## Phase 5: Enterprise Scaling (PLANNED)
-- [ ] Cross-tenant Referrals (Consent-based)
-- [ ] Advanced Reporting & Branch Analytics
-- [ ] Specialty Clinical Forms & Growth Charts
-- [ ] Offline Sync for Mobile/Tablet context
+## Phase 5: Enterprise Scaling & Tier 2 Hardening (ACTIVE)
+
+### Tier 2 Compliance Hardening
+- [ ] **Dynamic Management Reports**: Transition `Reports.jsx` from simulated to live clinical/revenue data.
+- [ ] **Physical Branch/Entity Layer**: Formalize sub-branching/facility mapping within a single tenant context.
+
+### Enterprise Features
+- [ ] **Cross-tenant Referrals (Consent-based)**: Secure clinical data sharing between separate facilities.
+- [ ] **Advanced Analytics**: Cross-branch performance benchmarking and custom reporting.
+- [ ] **Specialty Clinical Forms**: Pediatric growth charts and specialty specific encounter templates.
+- [ ] **Offline Sync**: CLINICAL CONTINUITY mode for tablet/mobile context.

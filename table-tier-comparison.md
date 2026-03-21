@@ -36,3 +36,13 @@
 | **Support** | Business-hours support | Priority support | SLA-based support |
 | **Customization** | Minimal | Moderate | Extensive |
 | **Pricing model** | Monthly subscription | Monthly subscription + fee | Implementation fee + maintenance |
+
+---
+
+## Tier 2 Compliance Hardening (In Progress)
+
+To ensure full compliance with Tier 2 (Group / Multi-Doctor Clinic) standards, the following roadmap items are being prioritized:
+
+1.  **DYNAMISM**: Transitioning `Reports.jsx` analytics from high-fidelity simulations to live clinical/revenue data hooks.
+2.  **FORMALIZATION**: Implementing an explicit `physical_branches` entity layer within the single-tenant context.
+3.  **INTERCONNECTIVITY**: Enabling consent-based cross-tenant referrals for patient care continuity across branches.
