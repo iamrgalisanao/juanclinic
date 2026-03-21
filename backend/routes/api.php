@@ -39,6 +39,12 @@ Route::group(['middleware' => ['auth:sanctum', 'tenant_user']], function () {
     Route::post('messages/groups', [\App\Http\Controllers\Api\MessageController::class, 'createGroup']);
     Route::get('messages/{conversation}', [\App\Http\Controllers\Api\MessageController::class, 'show']);
     Route::post('messages', [\App\Http\Controllers\Api\MessageController::class, 'store']);
+    Route::get('patients/{patient}/attachments', [\App\Http\Controllers\Api\AttachmentController::class, 'index'])->middleware('role:DOCTOR,ADMIN,TECH');
+    Route::post('attachments', [\App\Http\Controllers\Api\AttachmentController::class, 'store'])->middleware('role:DOCTOR,ADMIN,TECH');
+    Route::get('attachments/{id}/download', [\App\Http\Controllers\Api\AttachmentController::class, 'download'])->middleware('role:DOCTOR,ADMIN,TECH');
+    Route::delete('attachments/{id}', [\App\Http\Controllers\Api\AttachmentController::class, 'destroy'])->middleware('role:DOCTOR,ADMIN,TECH');
+    Route::get('pharmacy/worklist', [\App\Http\Controllers\Api\PharmacyController::class, 'worklist'])->middleware('role:ADMIN,TECH');
+    Route::post('pharmacy/dispense/{id}', [\App\Http\Controllers\Api\PharmacyController::class, 'dispense'])->middleware('role:ADMIN,TECH');
 });
 
 Route::post('hl7/ingest', [\App\Http\Controllers\Api\HL7Controller::class, 'store']);

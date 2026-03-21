@@ -16,6 +16,8 @@ import Patients from './components/Patients';
 import Doctors from './components/Doctors';
 import MedicineManagement from './views/MedicineManagement';
 import InteractiveGuide from './components/InteractiveGuide';
+import PharmacyWorklist from './components/PharmacyWorklist';
+import CashierDashboard from './components/CashierDashboard';
 
 // Simulated Users (Mapped to DB Seeders)
 const SIMULATED_USERS = [
@@ -44,6 +46,7 @@ function App() {
     const [prescriptions, setPrescriptions] = useState([]);
     const [currentUser, setCurrentUser] = useState(getInitialSimulatedUser);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [isTransitioning, setIsTransitioning] = useState(false);
 
     // Track sync state and prevent concurrent loops
     const syncLockRef = useRef({ userEmail: '', tenantId: null, isSyncing: false });
@@ -52,25 +55,17 @@ function App() {
     useEffect(() => {
         if (!currentUser) return;
 
-        // Skip if everything is already synced
-        // If activeTenant is null but user has a tenant_id, we MUST not return yet
-        if (syncLockRef.current.userEmail === currentUser.email &&
-            syncLockRef.current.tenantId === activeTenant?.id &&
-            (activeTenant || !currentUser.tenant_id)) {
-            return;
-        }
-
-        // Apply user headers
+        // Apply user headers immediately if they changed
         if (syncLockRef.current.userEmail !== currentUser.email) {
             setSimulatedUser(currentUser.email);
             setEchoAuthHeader(currentUser.email);
             syncLockRef.current.userEmail = currentUser.email;
         }
 
-        // Handle Tenant Alignment/Initialization
         const handleSync = async () => {
             if (syncLockRef.current.isSyncing) return;
             syncLockRef.current.isSyncing = true;
+            setIsTransitioning(true);
 
             try {
                 let targetTenant = activeTenant;
@@ -84,11 +79,16 @@ function App() {
                 }
 
                 if (targetTenant) {
+                    // Update header BEFORE any other data fetching occurs
+                    setTenantToken(targetTenant.id);
                     await handleTenantChange(targetTenant);
                     syncLockRef.current.tenantId = targetTenant.id;
                 }
+            } catch (err) {
+                console.error("Sync failed", err);
             } finally {
                 syncLockRef.current.isSyncing = false;
+                setIsTransitioning(false);
             }
         };
 
@@ -228,6 +228,9 @@ function App() {
                     currentUser={currentUser}
                     onSidebarToggle={() => setIsSidebarOpen(!isSidebarOpen)}
                     onUserSwitch={(user) => {
+                        setIsTransitioning(true);
+                        setPatients([]); // Clear potentially unauthorized data
+                        setOrders([]);
                         setCurrentUser(user);
                         if (user?.email) {
                             localStorage.setItem('simulated_user_email', user.email);
@@ -237,10 +240,12 @@ function App() {
                 />
 
                 <div className="p-10 space-y-10 max-w-[1600px] mx-auto">
-                    {!activeTenant && loading ? (
+                    {(!activeTenant || loading || isTransitioning) ? (
                         <div className="flex flex-col items-center justify-center p-20 bg-white rounded-[2.5rem] shadow-sleek">
                             <div className="w-16 h-16 border-4 border-his-green-500 border-t-transparent rounded-full animate-spin mb-6" />
-                            <h3 className="text-xl font-black text-slate-900 tracking-tight italic">Initializing juanclinic Secure Environment...</h3>
+                            <h3 className="text-xl font-black text-slate-900 tracking-tight italic">
+                                {isTransitioning ? "Securing Tenant Environment..." : "Initializing juanclinic Secure Environment..."}
+                            </h3>
                         </div>
                     ) : (
                         <div className="space-y-10">
@@ -472,94 +477,11 @@ function App() {
                                     case 'appointment':
                                         return <Appointments activeTenant={activeTenant} currentUser={currentUser} />;
                                     case 'pharmacy':
-                                        return (
-                                            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                                                <div className="flex justify-between items-center">
-                                                    <div>
-                                                        <h2 className="text-3xl font-black text-slate-900 tracking-tight">Pharmacy Worklist</h2>
-                                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mt-2">Active Prescriptions & Medication Management</p>
-                                                    </div>
-                                                </div>
-
-                                                <div className="bg-white rounded-[2.5rem] border border-his-slate-100 shadow-sleek overflow-hidden">
-                                                    <table className="w-full text-left border-collapse">
-                                                        <thead>
-                                                            <tr className="bg-slate-50/50 border-b border-his-slate-100">
-                                                                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Patient</th>
-                                                                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Medication</th>
-                                                                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Dosage/Freq</th>
-                                                                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Physician</th>
-                                                                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Status</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody className="divide-y divide-his-slate-50">
-                                                            {prescriptions.length === 0 ? (
-                                                                <tr>
-                                                                    <td colSpan="5" className="px-8 py-20 text-center">
-                                                                        <div className="flex flex-col items-center gap-4 opacity-30">
-                                                                            <svg className="w-12 h-12 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.022.547l-2.387 2.387a2 2 0 102.828 2.828l2.387-2.387a2 2 0 011.022-.547l2.387-.477a6 6 0 013.86-.517l.318-.158a6 6 0 003.86-.517l2.387.477a2 2 0 011.022.547l2.387 2.387a2 2 0 102.828-2.828l-2.387-2.387z" /></svg>
-                                                                            <p className="text-sm font-bold text-slate-500 italic">No prescriptions found for this tenant.</p>
-                                                                        </div>
-                                                                    </td>
-                                                                </tr>
-                                                            ) : (
-                                                                prescriptions.map((pres) => (
-                                                                    <tr key={pres.id} className="group hover:bg-slate-50/50 transition-colors">
-                                                                        <td className="px-8 py-5">
-                                                                            <div className="flex items-center gap-4">
-                                                                                <div className="w-8 h-8 rounded-xl bg-his-green-50 flex items-center justify-center text-[10px] font-black text-his-green-600">
-                                                                                    {pres.patient?.first_name[0]}{pres.patient?.last_name[0]}
-                                                                                </div>
-                                                                                <div>
-                                                                                    <p className="text-xs font-black text-slate-900 uppercase tracking-tight">{pres.patient?.first_name} {pres.patient?.last_name}</p>
-                                                                                    <p className="text-[9px] font-bold text-slate-400 mt-0.5">#{pres.patient?.patient_external_id || pres.patient?.id}</p>
-                                                                                </div>
-                                                                            </div>
-                                                                        </td>
-                                                                        <td className="px-8 py-5">
-                                                                            <p className="text-xs font-black text-his-green-600 uppercase tracking-tight">{pres.medication_name}</p>
-                                                                            <p className="text-[9px] font-bold text-slate-400 mt-0.5">Rx #{pres.id}</p>
-                                                                        </td>
-                                                                        <td className="px-8 py-5">
-                                                                            <p className="text-xs font-bold text-slate-700">{pres.dosage}</p>
-                                                                            <p className="text-[9px] font-bold text-slate-400 mt-0.5">{pres.frequency}</p>
-                                                                        </td>
-                                                                        <td className="px-8 py-5">
-                                                                            <p className="text-xs font-bold text-slate-600">{pres.physician?.name}</p>
-                                                                        </td>
-                                                                        <td className="px-8 py-5 text-right">
-                                                                            <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${
-                                                                                pres.status === 'ACTIVE' 
-                                                                                    ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
-                                                                                    : pres.status === 'CANCELLED'
-                                                                                        ? 'bg-rose-50 text-rose-600 border border-rose-100'
-                                                                                        : 'bg-slate-50 text-slate-400 border border-slate-100'
-                                                                            }`}>
-                                                                                {pres.status}
-                                                                            </span>
-                                                                        </td>
-                                                                    </tr>
-                                                                ))
-                                                            )}
-                                                        </tbody>
-                                                    </table>
-                                                </div>
-                                            </div>
-                                        );
+                                        return <PharmacyWorklist />;
                                     case 'medicine_management':
                                         return <MedicineManagement />;
                                     case 'billing':
-                                        return (
-                                            <div className="flex items-center justify-center p-20 bg-white rounded-[2.5rem] border border-his-slate-100 shadow-sleek">
-                                                <div className="text-center">
-                                                    <div className="w-20 h-20 bg-orange-50 rounded-3xl flex items-center justify-center mx-auto mb-6">
-                                                        <svg className="w-10 h-10 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
-                                                    </div>
-                                                    <h3 className="text-xl font-black text-slate-900 tracking-tight">Billing & Financials</h3>
-                                                    <p className="text-sm font-bold text-slate-400 mt-2">Managing invoices and payments with full tenant isolation.</p>
-                                                </div>
-                                            </div>
-                                        );
+                                        return <CashierDashboard />;
                                     case 'clinical_notes':
                                         return (
                                             <div className="flex items-center justify-center p-20 bg-white rounded-[2.5rem] border border-his-slate-100 shadow-sleek">

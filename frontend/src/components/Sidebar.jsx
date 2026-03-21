@@ -12,7 +12,7 @@ const Sidebar = ({ activeTenant, activeView, setActiveView, currentUser, isOpen,
             id: 'pharmacy_parent', 
             name: 'Pharmacy', 
             icon: 'M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.022.547l-2.387 2.387a2 2 0 102.828 2.828l2.387-2.387a2 2 0 011.022-.547l2.387-.477a6 6 0 013.86-.517l.318-.158a6 6 0 003.86-.517l2.387.477a2 2 0 011.022.547l2.387 2.387a2 2 0 102.828-2.828l-2.387-2.387z', 
-            roles: ['ADMIN', 'DOCTOR'],
+            roles: ['ADMIN', 'DOCTOR', 'TECH'],
             subItems: [
                 { id: 'pharmacy', name: 'Dispensing' },
                 { id: 'medicine_management', name: 'Medicines' },

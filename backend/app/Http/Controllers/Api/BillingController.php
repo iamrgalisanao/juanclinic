@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Invoice;
 use App\Models\Payment;
+use App\Models\Prescription;
 use Illuminate\Http\Request;
 
 class BillingController extends Controller
@@ -22,17 +23,28 @@ class BillingController extends Controller
         $validated = $request->validate([
             'patient_id' => 'required|exists:patients,id',
             'order_id' => 'nullable|exists:orders,id',
+            'prescription_ids' => 'nullable|array',
+            'prescription_ids.*' => 'exists:prescriptions,id',
             'total_amount' => 'required|numeric',
         ]);
 
         $validated['invoice_number'] = 'INV-' . strtoupper(uniqid());
         $validated['status'] = 'UNPAID';
 
-        return Invoice::create($validated);
+        $invoice = Invoice::create($request->only(['patient_id', 'order_id', 'total_amount', 'invoice_number', 'status']));
+        
+        if ($request->has('prescription_ids')) {
+            Prescription::whereIn('id', $request->prescription_ids)
+                ->update(['invoice_id' => $invoice->id]);
+        }
+
+        return $invoice;
     }
 
     public function processPayment(Request $request)
     {
+        $this->authorize('create', Payment::class);
+
         $validated = $request->validate([
             'invoice_id' => 'required|exists:invoices,id',
             'amount' => 'required|numeric',
@@ -47,7 +59,7 @@ class BillingController extends Controller
             'invoice_id' => $invoice->id,
             'amount' => $validated['amount'],
             'payment_method' => $validated['payment_method'],
-            'transaction_id' => $validated['transaction_id'],
+            'transaction_id' => $validated['transaction_id'] ?? null,
         ]);
 
         // Update invoice status

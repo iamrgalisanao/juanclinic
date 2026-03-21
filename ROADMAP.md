@@ -16,12 +16,15 @@
 - [x] Audit Engine (Log implementation)
 - [x] HL7/FHIR Ingestion logic
 
-## Phase 4: Workflow Hardening (ACTIVE)
-- [ ] Technician & Approver mobile/tablet views refinement
-- [ ] Pharmacy Worklist - Advanced Dispensing
+## Phase 4: Workflow Hardening (COMPLETED)
+- [x] Technician & Approver mobile/tablet views refinement
+- [x] Pharmacy Worklist - Advanced Dispensing
 - [x] **Subagent Integration (Operational Protocol)**
+- [x] **Multi-Branch Entity Layer & Cashiering Module**
+- [x] **Patient Document Uploads (Clinical Attachments)**
 
 ## Phase 5: Enterprise Scaling (PLANNED)
 - [ ] Cross-tenant Referrals (Consent-based)
-- [ ] Advanced Reporting & Clinical Analytics
+- [ ] Advanced Reporting & Branch Analytics
+- [ ] Specialty Clinical Forms & Growth Charts
 - [ ] Offline Sync for Mobile/Tablet context

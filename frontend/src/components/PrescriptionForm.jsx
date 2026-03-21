@@ -8,6 +8,8 @@ const PrescriptionForm = ({ patientId, prescription = null, onSuccess, onCancel 
     const [showConfirmCancel, setShowConfirmCancel] = useState(false);
     const [isDirty, setIsDirty] = useState(false);
     const [medicationName, setMedicationName] = useState(prescription?.medication_name || '');
+    const [medicineId, setMedicineId] = useState(prescription?.medicine_id || null);
+    const [quantity, setQuantity] = useState(prescription?.quantity || 1);
 
     const handleFormChange = () => {
         if (!isDirty) setIsDirty(true);
@@ -29,7 +31,9 @@ const PrescriptionForm = ({ patientId, prescription = null, onSuccess, onCancel 
         const formData = new FormData(e.target);
         const payload = {
             patient_id: patientId,
+            medicine_id: medicineId,
             medication_name: medicationName,
+            quantity: parseInt(formData.get('quantity')) || 1,
             dosage: formData.get('dosage'),
             frequency: formData.get('frequency'),
             duration: formData.get('duration'),
@@ -124,9 +128,27 @@ const PrescriptionForm = ({ patientId, prescription = null, onSuccess, onCancel 
                         value={medicationName}
                         onChange={(val) => {
                             setMedicationName(val);
+                            setMedicineId(null); // Reset ID if custom text entered
+                            handleFormChange();
+                        }}
+                        onSelect={(med) => {
+                            setMedicationName(med.generic_name);
+                            setMedicineId(med.id);
                             handleFormChange();
                         }}
                         placeholder="Search PNF or enter custom medication..."
+                    />
+                </div>
+
+                <div className="space-y-2">
+                    <label className="text-[12px] font-black uppercase tracking-widest text-slate-500 ml-2">Quantity</label>
+                    <input
+                        type="number"
+                        name="quantity"
+                        min="1"
+                        defaultValue={prescription?.quantity || 1}
+                        required
+                        className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 text-sm font-bold text-slate-900 focus:ring-4 focus:ring-his-green-500/10 focus:border-his-green-500 outline-none transition-all"
                     />
                 </div>
 

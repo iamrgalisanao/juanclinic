@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getPatientHistory, updatePatient } from '../services/api';
 import PrescriptionForm from './PrescriptionForm';
+import AttachmentManager from './AttachmentManager';
 
 const PatientProfile = ({ patientId, onBack }) => {
     const [data, setData] = useState(null);
@@ -11,6 +12,7 @@ const PatientProfile = ({ patientId, onBack }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showPrescriptionForm, setShowPrescriptionForm] = useState(false);
+    const [activeTab, setActiveTab] = useState('TIMELINE'); // TIMELINE | ATTACHMENTS | NOTES
 
     useEffect(() => {
         if (patientId) {
@@ -273,227 +275,253 @@ const PatientProfile = ({ patientId, onBack }) => {
                 />
             )}
 
+            <div className="flex gap-4 border-b border-slate-100 px-4">
+                <button
+                    onClick={() => setActiveTab('TIMELINE')}
+                    className={`pb-4 px-4 text-[11px] font-black uppercase tracking-widest transition-all relative ${activeTab === 'TIMELINE' ? 'text-his-green-500 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-his-green-500' : 'text-slate-400 hover:text-slate-600'}`}
+                >
+                    Longitudinal History
+                </button>
+                <button
+                    onClick={() => setActiveTab('ATTACHMENTS')}
+                    className={`pb-4 px-4 text-[11px] font-black uppercase tracking-widest transition-all relative ${activeTab === 'ATTACHMENTS' ? 'text-blue-500 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-blue-500' : 'text-slate-400 hover:text-slate-600'}`}
+                >
+                    Clinical Folders
+                </button>
+            </div>
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 md:gap-10">
                 {/* Timeline */}
-                <div className="lg:col-span-2 space-y-6 md:space-y-8">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-2 md:px-4">
-                        <h3 className="text-sm font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-3">
-                            <div className="w-2 h-2 rounded-full bg-his-green-500" />
-                            Longitudinal Timeline
-                        </h3>
-                        <div className="flex gap-2 overflow-x-auto pb-2 sm:pb-0 scrollbar-hide -mx-2 px-2 sm:mx-0 sm:px-0">
-                            <button
-                                type="button"
-                                onClick={() => setTimelineFilter('ALL')}
-                                className={`px-4 py-2 rounded-full border min-h-[44px] text-[9px] font-black uppercase tracking-widest whitespace-nowrap transition-all ${timelineFilter === 'ALL' ? 'bg-his-green-500 text-white border-his-green-500 shadow-lg shadow-his-green-500/20' : 'bg-white text-slate-400 border-his-slate-100'}`}
-                            >
-                                All
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setTimelineFilter('ORDERS')}
-                                className={`px-4 py-2 rounded-full border min-h-[44px] text-[9px] font-black uppercase tracking-widest whitespace-nowrap transition-all ${timelineFilter === 'ORDERS' ? 'bg-his-green-500 text-white border-his-green-500 shadow-lg shadow-his-green-500/20' : 'bg-white text-slate-400 border-his-slate-100'}`}
-                            >
-                                Orders
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setTimelineFilter('APPOINTMENTS')}
-                                className={`px-4 py-2 rounded-full border min-h-[44px] text-[9px] font-black uppercase tracking-widest whitespace-nowrap transition-all ${timelineFilter === 'APPOINTMENTS' ? 'bg-his-green-500 text-white border-his-green-500 shadow-lg shadow-his-green-500/20' : 'bg-white text-slate-400 border-his-slate-100'}`}
-                            >
-                                Appts
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setTimelineFilter('PRESCRIPTIONS')}
-                                className={`px-4 py-2 rounded-full border min-h-[44px] text-[9px] font-black uppercase tracking-widest whitespace-nowrap transition-all ${timelineFilter === 'PRESCRIPTIONS' ? 'bg-his-green-500 text-white border-his-green-500 shadow-lg shadow-his-green-500/20' : 'bg-white text-slate-400 border-his-slate-100'}`}
-                            >
-                                Meds
-                            </button>
+                {activeTab === 'TIMELINE' && (
+                    <>
+                        <div className="lg:col-span-2 space-y-6 md:space-y-8">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-2 md:px-4">
+                                <h3 className="text-sm font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-3">
+                                    <div className="w-2 h-2 rounded-full bg-his-green-500" />
+                                    Longitudinal Timeline
+                                </h3>
+                                <div className="flex gap-2 overflow-x-auto pb-2 sm:pb-0 scrollbar-hide -mx-2 px-2 sm:mx-0 sm:px-0">
+                                    <button
+                                        type="button"
+                                        onClick={() => setTimelineFilter('ALL')}
+                                        className={`px-4 py-2 rounded-full border min-h-[44px] text-[9px] font-black uppercase tracking-widest whitespace-nowrap transition-all ${timelineFilter === 'ALL' ? 'bg-his-green-500 text-white border-his-green-500 shadow-lg shadow-his-green-500/20' : 'bg-white text-slate-400 border-his-slate-100'}`}
+                                    >
+                                        All
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setTimelineFilter('ORDERS')}
+                                        className={`px-4 py-2 rounded-full border min-h-[44px] text-[9px] font-black uppercase tracking-widest whitespace-nowrap transition-all ${timelineFilter === 'ORDERS' ? 'bg-his-green-500 text-white border-his-green-500 shadow-lg shadow-his-green-500/20' : 'bg-white text-slate-400 border-his-slate-100'}`}
+                                    >
+                                        Orders
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setTimelineFilter('APPOINTMENTS')}
+                                        className={`px-4 py-2 rounded-full border min-h-[44px] text-[9px] font-black uppercase tracking-widest whitespace-nowrap transition-all ${timelineFilter === 'APPOINTMENTS' ? 'bg-his-green-500 text-white border-his-green-500 shadow-lg shadow-his-green-500/20' : 'bg-white text-slate-400 border-his-slate-100'}`}
+                                    >
+                                        Appts
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setTimelineFilter('PRESCRIPTIONS')}
+                                        className={`px-4 py-2 rounded-full border min-h-[44px] text-[9px] font-black uppercase tracking-widest whitespace-nowrap transition-all ${timelineFilter === 'PRESCRIPTIONS' ? 'bg-his-green-500 text-white border-his-green-500 shadow-lg shadow-his-green-500/20' : 'bg-white text-slate-400 border-his-slate-100'}`}
+                                    >
+                                        Meds
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="space-y-6 relative before:absolute before:left-[19px] md:before:left-[23px] before:top-2 before:bottom-2 before:w-[2px] before:bg-his-slate-100">
+                                {filteredTimeline.map((event, idx) => (
+                                    <div key={idx} className="flex gap-4 md:gap-8 group">
+                                        <div className={`relative z-10 w-10 h-10 md:w-12 md:h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-sm border transition-all duration-500 group-hover:scale-110 ${
+                                            event.type === 'ORDER' ? 'bg-purple-50 text-purple-600 border-purple-100' : 
+                                            event.type === 'APPOINTMENT' ? 'bg-blue-50 text-blue-600 border-blue-100' :
+                                            'bg-emerald-50 text-emerald-600 border-emerald-100'
+                                        }`}>
+                                            {event.type === 'ORDER' && (
+                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+                                            )}
+                                            {event.type === 'APPOINTMENT' && (
+                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                            )}
+                                            {event.type === 'PRESCRIPTION' && (
+                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.022.547l-2.387 2.387a2 2 0 102.828 2.828l2.387-2.387a2 2 0 011.022-.547l2.387-.477a6 6 0 013.86-.517l.318-.158a6 6 0 003.86-.517l2.387.477a2 2 0 011.022.547l2.387 2.387a2 2 0 102.828-2.828l-2.387-2.387z" /></svg>
+                                            )}
+                                        </div>
+                                        <div className="flex-1 bg-white rounded-3xl p-4 md:p-6 border border-his-slate-50 shadow-sm group-hover:shadow-md transition-all duration-300">
+                                            <div className="flex flex-col sm:flex-row justify-between sm:items-start mb-2 gap-2">
+                                                <h4 className="font-black text-slate-900 text-[13px] md:text-sm">
+                                                    {event.type === 'ORDER' ? `Order: ${event.order_type}` : 
+                                                     event.type === 'APPOINTMENT' ? 'Clinic Appointment' : 
+                                                     `Prescription: ${event.medication_name}`}
+                                                </h4>
+                                                <span className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                                    {new Date(event.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center justify-between mt-1">
+                                                <p className="text-[11px] md:text-xs text-slate-500 leading-relaxed font-medium">
+                                                    {event.type === 'ORDER' ? `ID #${event.id}` : 
+                                                     event.type === 'APPOINTMENT' ? `With ${event.doctor?.name || 'Staff'}` :
+                                                     `${event.dosage} • ${event.frequency}`}
+                                                </p>
+                                                {(event.type === 'ORDER' || event.type === 'PRESCRIPTION') && (
+                                                    <span className={`ml-3 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest ${
+                                                        event.status === 'COMPLETED' || event.status === 'ACTIVE'
+                                                            ? 'bg-emerald-50 text-emerald-600'
+                                                            : event.status === 'IN_PROGRESS' || event.status === 'PRELIMINARY'
+                                                                ? 'bg-amber-50 text-amber-600'
+                                                                : 'bg-slate-50 text-slate-400'
+                                                    }`}>
+                                                        {event.status}
+                                                    </span>
+                                                )}
+                                            </div>
+
+                                            {event.type === 'ORDER' && event.status === 'COMPLETED' && (
+                                                <button
+                                                    onClick={() => {
+                                                        setSelectedOrder(event);
+                                                        setSelectedPrescription(null);
+                                                    }}
+                                                    className="mt-4 px-4 py-2 bg-his-slate-50 text-his-green-600 text-[10px] font-black rounded-xl hover:bg-his-green-50 transition-all uppercase tracking-widest border border-his-green-100/30"
+                                                >
+                                                    View Finalized Findings
+                                                </button>
+                                            )}
+
+                                            {event.type === 'PRESCRIPTION' && (
+                                                <div className="flex gap-2 mt-4">
+                                                    <button
+                                                        onClick={() => {
+                                                            setSelectedPrescription(event);
+                                                            setSelectedOrder(null);
+                                                        }}
+                                                        className="px-4 py-2 bg-emerald-50 text-emerald-600 text-[10px] font-black rounded-xl hover:bg-emerald-100 transition-all uppercase tracking-widest border border-emerald-100/30"
+                                                    >
+                                                        Details
+                                                    </button>
+                                                    <button
+                                                        onClick={() => {
+                                                            setSelectedPrescription(event);
+                                                            setShowPrescriptionForm(true);
+                                                        }}
+                                                        className="px-4 py-2 bg-his-slate-50 text-slate-400 text-[10px] font-black rounded-xl hover:bg-his-slate-100 transition-all uppercase tracking-widest border border-slate-100"
+                                                    >
+                                                        Edit
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
-                    </div>
 
-                    <div className="space-y-6 relative before:absolute before:left-[19px] md:before:left-[23px] before:top-2 before:bottom-2 before:w-[2px] before:bg-his-slate-100">
-                        {filteredTimeline.map((event, idx) => (
-                            <div key={idx} className="flex gap-4 md:gap-8 group">
-                                <div className={`relative z-10 w-10 h-10 md:w-12 md:h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-sm border transition-all duration-500 group-hover:scale-110 ${
-                                    event.type === 'ORDER' ? 'bg-purple-50 text-purple-600 border-purple-100' : 
-                                    event.type === 'APPOINTMENT' ? 'bg-blue-50 text-blue-600 border-blue-100' :
-                                    'bg-emerald-50 text-emerald-600 border-emerald-100'
-                                }`}>
-                                    {event.type === 'ORDER' && (
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
-                                    )}
-                                    {event.type === 'APPOINTMENT' && (
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                                    )}
-                                    {event.type === 'PRESCRIPTION' && (
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.022.547l-2.387 2.387a2 2 0 102.828 2.828l2.387-2.387a2 2 0 011.022-.547l2.387-.477a6 6 0 013.86-.517l.318-.158a6 6 0 003.86-.517l2.387.477a2 2 0 011.022.547l2.387 2.387a2 2 0 102.828-2.828l-2.387-2.387z" /></svg>
-                                    )}
-                                </div>
-                                <div className="flex-1 bg-white rounded-3xl p-4 md:p-6 border border-his-slate-50 shadow-sm group-hover:shadow-md transition-all duration-300">
-                                    <div className="flex flex-col sm:flex-row justify-between sm:items-start mb-2 gap-2">
-                                        <h4 className="font-black text-slate-900 text-[13px] md:text-sm">
-                                            {event.type === 'ORDER' ? `Order: ${event.order_type}` : 
-                                             event.type === 'APPOINTMENT' ? 'Clinic Appointment' : 
-                                             `Prescription: ${event.medication_name}`}
-                                        </h4>
-                                        <span className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                                            {new Date(event.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-                                        </span>
-                                    </div>
-                                    <div className="flex items-center justify-between mt-1">
-                                        <p className="text-[11px] md:text-xs text-slate-500 leading-relaxed font-medium">
-                                            {event.type === 'ORDER' ? `ID #${event.id}` : 
-                                             event.type === 'APPOINTMENT' ? `With ${event.doctor?.name || 'Staff'}` :
-                                             `${event.dosage} • ${event.frequency}`}
-                                        </p>
-                                        {(event.type === 'ORDER' || event.type === 'PRESCRIPTION') && (
-                                            <span className={`ml-3 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest ${
-                                                event.status === 'COMPLETED' || event.status === 'ACTIVE'
-                                                    ? 'bg-emerald-50 text-emerald-600'
-                                                    : event.status === 'IN_PROGRESS' || event.status === 'PRELIMINARY'
-                                                        ? 'bg-amber-50 text-amber-600'
-                                                        : 'bg-slate-50 text-slate-400'
-                                            }`}>
-                                                {event.status}
-                                            </span>
-                                        )}
-                                    </div>
+                        {/* Right Panel: Result Viewer */}
+                        <div className="space-y-8">
+                            <h3 className="text-sm font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-3 px-4">
+                                <div className="w-2 h-2 rounded-full bg-purple-500" />
+                                Finding Details
+                            </h3>
 
-                                    {event.type === 'ORDER' && event.status === 'COMPLETED' && (
-                                        <button
-                                            onClick={() => {
-                                                setSelectedOrder(event);
-                                                setSelectedPrescription(null);
-                                            }}
-                                            className="mt-4 px-4 py-2 bg-his-slate-50 text-his-green-600 text-[10px] font-black rounded-xl hover:bg-his-green-50 transition-all uppercase tracking-widest border border-his-green-100/30"
-                                        >
-                                            View Finalized Findings
-                                        </button>
-                                    )}
-
-                                    {event.type === 'PRESCRIPTION' && (
-                                        <div className="flex gap-2 mt-4">
-                                            <button
-                                                onClick={() => {
-                                                    setSelectedPrescription(event);
-                                                    setSelectedOrder(null);
-                                                }}
-                                                className="px-4 py-2 bg-emerald-50 text-emerald-600 text-[10px] font-black rounded-xl hover:bg-emerald-100 transition-all uppercase tracking-widest border border-emerald-100/30"
-                                            >
-                                                Details
-                                            </button>
-                                            <button
-                                                onClick={() => {
-                                                    setSelectedPrescription(event);
-                                                    setShowPrescriptionForm(true);
-                                                }}
-                                                className="px-4 py-2 bg-his-slate-50 text-slate-400 text-[10px] font-black rounded-xl hover:bg-his-slate-100 transition-all uppercase tracking-widest border border-slate-100"
-                                            >
-                                                Edit
-                                            </button>
+                            <div className="bg-white rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-10 border border-his-slate-100 shadow-sleek min-h-[300px] md:min-h-[400px]">
+                                {selectedOrder ? (
+                                    <div className="animate-in fade-in duration-500">
+                                        <div className="flex justify-between items-start mb-8 border-b border-slate-50 pb-6">
+                                            <div>
+                                                <h4 className="font-black text-slate-900 text-base">Results for Order #{selectedOrder.id}</h4>
+                                                <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">Verified on {new Date(selectedOrder.updated_at).toLocaleDateString()}</p>
+                                            </div>
+                                            <span className="px-3 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-black rounded-full uppercase">Finalized</span>
                                         </div>
-                                    )}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
 
-                {/* Right Panel: Result Viewer */}
-                <div className="space-y-8">
-                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-3 px-4">
-                        <div className="w-2 h-2 rounded-full bg-purple-500" />
-                        Finding Details
-                    </h3>
-
-                    <div className="bg-white rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-10 border border-his-slate-100 shadow-sleek min-h-[300px] md:min-h-[400px]">
-                        {selectedOrder ? (
-                            <div className="animate-in fade-in duration-500">
-                                <div className="flex justify-between items-start mb-8 border-b border-slate-50 pb-6">
-                                    <div>
-                                        <h4 className="font-black text-slate-900 text-base">Results for Order #{selectedOrder.id}</h4>
-                                        <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">Verified on {new Date(selectedOrder.updated_at).toLocaleDateString()}</p>
-                                    </div>
-                                    <span className="px-3 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-black rounded-full uppercase">Finalized</span>
-                                </div>
-
-                                <div className="space-y-4">
-                                    {Object.entries(selectedOrder.result_data || {}).map(([key, value], idx) => (
-                                        <div key={idx} className="flex justify-between p-4 bg-his-slate-50/50 rounded-2xl border border-his-slate-50 group hover:bg-white hover:border-his-green-100 transition-all">
-                                            <span className="text-xs font-bold text-slate-500 uppercase tracking-tight">{key}</span>
-                                            <span className="text-xs font-black text-slate-900">{value}</span>
+                                        <div className="space-y-4">
+                                            {Object.entries(selectedOrder.result_data || {}).map(([key, value], idx) => (
+                                                <div key={idx} className="flex justify-between p-4 bg-his-slate-50/50 rounded-2xl border border-his-slate-50 group hover:bg-white hover:border-his-green-100 transition-all">
+                                                    <span className="text-xs font-bold text-slate-500 uppercase tracking-tight">{key}</span>
+                                                    <span className="text-xs font-black text-slate-900">{value}</span>
+                                                </div>
+                                            ))}
                                         </div>
-                                    ))}
-                                </div>
 
-                                <div className="mt-10 pt-10 border-t border-dashed border-slate-100">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-full bg-his-slate-100 flex items-center justify-center text-xs font-black text-slate-400">SIG</div>
-                                        <div>
-                                            <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Digitally Signed By</p>
-                                            <p className="text-xs font-bold text-his-green-500 mt-0.5">Dr. Specialist Approver</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        ) : selectedPrescription ? (
-                            <div className="animate-in fade-in duration-500">
-                                <div className="flex justify-between items-start mb-8 border-b border-slate-50 pb-6">
-                                    <div>
-                                        <h4 className="font-black text-slate-900 text-base">{selectedPrescription.medication_name}</h4>
-                                        <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">Prescribed on {new Date(selectedPrescription.created_at).toLocaleDateString()}</p>
-                                    </div>
-                                    <span className="px-3 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-black rounded-full uppercase">{selectedPrescription.status}</span>
-                                </div>
-
-                                <div className="space-y-6">
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="p-4 bg-his-slate-50/50 rounded-2xl border border-his-slate-50">
-                                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Dosage</p>
-                                            <p className="text-sm font-black text-slate-900">{selectedPrescription.dosage}</p>
-                                        </div>
-                                        <div className="p-4 bg-his-slate-50/50 rounded-2xl border border-his-slate-50">
-                                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Frequency</p>
-                                            <p className="text-sm font-black text-slate-900">{selectedPrescription.frequency}</p>
-                                        </div>
-                                        <div className="p-4 bg-his-slate-50/50 rounded-2xl border border-his-slate-50">
-                                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Duration</p>
-                                            <p className="text-sm font-black text-slate-900">{selectedPrescription.duration}</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="p-6 bg-his-green-50/30 rounded-3xl border border-his-green-100/50">
-                                        <p className="text-[9px] font-black text-his-green-600 uppercase tracking-widest mb-2">Instructions</p>
-                                        <p className="text-xs font-bold text-slate-700 leading-normal italic">
-                                            "{selectedPrescription.instructions || 'No additional instructions provided.'}"
-                                        </p>
-                                    </div>
-
-                                    {selectedPrescription.amendments?.length > 0 && (
-                                        <div className="mt-8">
-                                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-4">Clinical Amendment History</p>
-                                            <div className="space-y-3">
-                                                {selectedPrescription.amendments.map((am, i) => (
-                                                    <div key={i} className="text-[10px] p-3 border-l-2 border-amber-400 bg-amber-50/50 rounded-r-xl">
-                                                        <p className="font-black text-amber-700 underline uppercase tracking-tight">{am.reason}</p>
-                                                        <p className="text-slate-400 mt-1 font-bold">By {am.actor?.name} on {new Date(am.created_at).toLocaleString()}</p>
-                                                    </div>
-                                                ))}
+                                        <div className="mt-10 pt-10 border-t border-dashed border-slate-100">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-full bg-his-slate-100 flex items-center justify-center text-xs font-black text-slate-400">SIG</div>
+                                                <div>
+                                                    <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Digitally Signed By</p>
+                                                    <p className="text-xs font-bold text-his-green-500 mt-0.5">Dr. Specialist Approver</p>
+                                                </div>
                                             </div>
                                         </div>
-                                    )}
-                                </div>
+                                    </div>
+                                ) : selectedPrescription ? (
+                                    <div className="animate-in fade-in duration-500">
+                                        <div className="flex justify-between items-start mb-8 border-b border-slate-50 pb-6">
+                                            <div>
+                                                <h4 className="font-black text-slate-900 text-base">{selectedPrescription.medication_name}</h4>
+                                                <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">Prescribed on {new Date(selectedPrescription.created_at).toLocaleDateString()}</p>
+                                            </div>
+                                            <span className="px-3 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-black rounded-full uppercase">{selectedPrescription.status}</span>
+                                        </div>
+
+                                        <div className="space-y-6">
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="p-4 bg-his-slate-50/50 rounded-2xl border border-his-slate-50">
+                                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Dosage</p>
+                                                    <p className="text-sm font-black text-slate-900">{selectedPrescription.dosage}</p>
+                                                </div>
+                                                <div className="p-4 bg-his-slate-50/50 rounded-2xl border border-his-slate-50">
+                                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Frequency</p>
+                                                    <p className="text-sm font-black text-slate-900">{selectedPrescription.frequency}</p>
+                                                </div>
+                                                <div className="p-4 bg-his-slate-50/50 rounded-2xl border border-his-slate-50">
+                                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Duration</p>
+                                                    <p className="text-sm font-black text-slate-900">{selectedPrescription.duration}</p>
+                                                </div>
+                                            </div>
+
+                                            <div className="p-6 bg-his-green-50/30 rounded-3xl border border-his-green-100/50">
+                                                <p className="text-[9px] font-black text-his-green-600 uppercase tracking-widest mb-2">Instructions</p>
+                                                <p className="text-xs font-bold text-slate-700 leading-normal italic">
+                                                    "{selectedPrescription.instructions || 'No additional instructions provided.'}"
+                                                </p>
+                                            </div>
+
+                                            {selectedPrescription.amendments?.length > 0 && (
+                                                <div className="mt-8">
+                                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-4">Clinical Amendment History</p>
+                                                    <div className="space-y-3">
+                                                        {selectedPrescription.amendments.map((am, i) => (
+                                                            <div key={i} className="text-[10px] p-3 border-l-2 border-amber-400 bg-amber-50/50 rounded-r-xl">
+                                                                <p className="font-black text-amber-700 underline uppercase tracking-tight">{am.reason}</p>
+                                                                <p className="text-slate-400 mt-1 font-bold">By {am.actor?.name} on {new Date(am.created_at).toLocaleString()}</p>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="h-full flex flex-col items-center justify-center text-center py-20 opacity-40">
+                                        <svg className="w-16 h-16 text-slate-200 mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                                        <p className="text-sm font-bold text-slate-400">Select a finalized order or prescription<br />to view clinical details.</p>
+                                    </div>
+                                )}
                             </div>
-                        ) : (
-                            <div className="h-full flex flex-col items-center justify-center text-center py-20 opacity-40">
-                                <svg className="w-16 h-16 text-slate-200 mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                                <p className="text-sm font-bold text-slate-400">Select a finalized order or prescription<br />to view clinical details.</p>
-                            </div>
-                        )}
+                        </div>
+                    </>
+                )}
+
+                {/* Attachments */}
+                {activeTab === 'ATTACHMENTS' && (
+                    <div className="lg:col-span-3">
+                        <AttachmentManager patientId={patient.id} />
                     </div>
-                </div>
+                )}
             </div>
         </div>
     );

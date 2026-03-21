@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getMedicines } from '../services/api';
 
-const MedicineAutocomplete = ({ value, onChange, placeholder = "Search medication..." }) => {
+const MedicineAutocomplete = ({ value, onChange, onSelect, placeholder = "Search medication..." }) => {
     const [search, setSearch] = useState(value || '');
     const [suggestions, setSuggestions] = useState([]);
     const [showDropdown, setShowDropdown] = useState(false);
@@ -59,6 +59,7 @@ const MedicineAutocomplete = ({ value, onChange, placeholder = "Search medicatio
         const fullValue = `${displayName} ${medicine.strength || ''} ${medicine.form || ''}`.trim();
         setSearch(fullValue);
         onChange(fullValue);
+        if (onSelect) onSelect(medicine);
         setShowDropdown(false);
     };
 

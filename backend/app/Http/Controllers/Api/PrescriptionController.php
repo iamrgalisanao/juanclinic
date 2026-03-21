@@ -20,7 +20,9 @@ class PrescriptionController extends Controller
 
         $validated = $request->validate([
             'patient_id' => 'required|exists:patients,id',
+            'medicine_id' => 'nullable|exists:medicines,id',
             'medication_name' => 'required|string',
+            'quantity' => 'required|integer|min:1',
             'dosage' => 'required|string',
             'frequency' => 'required|string',
             'duration' => 'required|string',

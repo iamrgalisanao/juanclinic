@@ -78,6 +78,17 @@ Legend:
 | Front Desk | R C U (demographics only) | X | X | X |
 | Patient | R (self only) | R (self only) | R (self only) | R (self only) |
 
+### Pharmacy & Billing
+
+| Role | Dispense Meds | View Worklist | Create Invoice | Process Payment |
+|------|--------------|---------------|----------------|-----------------|
+| Lab Technician | X | X | X | X |
+| Radiology Tech | X | X | X | X |
+| Clinical Provider | X | R | X | X |
+| Pharmacy Tech | C U | R | C (auto) | X |
+| Front Desk | X | X | C | C U |
+| Clinic Admin | C U | R | C | C U |
+
 ---
 
 ### Orders & Workflow
@@ -118,6 +129,14 @@ Segregation Rule:
 | Clinical Provider | X | X | R (limited) | X |
 | Lab Technician | X | X | X | X |
 | Front Desk | X | X | X | X |
+
+### Financial & Inventory Controls
+
+| Role | View Accounts Receivable | Void Invoice | View Revenue Reports | Manage Price List |
+|------|-------------------------|--------------|----------------------|-------------------|
+| Clinic Admin | R | U D | R | R C U |
+| Front Desk | R | X | X | X |
+| Pharmacy Tech | X | X | X | X |
 
 ---
 

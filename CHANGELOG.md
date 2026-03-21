@@ -1,5 +1,24 @@
 # JuanClinic HIS - Developer Changelog
 
+## [2026-03-21] - Workflow Hardening & Financial Integration (Phase 4 Finalization)
+
+### Added
+- **Pharmacy Worklist**: Integrated React component for tracking pending prescriptions and clinical dispensing.
+- **Cashier Dashboard**: Unified React dashboard for settlement of diagnostic and pharmacy invoices.
+- **Automated Billing Integration**: Automated link between clinical dispensing and financial record creation (INV/PAY).
+- **Invoice & Payment Policies**: Hardened RBAC for financial modules to comply with segregation of duties standard.
+- **Patient Attachments**: High-performance "Clinical Folders" UI with multi-tenant storage isolation.
+
+### Changed
+- **Prescription Form**: Added mandatory 'Quantity' field and Medicine ID tracking for precise inventory and billing.
+- **Medicine Autocomplete**: Updated to support full object selection (generic/brand names and IDs).
+- **Billing Controller**: Extended to support batch linking of prescriptions to payment invoices.
+
+### Fixed
+- **Authorization Blockers**: Resolved 403 Forbidden errors on billing retrieval by implementing missing Laravel Policies.
+- **Financial Loop Null-Ref**: Fixed "Undefined array key" 500 error in `processPayment` when handling optional transaction IDs.
+- **UI Consistency**: Fixed missing Quantity field in standard prescription entry forms.
+
 ## [2026-03-18] - Clinical Core & Integrity Hardening
 
 ### Added

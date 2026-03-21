@@ -155,4 +155,66 @@ export const createMedicine = async (data) => {
     return response.data;
 };
 
+// Attachment API
+export const getAttachments = async (patientId) => {
+    const response = await api.get(`/patients/${patientId}/attachments`);
+    return response.data;
+};
+
+export const uploadAttachment = async (formData) => {
+    const response = await api.post('/attachments', formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data',
+        },
+    });
+    return response.data;
+};
+
+export const downloadAttachment = async (id, fileName) => {
+    const response = await api.get(`/attachments/${id}/download`, {
+        responseType: 'blob',
+    });
+    
+    // Create a link to download the blob
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', fileName);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+};
+
+export const deleteAttachment = async (id) => {
+    const response = await api.delete(`/attachments/${id}`);
+    return response.data;
+};
+
+// Pharmacy API
+export const getPharmacyWorklist = async () => {
+    const response = await api.get('/pharmacy/worklist');
+    return response.data;
+};
+
+export const dispenseMedication = async (id) => {
+    const response = await api.post(`/pharmacy/dispense/${id}`);
+    return response.data;
+};
+
+// Billing API
+export const getInvoices = async () => {
+    const response = await api.get('/billing/invoices');
+    return response.data;
+};
+
+export const createInvoice = async (data) => {
+    const response = await api.post('/billing/invoices', data);
+    return response.data;
+};
+
+export const processPayment = async (data) => {
+    const response = await api.post('/billing/payments', data);
+    return response.data;
+};
+
 export default api;
