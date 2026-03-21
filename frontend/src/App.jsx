@@ -14,6 +14,7 @@ import PatientProfile from './components/PatientProfile';
 import AuditLogExplorer from './components/AuditLogExplorer';
 import Patients from './components/Patients';
 import Doctors from './components/Doctors';
+import MedicineManagement from './views/MedicineManagement';
 
 // Simulated Users (Mapped to DB Seeders)
 const SIMULATED_USERS = [
@@ -41,6 +42,7 @@ function App() {
     const [auditLogs, setAuditLogs] = useState([]);
     const [prescriptions, setPrescriptions] = useState([]);
     const [currentUser, setCurrentUser] = useState(getInitialSimulatedUser);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     // Track sync state and prevent concurrent loops
     const syncLockRef = useRef({ userEmail: '', tenantId: null, isSyncing: false });
@@ -94,7 +96,7 @@ function App() {
 
     const [activeView, setActiveView] = useState(() => {
         const hash = window.location.hash.replace('#', '');
-        return ['dashboard', 'worklist', 'messages', 'message', 'appointments', 'appointment', 'patients', 'doctors', 'reports', 'audit', 'patient_profile', 'pharmacy', 'billing', 'clinical_notes'].includes(hash) ? hash : 'dashboard';
+        return ['dashboard', 'worklist', 'messages', 'message', 'appointments', 'appointment', 'patients', 'doctors', 'reports', 'audit', 'patient_profile', 'pharmacy', 'billing', 'clinical_notes', 'medicine_management'].includes(hash) ? hash : 'dashboard';
     });
 
     // Hash sync: State -> URL
@@ -196,20 +198,34 @@ function App() {
     };
 
     return (
-        <div className="flex bg-[#F8FAFC] min-h-screen font-sans text-slate-900 scroll-smooth">
+        <div className="flex bg-[#F8FAFC] min-h-screen font-sans text-slate-900 scroll-smooth relative overflow-x-hidden">
+            {/* Mobile Sidebar Backdrop */}
+            {isSidebarOpen && (
+                <div 
+                    className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 lg:hidden animate-in fade-in duration-300"
+                    onClick={() => setIsSidebarOpen(false)}
+                />
+            )}
+
             <Sidebar
                 activeTenant={activeTenant}
                 activeView={activeView}
-                setActiveView={setActiveView}
+                setActiveView={(view) => {
+                    setActiveView(view);
+                    setIsSidebarOpen(false); // Auto-close on mobile
+                }}
                 currentUser={currentUser}
+                isOpen={isSidebarOpen}
+                onClose={() => setIsSidebarOpen(false)}
             />
 
-            <main className="flex-1 ml-64 min-w-0">
+            <main className={`flex-1 min-w-0 transition-all duration-300 ${isSidebarOpen ? 'lg:ml-64' : 'ml-0 lg:ml-64'}`}>
                 <TopBar
                     activeTenant={activeTenant}
                     tenants={tenants}
                     onTenantChange={handleTenantChange}
                     currentUser={currentUser}
+                    onSidebarToggle={() => setIsSidebarOpen(!isSidebarOpen)}
                     onUserSwitch={(user) => {
                         setCurrentUser(user);
                         if (user?.email) {
@@ -529,6 +545,8 @@ function App() {
                                                 </div>
                                             </div>
                                         );
+                                    case 'medicine_management':
+                                        return <MedicineManagement />;
                                     case 'billing':
                                         return (
                                             <div className="flex items-center justify-center p-20 bg-white rounded-[2.5rem] border border-his-slate-100 shadow-sleek">

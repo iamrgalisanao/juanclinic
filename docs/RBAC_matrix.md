@@ -106,6 +106,7 @@ Legend:
 Segregation Rule:
 - Technician cannot finalize results.
 - Approver cannot create original order.
+- **Integrity Rule**: Any update to `Lab Results` or `Radiology Reports` (U) MUST be accompanied by an `amendment_reason` stored in the audit trail.
 
 ---
 

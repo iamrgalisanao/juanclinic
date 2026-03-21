@@ -156,15 +156,18 @@ Findings from the scanner must be recorded in `findings.md` using the clinical i
 ### 7.5 Refactor Scanner Integration (DRY Audit)
 For logic consolidation and code health, invoke the **JuanClinic Refactor-Scanner** subagent (`docs/architecture/subagents/refactor-scanner.md`):
 1.  **Classification**: Tag refactors of core modules as `Work Type: Refactor` and `Risk Level: Medium/High`.
-2.  **Automated Documentation Flow**: The subagent MUST synchronize findings with the "Source of Truth Quartet" (DS-001):
-    *   **findings.md**: Log High Impact refactors as "Verified Discoveries".
-    *   **progress.md**: Inject a "Refactor Validation" block to track pending extractions.
-    *   **CHANGELOG.md**: Document implemented refactors under "Unreleased Changes".
+2.  **Automated Documentation Flow**: The subagent MUST synchronize findings with the "Source of Truth Quartet" (DS-001) as detailed in its specification.
 
-### 7.6 Rule
+### 7.6 UI Reviewer Integration (UX & Accessibility)
+For frontend quality and clinical UX safety, invoke the **JuanClinic UI-Reviewer** subagent (`docs/architecture/subagents/ui-reviewer.md`):
+1.  **Classification**: Tag UI changes as `Work Type: UI/UX` and `Risk Level: Medium` (unless Auth/Patient views are touched).
+2.  **Stitch Verification**: High-visibility clinical screens must follow the **[Stitch Workflow](.agents/workflows/stitch-workflow.md) (DS-012)**.
+3.  **Output**: Findings must be recorded in `findings.md` focusing on **Clinical Safety** (context confusion) and **Accessibility**.
+
+### 7.7 Rule
 Do not proceed while known debug backdoors, exposed secrets, or unsafe temporary code remain unresolved.
 
-### 7.7 Recording Rule
+### 7.8 Recording Rule
 
 Meaningful findings must be recorded in one or more of:
 

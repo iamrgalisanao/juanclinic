@@ -10,7 +10,8 @@ juanclinic/
 │   │   │   ├── patient_validator.md
 │   │   │   ├── code-scanner.md
 │   │   │   ├── auth-auditor.md
-│   │   │   └── refactor-scanner.md
+│   │   │   ├── refactor-scanner.md
+│   │   │   └── ui-reviewer.md
 │   │   ├── clinical-state-machine-map.md
 │   │   ├── database-persistence-guardrails.md
 │   │   ├── integration-standards.md
@@ -47,6 +48,7 @@ juanclinic/
 ├── gemini.md                     # PROJECT CONSTITUTION (Strategy)
 ├── spec.md                       # DOMAIN SPECIFICATIONS (Compliance)
 ├── CHANGELOG.md
+├── DEVELOPMENT.md                # SETUP & EXECUTION GUIDE (Local & Docker)
 ├── ROADMAP.md                    # Quartet: Milestone tracking
 ├── progress.md                   # Quartet: Milestone percentages & Readiness
 ├── findings.md                   # Quartet: Security & Compliance scan results

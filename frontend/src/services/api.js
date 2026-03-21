@@ -144,4 +144,15 @@ export const updatePrescription = async (id, data) => {
     return response.data;
 };
 
+// Medicine API
+export const getMedicines = async (search = '') => {
+    const response = await api.get('/medicines', { params: { search } });
+    return response.data;
+};
+
+export const createMedicine = async (data) => {
+    const response = await api.post('/medicines', data);
+    return response.data;
+};
+
 export default api;

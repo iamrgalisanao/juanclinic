@@ -29,6 +29,7 @@ Route::group(['middleware' => ['auth:sanctum', 'tenant_user']], function () {
     Route::apiResource('prescriptions', \App\Http\Controllers\Api\PrescriptionController::class)->middleware('role:DOCTOR,ADMIN');
     Route::apiResource('appointments', \App\Http\Controllers\Api\AppointmentController::class)->middleware('role:DOCTOR,ADMIN,FRONT_DESK');
     Route::apiResource('users', \App\Http\Controllers\Api\UserController::class)->middleware('role:ADMIN,DOCTOR,TECH,FRONT_DESK,DIAGNOSTIC_APPROVER');
+    Route::apiResource('medicines', \App\Http\Controllers\Api\MedicineController::class)->middleware('role:DOCTOR,ADMIN,FRONT_DESK');
     Route::get('billing/invoices', [\App\Http\Controllers\Api\BillingController::class, 'index'])->middleware('role:ADMIN,FRONT_DESK');
     Route::post('billing/invoices', [\App\Http\Controllers\Api\BillingController::class, 'storeInvoice'])->middleware('role:ADMIN,FRONT_DESK');
     Route::get('billing/invoices/{id}', [\App\Http\Controllers\Api\BillingController::class, 'showInvoice'])->middleware('role:ADMIN,FRONT_DESK');
