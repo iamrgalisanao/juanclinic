@@ -15,6 +15,7 @@ import AuditLogExplorer from './components/AuditLogExplorer';
 import Patients from './components/Patients';
 import Doctors from './components/Doctors';
 import MedicineManagement from './views/MedicineManagement';
+import InteractiveGuide from './components/InteractiveGuide';
 
 // Simulated Users (Mapped to DB Seeders)
 const SIMULATED_USERS = [
@@ -592,7 +593,6 @@ function App() {
                 </div>
             </main>
 
-            {/* Registration Modal - Integrated with Multi-step Stepper */}
             {showRegister && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md transition-opacity duration-300">
                     <div className="bg-white rounded-[3rem] p-12 max-w-2xl w-full shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] relative overflow-hidden">
@@ -607,6 +607,8 @@ function App() {
                     </div>
                 </div>
             )}
+
+            <InteractiveGuide activeView={activeView} />
         </div>
     );
 }
