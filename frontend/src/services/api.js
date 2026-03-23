@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE = 'http://localhost:8000/api';
+const API_BASE = 'http://localhost:8001/api';
 
 const api = axios.create({
     baseURL: API_BASE,
@@ -40,13 +40,64 @@ export const getOrders = async () => {
     return response.data;
 };
 
+export const login = async (credentials) => {
+    const response = await api.post('/auth/login', {
+        ...credentials,
+        device_name: 'web_browser'
+    });
+    if (response.data.token) {
+        localStorage.setItem('auth_token', response.data.token);
+        api.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
+    }
+    return response.data;
+};
+
+export const logout = async () => {
+    try {
+        await api.post('/auth/logout');
+    } finally {
+        localStorage.removeItem('auth_token');
+        delete api.defaults.headers.common['Authorization'];
+    }
+};
+
 export const getTenants = async () => {
     const response = await api.get('/tenants');
     return response.data;
 };
 
+export const createTenant = async (data) => {
+    const response = await api.post('/tenants', data);
+    return response.data;
+};
+
+export const updateTenant = async (id, data) => {
+    const response = await api.put(`/tenants/${id}`, data);
+    return response.data;
+};
+
+export const deleteTenant = async (id) => {
+    const response = await api.delete(`/tenants/${id}`);
+    return response.data;
+};
+
 export const getBranches = async () => {
     const response = await api.get('/branches');
+    return response.data;
+};
+
+export const createBranch = async (data) => {
+    const response = await api.post('/branches', data);
+    return response.data;
+};
+
+export const updateBranch = async (id, data) => {
+    const response = await api.put(`/branches/${id}`, data);
+    return response.data;
+};
+
+export const deleteBranch = async (id) => {
+    const response = await api.delete(`/branches/${id}`);
     return response.data;
 };
 

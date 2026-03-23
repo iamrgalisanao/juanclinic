@@ -20,6 +20,11 @@ import InteractiveGuide from './components/InteractiveGuide';
 import PharmacyWorklist from './components/PharmacyWorklist';
 import CashierDashboard from './components/CashierDashboard';
 import Referrals from './components/Referrals';
+import BranchManagement from './views/BranchManagement';
+import TenantManagement from './views/TenantManagement';
+import HelpCenter from './views/HelpCenter';
+import Login from './views/Login';
+import api from './services/api';
 
 // Simulated Users (Mapped to DB Seeders)
 const SIMULATED_USERS = [
@@ -31,9 +36,13 @@ const SIMULATED_USERS = [
 ];
 
 const getInitialSimulatedUser = () => {
+    const savedUser = localStorage.getItem('auth_user');
+    if (savedUser) return JSON.parse(savedUser);
+
+    // Fallback search by email for backward compatibility with switch logic
     const savedEmail = localStorage.getItem('simulated_user_email');
-    if (!savedEmail) return SIMULATED_USERS[0];
-    return SIMULATED_USERS.find(u => u.email === savedEmail) || SIMULATED_USERS[0];
+    if (!savedEmail) return null;
+    return SIMULATED_USERS.find(u => u.email === savedEmail) || null;
 };
 
 function App() {
@@ -48,8 +57,16 @@ function App() {
     const [selectedPatient, setSelectedPatient] = useState(null);
     const [prescriptions, setPrescriptions] = useState([]);
     const [currentUser, setCurrentUser] = useState(getInitialSimulatedUser);
+    const [userToken, setUserToken] = useState(() => localStorage.getItem('auth_token'));
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isTransitioning, setIsTransitioning] = useState(false);
+
+    // Initial token setup for Axios
+    useEffect(() => {
+        if (userToken) {
+            api.defaults.headers.common['Authorization'] = `Bearer ${userToken}`;
+        }
+    }, []);
 
     // Track sync state and prevent concurrent loops
     const syncLockRef = useRef({ userEmail: '', tenantId: null, isSyncing: false });
@@ -117,7 +134,7 @@ function App() {
 
     const [activeView, setActiveView] = useState(() => {
         const hash = window.location.hash.replace('#', '');
-        return ['dashboard', 'worklist', 'messages', 'message', 'appointments', 'appointment', 'patients', 'doctors', 'reports', 'audit', 'patient_profile', 'pharmacy', 'billing', 'clinical_notes', 'medicine_management', 'referrals'].includes(hash) ? hash : 'dashboard';
+        return ['dashboard', 'worklist', 'messages', 'message', 'appointments', 'appointment', 'patients', 'doctors', 'reports', 'audit', 'patient_profile', 'pharmacy', 'billing', 'clinical_notes', 'medicine_management', 'referrals', 'branch_management'].includes(hash) ? hash : 'dashboard';
     });
 
     // Hash sync: State -> URL
@@ -153,6 +170,27 @@ function App() {
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleLoginSuccess = (user, token, tenant) => {
+        setCurrentUser(user);
+        setUserToken(token);
+        localStorage.setItem('auth_token', token);
+        localStorage.setItem('auth_user', JSON.stringify(user));
+        localStorage.setItem('simulated_user_email', user.email);
+
+        if (tenant) {
+            setActiveTenant(tenant);
+        }
+    };
+
+    const handleLogout = () => {
+        setCurrentUser(null);
+        setUserToken(null);
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('auth_user');
+        localStorage.removeItem('simulated_user_email');
+        delete api.defaults.headers.common['Authorization'];
     };
 
     const handleTenantChange = async (tenant) => {
@@ -239,6 +277,10 @@ function App() {
         }
     };
 
+    if (!userToken) {
+        return <Login onLoginSuccess={handleLoginSuccess} />;
+    }
+
     return (
         <div className="flex bg-[#F8FAFC] min-h-screen font-sans text-slate-900 scroll-smooth relative overflow-x-hidden">
             {/* Mobile Sidebar Backdrop */}
@@ -279,7 +321,18 @@ function App() {
                         if (user?.email) {
                             localStorage.setItem('simulated_user_email', user.email);
                         }
+                        // If we already have an active tenant, re-evaluate branch for new user context
+                        if (activeTenant && branches.length > 0) {
+                            let newBranch = null;
+                            if (user.branch_id) {
+                                newBranch = branches.find(b => b.id === user.branch_id);
+                            }
+                            if (!newBranch) newBranch = branches[0];
+                            setActiveBranch(newBranch);
+                            setBranchToken(newBranch?.id);
+                        }
                     }}
+                    onLogout={handleLogout}
                     availableUsers={SIMULATED_USERS}
                 />
 
@@ -543,6 +596,12 @@ function App() {
                                         return <PatientProfile patientId={selectedPatient} onBack={() => setActiveView('dashboard')} />;
                                     case 'referrals':
                                         return <Referrals activeTenant={activeTenant} activeBranch={activeBranch} />;
+                                    case 'branch_management':
+                                        return <BranchManagement activeTenant={activeTenant} tenants={tenants} />;
+                                    case 'tenant_management':
+                                        return <TenantManagement onTenantUpdate={fetchInitialData} />;
+                                    case 'help':
+                                        return <HelpCenter />;
                                     default:
                                         return (
                                             <div className="flex items-center justify-center p-20 bg-white rounded-[2.5rem] border border-his-slate-100 shadow-sleek">

@@ -14,12 +14,17 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+Route::post('/auth/login', [\App\Http\Controllers\Api\AuthController::class, 'login']);
+Route::middleware('auth:sanctum')->post('/auth/logout', [\App\Http\Controllers\Api\AuthController::class, 'logout']);
+
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-Route::apiResource('tenants', \App\Http\Controllers\Api\TenantController::class);
+Route::get('tenants', [\App\Http\Controllers\Api\TenantController::class, 'index']);
+Route::apiResource('tenants', \App\Http\Controllers\Api\TenantController::class)->except(['index'])->middleware(['auth:sanctum', 'role:ADMIN']);
 Route::get('branches', [\App\Http\Controllers\Api\BranchController::class, 'index'])->middleware(['auth:sanctum', 'tenant_user']);
+Route::apiResource('branches', \App\Http\Controllers\Api\BranchController::class)->except(['index'])->middleware(['auth:sanctum', 'tenant_user', 'role:ADMIN']);
 
 Route::group(['middleware' => ['auth:sanctum', 'tenant_user', 'branch_user']], function () {
     Route::apiResource('patients', \App\Http\Controllers\Api\PatientController::class)->middleware('role:DOCTOR,ADMIN,FRONT_DESK');

@@ -8,6 +8,8 @@ db.version(1).stores({
     patients: 'id, tenant_id, [tenant_id+id], updated_at',
     orders: 'id, tenant_id, patient_id, [tenant_id+id], updated_at',
     clinical_notes: 'id, tenant_id, patient_id, [tenant_id+id], updated_at',
+    prescriptions: 'id, tenant_id, patient_id, [tenant_id+id], updated_at',
+    appointments: 'id, tenant_id, patient_id, [tenant_id+id], updated_at',
     sync_queue: '++id, tenant_id, method, url'
 });
 

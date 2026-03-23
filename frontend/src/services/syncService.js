@@ -73,10 +73,12 @@ const pullServerChanges = async (tenantId) => {
     const response = await pullSync(lastSyncAt);
 
     if (response.data) {
-        // Update local DB tables
-        if (response.data.patients) await saveToLocal('patients', response.data.patients);
-        if (response.data.orders) await saveToLocal('orders', response.data.orders);
-        if (response.data.clinical_notes) await saveToLocal('clinical_notes', response.data.clinical_notes);
+        // Update local DB tables for all returned models
+        for (const [table, items] of Object.entries(response.data)) {
+            if (items && items.length > 0) {
+                await saveToLocal(table, items);
+            }
+        }
 
         // Update last sync timestamp
         localStorage.setItem(`${LAST_SYNC_KEY}_${tenantId}`, response.server_time);

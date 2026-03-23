@@ -24,20 +24,51 @@ const Sidebar = ({ activeTenant, activeView, setActiveView, currentUser, isOpen,
         { id: 'doctors', name: 'Doctors', icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z', roles: ['ADMIN'] },
         { id: 'reports', name: 'Reports', icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z', roles: ['ADMIN', 'FRONT_DESK'] },
         { id: 'referrals', name: 'Referrals', icon: 'M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4', roles: ['ADMIN', 'DOCTOR', 'FRONT_DESK'] },
+        { id: 'tenant_management', name: 'Organization Settings', icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4', roles: ['ADMIN'], globalOnly: true },
+        { id: 'branch_management', name: 'Branch Settings', icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4', roles: ['ADMIN'] },
         { id: 'audit', name: 'Audit', icon: 'M9 17v-6a2 2 0 012-2h7m-7 0l-2-2m2 2l-2 2M5 19h14', roles: ['ADMIN'] },
+        { id: 'help', name: 'Help Center', icon: 'M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z', roles: ['ADMIN', 'DOCTOR', 'FRONT_DESK', 'TECH'] },
     ];
-    const menuItems = allItems.filter(item => item.roles.includes(currentUser.role));
+    const categories = [
+        {
+            name: 'Overview',
+            items: ['dashboard', 'messages', 'help']
+        },
+        {
+            name: 'Clinical Core',
+            items: ['patients', 'appointments', 'clinical_notes', 'referrals', 'doctors']
+        },
+        {
+            name: 'Operations',
+            items: ['worklist', 'pharmacy_parent', 'billing']
+        },
+        {
+            name: 'Administration',
+            items: ['reports', 'tenant_management', 'branch_management', 'audit']
+        }
+    ];
+
+    const filteredItems = allItems.filter(item => {
+        if (!item.roles.includes(currentUser.role)) return false;
+        if (item.globalOnly && currentUser.tenant_id !== null) return false;
+        return true;
+    });
+
+    const groupedItems = categories.map(cat => ({
+        ...cat,
+        items: filteredItems.filter(item => cat.items.includes(item.id))
+    })).filter(cat => cat.items.length > 0);
 
     useEffect(() => {
         // Auto-expand menu if active link is a sub-item
-        menuItems.forEach(item => {
+        filteredItems.forEach(item => {
             if (item.subItems && item.subItems.some(sub => sub.id === activeView)) {
                 if (!expandedMenus.includes(item.id)) {
                     setExpandedMenus(prev => [...prev, item.id]);
                 }
             }
         });
-    }, [activeView, menuItems]);
+    }, [activeView, filteredItems]);
 
     const toggleMenu = (id) => {
         setExpandedMenus(prev =>
@@ -65,56 +96,65 @@ const Sidebar = ({ activeTenant, activeView, setActiveView, currentUser, isOpen,
                 </button>
             </div>
 
-            <nav className="flex-1 space-y-1.5 overflow-y-auto pr-2 custom-scrollbar">
-                {menuItems.map((item) => {
-                    const isExpanded = expandedMenus.includes(item.id);
-                    const isActive = activeView === item.id || (item.subItems && item.subItems.some(sub => sub.id === activeView));
+            <nav className="flex-1 space-y-8 overflow-y-auto pr-2 custom-scrollbar">
+                {groupedItems.map((category) => (
+                    <div key={category.name} className="space-y-3">
+                        <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-4">
+                            {category.name}
+                        </h3>
+                        <div className="space-y-1">
+                            {category.items.map((item) => {
+                                const isExpanded = expandedMenus.includes(item.id);
+                                const isActive = activeView === item.id || (item.subItems && item.subItems.some(sub => sub.id === activeView));
 
-                    return (
-                        <div key={item.id} className="space-y-1">
-                            <button
-                                onClick={() => item.subItems ? toggleMenu(item.id) : setActiveView(item.id)}
-                                className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-300 group ${isActive && !item.subItems
-                                    ? 'bg-his-green-500 text-white shadow-lg shadow-his-green-500/10'
-                                    : isActive
-                                        ? 'text-white bg-white/5'
-                                        : 'text-slate-400 hover:text-white hover:bg-white/5'
-                                    }`}
-                            >
-                                <div className="flex items-center gap-3">
-                                    <svg className={`w-5 h-5 transition-colors ${isActive ? 'text-his-green-400' : 'text-slate-500 group-hover:text-his-green-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={item.icon} />
-                                    </svg>
-                                    <span className={isActive ? 'text-white' : ''}>{item.name}</span>
-                                </div>
-                                {item.subItems && (
-                                    <svg className={`w-4 h-4 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''} text-slate-500`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
-                                    </svg>
-                                )}
-                            </button>
+                                return (
+                                    <div key={item.id} className="space-y-1">
+                                        <button
+                                            onClick={() => item.subItems ? toggleMenu(item.id) : setActiveView(item.id)}
+                                            className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-300 group ${isActive && !item.subItems
+                                                ? 'bg-his-green-500 text-white shadow-lg shadow-his-green-500/10'
+                                                : isActive
+                                                    ? 'text-white bg-white/5'
+                                                    : 'text-slate-400 hover:text-white hover:bg-white/5'
+                                                }`}
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <svg className={`w-5 h-5 transition-colors ${isActive ? 'text-his-green-400' : 'text-slate-500 group-hover:text-his-green-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={item.icon} />
+                                                </svg>
+                                                <span className={isActive ? 'text-white' : ''}>{item.name}</span>
+                                            </div>
+                                            {item.subItems && (
+                                                <svg className={`w-4 h-4 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''} text-slate-500`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
+                                                </svg>
+                                            )}
+                                        </button>
 
-                            {item.subItems && (
-                                <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isExpanded ? 'max-h-40 opacity-100 mt-1' : 'max-h-0 opacity-0'}`}>
-                                    <div className="pl-12 space-y-1 py-1">
-                                        {item.subItems.map(sub => (
-                                            <button
-                                                key={sub.id}
-                                                onClick={() => setActiveView(sub.id)}
-                                                className={`w-full text-left px-4 py-2 text-xs font-black uppercase tracking-widest transition-all duration-200 rounded-lg ${activeView === sub.id
-                                                    ? 'text-his-green-400 translate-x-1'
-                                                    : 'text-slate-500 hover:text-his-green-300 hover:translate-x-1'
-                                                    }`}
-                                            >
-                                                {sub.name}
-                                            </button>
-                                        ))}
+                                        {item.subItems && (
+                                            <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isExpanded ? 'max-h-40 opacity-100 mt-1' : 'max-h-0 opacity-0'}`}>
+                                                <div className="pl-12 space-y-1 py-1">
+                                                    {item.subItems.map(sub => (
+                                                        <button
+                                                            key={sub.id}
+                                                            onClick={() => setActiveView(sub.id)}
+                                                            className={`w-full text-left px-4 py-2 text-xs font-black uppercase tracking-widest transition-all duration-200 rounded-lg ${activeView === sub.id
+                                                                ? 'text-his-green-400 translate-x-1'
+                                                                : 'text-slate-500 hover:text-his-green-300 hover:translate-x-1'
+                                                                }`}
+                                                        >
+                                                            {sub.name}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
-                                </div>
-                            )}
+                                );
+                            })}
                         </div>
-                    );
-                })}
+                    </div>
+                ))}
             </nav>
 
             <div className="pt-6 mt-6 border-t border-white/5">

@@ -1,7 +1,7 @@
 import React from 'react';
 import { useSyncStatus } from '../services/syncService';
 
-const TopBar = ({ activeTenant, tenants, onTenantChange, activeBranch, branches, onBranchChange, currentUser, onUserSwitch, availableUsers, onSidebarToggle }) => {
+const TopBar = ({ activeTenant, tenants, onTenantChange, activeBranch, branches, onBranchChange, currentUser, onUserSwitch, availableUsers, onSidebarToggle, onLogout }) => {
     const { isOnline, lastSync } = useSyncStatus(activeTenant?.id);
 
     return (
@@ -71,45 +71,63 @@ const TopBar = ({ activeTenant, tenants, onTenantChange, activeBranch, branches,
                     </span>
                     <select
                         value={activeBranch?.id || ''}
-                        disabled={!!currentUser.branch_id}
+                        disabled={!!currentUser.branch_id || branches.length === 0}
                         onChange={(e) => {
                             const branch = branches.find(b => b.id === parseInt(e.target.value));
                             if (branch) onBranchChange(branch);
                         }}
-                        className={`bg-transparent border-none text-blue-600 text-[11px] font-black uppercase tracking-widest outline-none py-0.5 ${currentUser.branch_id ? 'cursor-not-allowed opacity-70' : 'cursor-pointer hover:text-blue-700 transition-colors'}`}
+                        className={`bg-transparent border-none text-blue-600 text-[11px] font-black uppercase tracking-widest outline-none py-0.5 ${currentUser.branch_id || branches.length === 0 ? 'cursor-not-allowed opacity-70' : 'cursor-pointer hover:text-blue-700 transition-colors'}`}
                     >
-                        {branches.map(b => (
-                            <option key={b.id} value={b.id} className="bg-white text-slate-900 font-sans normal-case tracking-normal">{b.name}</option>
-                        ))}
+                        {branches.length === 0 ? (
+                            <option value="" disabled className="bg-white text-slate-400 font-sans normal-case tracking-normal">No Facilities Found</option>
+                        ) : (
+                            <>
+                                <option value="" disabled className="bg-white text-slate-400 font-sans normal-case tracking-normal">Select Facility...</option>
+                                {branches.map(b => (
+                                    <option key={b.id} value={b.id} className="bg-white text-slate-900 font-sans normal-case tracking-normal">{b.name}</option>
+                                ))}
+                            </>
+                        )}
                     </select>
                 </div>
 
                 <div className="flex items-center gap-4">
-                    {/* Dev User Switcher */}
-                    <select
-                        className="text-[10px] font-black uppercase bg-his-slate-100 border-none rounded-lg px-2 py-1 outline-none text-slate-500 hover:text-his-green-600 transition-colors cursor-pointer"
-                        value={currentUser.id}
-                        onChange={(e) => {
-                            const user = availableUsers.find(u => u.id === parseInt(e.target.value));
-                            if (user) onUserSwitch(user);
-                        }}
-                    >
-                        {availableUsers.map(u => (
-                            <option key={u.id} value={u.id}>{u.role}: {u.name}</option>
-                        ))}
-                    </select>
+                    {/* Dev User Switcher - Only for Admin */}
+                    {currentUser.role === 'ADMIN' && (
+                        <select
+                            className="text-[10px] font-black uppercase bg-his-slate-100 border-none rounded-lg px-2 py-1 outline-none text-slate-500 hover:text-his-green-600 transition-colors cursor-pointer"
+                            value={currentUser.id}
+                            onChange={(e) => {
+                                const user = availableUsers.find(u => u.id === parseInt(e.target.value));
+                                if (user) onUserSwitch(user);
+                            }}
+                        >
+                            {availableUsers.map(u => (
+                                <option key={u.id} value={u.id}>{u.role}: {u.name}</option>
+                            ))}
+                        </select>
+                    )}
 
                     <div className="flex items-center gap-4 pl-6 border-l border-slate-100">
                         <div className="text-right">
                             <p className="text-sm font-black text-slate-900 leading-none">{currentUser.name}</p>
                             <p className="text-[10px] font-bold text-his-green-500 uppercase tracking-widest mt-1.5">{currentUser.role} Control</p>
                         </div>
-                        <div className="w-12 h-12 rounded-2xl bg-his-slate-100 border border-slate-100 overflow-hidden shadow-sm group cursor-pointer">
-                            <img
-                                src={`https://ui-avatars.com/api/?name=${currentUser.name.replace(' ', '+')}&background=f8fafc&color=22c55e&bold=true`}
-                                alt="Avatar"
-                                className="w-full h-full object-cover group-hover:scale-110 transition-transform"
-                            />
+                        <div className="group relative">
+                            <div className="w-12 h-12 rounded-2xl bg-his-slate-100 border border-slate-100 overflow-hidden shadow-sm cursor-pointer hover:ring-2 hover:ring-his-green-500/20 transition-all">
+                                <img
+                                    src={`https://ui-avatars.com/api/?name=${currentUser.name.replace(' ', '+')}&background=f8fafc&color=22c55e&bold=true`}
+                                    alt="Avatar"
+                                    className="w-full h-full object-cover group-hover:scale-110 transition-transform"
+                                />
+                            </div>
+                            {/* Simple Tooltip-style Logout */}
+                            <button
+                                onClick={onLogout}
+                                className="absolute top-14 right-0 opacity-0 group-hover:opacity-100 transition-opacity bg-white border border-slate-100 px-4 py-2 rounded-xl shadow-xl text-[10px] font-black uppercase tracking-widest text-rose-500 hover:bg-rose-50 whitespace-nowrap"
+                            >
+                                Terminate Session
+                            </button>
                         </div>
                     </div>
                 </div>

@@ -4,6 +4,7 @@ import PrescriptionForm from './PrescriptionForm';
 import AttachmentManager from './AttachmentManager';
 import ReferralForm from './ReferralForm';
 import ClinicalNotesManager from './ClinicalNotesManager';
+import GrowthChart from './GrowthChart';
 
 const PatientProfile = ({ patientId, onBack }) => {
     const [data, setData] = useState(null);
@@ -15,7 +16,7 @@ const PatientProfile = ({ patientId, onBack }) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showPrescriptionForm, setShowPrescriptionForm] = useState(false);
     const [showReferralForm, setShowReferralForm] = useState(false);
-    const [activeTab, setActiveTab] = useState('TIMELINE'); // TIMELINE | ATTACHMENTS | NOTES
+    const [activeTab, setActiveTab] = useState('TIMELINE'); // TIMELINE | ATTACHMENTS | NOTES | PEDIATRICS
 
     useEffect(() => {
         if (patientId) {
@@ -317,6 +318,12 @@ const PatientProfile = ({ patientId, onBack }) => {
                 >
                     Clinical Notes & Encounters
                 </button>
+                <button
+                    onClick={() => setActiveTab('PEDIATRICS')}
+                    className={`pb-4 px-4 text-[11px] font-black uppercase tracking-widest transition-all relative ${activeTab === 'PEDIATRICS' ? 'text-his-green-500 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-his-green-500' : 'text-slate-400 hover:text-slate-600'}`}
+                >
+                    Pediatrics / Growth
+                </button>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 md:gap-10">
@@ -553,6 +560,12 @@ const PatientProfile = ({ patientId, onBack }) => {
                 {activeTab === 'NOTES' && (
                     <div className="lg:col-span-3">
                         <ClinicalNotesManager patientId={patient.id} patient={patient} />
+                    </div>
+                )}
+
+                {activeTab === 'PEDIATRICS' && (
+                    <div className="lg:col-span-3">
+                        <GrowthChart notes={history.clinical_notes || []} />
                     </div>
                 )}
             </div>

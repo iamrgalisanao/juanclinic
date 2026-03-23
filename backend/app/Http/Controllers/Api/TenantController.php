@@ -15,36 +15,46 @@ class TenantController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string',
-            'slug' => 'required|string|unique:tenants',
+            'name' => 'required|string|max:255',
+            'slug' => 'required|string|unique:tenants,slug|max:255',
             'admin_settings' => 'nullable|array',
         ]);
 
-        return \App\Models\Tenant::create($validated);
+        $tenant = \App\Models\Tenant::create($validated);
+        return response()->json($tenant, 201);
     }
-
 
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(\App\Models\Tenant $tenant)
     {
-        //
+        return $tenant;
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, \App\Models\Tenant $tenant)
     {
-        //
+        $validated = $request->validate([
+            'name' => 'sometimes|required|string|max:255',
+            'slug' => 'sometimes|required|string|unique:tenants,slug,' . $tenant->id . '|max:255',
+            'admin_settings' => 'nullable|array',
+        ]);
+
+        $tenant->update($validated);
+        return response()->json($tenant);
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(\App\Models\Tenant $tenant)
     {
-        //
+        // Safety check: Don't delete tenants with active branches easily?
+        // For now, allow deletion but maybe warn in UI.
+        $tenant->delete();
+        return response()->json(null, 204);
     }
 }
