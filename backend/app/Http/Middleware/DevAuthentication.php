@@ -18,8 +18,12 @@ class DevAuthentication
         if (config('app.env') === 'local' && $request->hasHeader('X-Simulated-User')) {
             $identifier = $request->header('X-Simulated-User');
 
-            $user = User::where('id', $identifier)
-                ->orWhere('email', $identifier)
+            // Bypass global scopes to allow switching back to Global Admin (tenant_id = null)
+            $user = User::withoutGlobalScopes()
+                ->where(function($q) use ($identifier) {
+                    $q->where('id', $identifier)
+                      ->orWhere('email', $identifier);
+                })
                 ->first();
 
             if ($user) {

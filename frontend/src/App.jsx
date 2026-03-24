@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { getPatients, getTenants, setTenantToken, getOrders, ingestHL7, updateOrder, setSimulatedUser, getAuditLogs, getPrescriptions, getBranches, setBranchToken } from './services/api';
+import { getPatients, getTenants, setTenantToken, getOrders, ingestHL7, updateOrder, setSimulatedUser, getAuditLogs, getPrescriptions, getBranches, setBranchToken, getDashboardReports, getDoctors } from './services/api';
 import { setEchoAuthHeader } from './services/echo';
 import { startAutoSync } from './services/syncService';
 import Sidebar from './components/Sidebar';
@@ -58,6 +58,9 @@ function App() {
     const [prescriptions, setPrescriptions] = useState([]);
     const [currentUser, setCurrentUser] = useState(getInitialSimulatedUser);
     const [userToken, setUserToken] = useState(() => localStorage.getItem('auth_token'));
+    const [dashboardStats, setDashboardStats] = useState(null);
+    const [doctorsCount, setDoctorsCount] = useState(0);
+    const [recentActivity, setRecentActivity] = useState([]);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isTransitioning, setIsTransitioning] = useState(false);
 
@@ -68,19 +71,27 @@ function App() {
         }
     }, []);
 
+    // Sync currentUser to API Headers & LocalStorage
+    useEffect(() => {
+        if (currentUser) {
+            setSimulatedUser(currentUser.id);
+            setEchoAuthHeader(currentUser.email);
+            localStorage.setItem('auth_user', JSON.stringify(currentUser));
+            if (currentUser.email) {
+                localStorage.setItem('simulated_user_email', currentUser.email);
+            }
+        } else {
+            localStorage.removeItem('auth_user');
+            localStorage.removeItem('simulated_user_email');
+        }
+    }, [currentUser]);
+
     // Track sync state and prevent concurrent loops
     const syncLockRef = useRef({ userEmail: '', tenantId: null, isSyncing: false });
 
     // Sync simulated user with API headers and handle auto-tenant alignment
     useEffect(() => {
         if (!currentUser) return;
-
-        // Apply user headers immediately if they changed
-        if (syncLockRef.current.userEmail !== currentUser.email) {
-            setSimulatedUser(currentUser.email);
-            setEchoAuthHeader(currentUser.email);
-            syncLockRef.current.userEmail = currentUser.email;
-        }
 
         const handleSync = async () => {
             if (syncLockRef.current.isSyncing) return;
@@ -122,7 +133,7 @@ function App() {
         };
 
         handleSync();
-    }, [currentUser, tenants, activeTenant]);
+    }, [currentUser, tenants, activeTenant, doctorsCount]);
 
     // Handle Offline Sync Lifecycle
     useEffect(() => {
@@ -226,6 +237,9 @@ function App() {
             } else {
                 setPatients([]); // Clear patients if no access
             }
+
+            // Fetch Dashboard Analytics & Activity
+            await fetchDashboardData();
         } catch (err) {
             console.error("Failed to fetch tenant/branch data", err);
             setPatients([]);
@@ -247,10 +261,26 @@ function App() {
             ]);
             setOrders(orderData);
             setPatients(patientData);
+            await fetchDashboardData();
         } catch (err) {
             console.error("Failed to fetch branch data", err);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchDashboardData = async () => {
+        try {
+            const [stats, docs, logs] = await Promise.all([
+                getDashboardReports(),
+                getDoctors(),
+                getAuditLogs({ limit: 5 })
+            ]);
+            setDashboardStats(stats);
+            setDoctorsCount(docs.filter(u => u.role === 'DOCTOR').length);
+            setRecentActivity(logs.slice(0, 5));
+        } catch (err) {
+            console.error("Dashboard fetch failed", err);
         }
     };
 
@@ -313,14 +343,17 @@ function App() {
                     onBranchChange={handleBranchChange}
                     currentUser={currentUser}
                     onSidebarToggle={() => setIsSidebarOpen(!isSidebarOpen)}
-                    onUserSwitch={(user) => {
+                    onUserSwitch={async (user) => {
                         setIsTransitioning(true);
                         setPatients([]); // Clear potentially unauthorized data
                         setOrders([]);
+                        
+                        // Critical: Update header immediately before any state triggers fetch hooks
+                        setSimulatedUser(user.id);
+                        setEchoAuthHeader(user.email);
+                        
                         setCurrentUser(user);
-                        if (user?.email) {
-                            localStorage.setItem('simulated_user_email', user.email);
-                        }
+                        
                         // If we already have an active tenant, re-evaluate branch for new user context
                         if (activeTenant && branches.length > 0) {
                             let newBranch = null;
@@ -390,16 +423,16 @@ function App() {
                                                     />
                                                     <StatCard
                                                         title="Available Doctors"
-                                                        value="84"
-                                                        percentage="8.3"
+                                                        value={doctorsCount}
+                                                        percentage="0"
                                                         isUp={true}
                                                         icon="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                                                         colorClass="bg-his-green-50 text-his-green-500"
                                                     />
                                                     <StatCard
-                                                        title="Total Invoices"
-                                                        value="₱1,234"
-                                                        percentage="5.1"
+                                                        title="Total Revenue"
+                                                        value={`₱${dashboardStats?.stats?.total_revenue?.toLocaleString() || '0'}`}
+                                                        percentage={dashboardStats?.stats?.completion_rate || '0'}
                                                         isUp={true}
                                                         icon="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"
                                                         colorClass="bg-orange-50 text-orange-500"
@@ -503,15 +536,21 @@ function App() {
                                                                 Recent Activity
                                                             </h3>
                                                             <div className="space-y-10 relative before:absolute before:left-[7px] before:top-2 before:bottom-2 before:w-[2px] before:bg-his-slate-50">
-                                                                {[1, 2, 3, 4].map(i => (
-                                                                    <div key={i} className="flex gap-6 relative z-10 transition-transform hover:translate-x-1 cursor-default group">
+                                                                {recentActivity.length > 0 ? recentActivity.map((log, i) => (
+                                                                    <div key={log.id} className="flex gap-6 relative z-10 transition-transform hover:translate-x-1 cursor-default group">
                                                                         <div className="w-4 h-4 rounded-full bg-white border-4 border-his-green-500 shrink-0 group-hover:bg-his-green-500 transition-colors" />
                                                                         <div>
-                                                                            <p className="text-xs font-black text-slate-900 leading-tight">New clinical order received</p>
-                                                                            <p className="text-[10px] font-bold text-slate-400 mt-2 uppercase tracking-widest">2 mins ago • LAB-00{i}</p>
+                                                                            <p className="text-xs font-black text-slate-900 leading-tight capitalize">
+                                                                                {log.event.replace('_', ' ')}: {log.auditable_type.split('\\').pop()}
+                                                                            </p>
+                                                                            <p className="text-[10px] font-bold text-slate-400 mt-2 uppercase tracking-widest">
+                                                                                {new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {log.user?.name || 'System'}
+                                                                            </p>
                                                                         </div>
                                                                     </div>
-                                                                ))}
+                                                                )) : (
+                                                                    <p className="text-[10px] font-bold text-slate-300 uppercase italic">No recent activity</p>
+                                                                )}
                                                             </div>
                                                             <button className="w-full mt-10 py-5 bg-his-slate-100/50 text-slate-500 text-[10px] font-black rounded-2xl hover:bg-his-slate-100 hover:text-slate-900 transition-all uppercase tracking-widest border border-transparent hover:border-his-slate-200">
                                                                 Full Audit History

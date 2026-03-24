@@ -18,7 +18,8 @@ class AuthController extends Controller
             'device_name' => 'required',
         ]);
 
-        $user = User::where('email', $request->email)->first();
+        // Global admins (tenant_id = null) must be reachable regardless of current tenant context
+        $user = User::where('email', $request->email)->withoutGlobalScopes()->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             throw ValidationException::withMessages([

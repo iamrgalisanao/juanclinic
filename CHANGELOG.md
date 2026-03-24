@@ -1,5 +1,14 @@
 # JuanClinic HIS - Developer Changelog
 
+## [2026-03-24] - Documentation Hardening & Roadmap Alignment
+
+### Added
+- **Entity Authority Map**: Defined server-authoritative state transitions for clinical and financial entities.
+- **Client-Server Sync Contract**: Standardized API retry logic, idempotency, and background sync protocols.
+- **Offline Action Matrix**: Categorized clinical actions for low-connectivity HIS operations.
+- **Deployment Topology**: Mapped Cloud-SaaS, Edge, and Client device runtime architecture.
+- **Client-Server Security Model**: Documented trust boundaries and tenant-isolation guardrails.
+
 ## [2026-03-21] - Workflow Hardening & Financial Integration (Phase 4 Finalization)
 
 ### Added
@@ -39,6 +48,7 @@
 
 ### Security & Integrity
 - **CDIM Hardening**: Mandatory `amendment_reason` requirement for all clinical and patient identity updates.
+- **2026-03-24**: Dynamic Dashboard Transition. Replaced static metrics and activity feed with live API hooks. Updated `App.jsx` with analytics states.
 - **RBAC Matrix**: Synchronized documentation and enforcement for `TECH` and `DIAGNOSTIC_APPROVER` roles.
 - **Multi-Tenant Isolation**: Hardened `EnsureUserBelongsToTenant` middleware to prevent race conditions during tenant context switching.
 

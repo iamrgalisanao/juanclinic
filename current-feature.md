@@ -5,8 +5,8 @@ Establish the primary documentation stack and operational gates to ensure the HI
 
 ## Active Tasks
 - [x] Synchronize `gemini.md`, `spec.md`, and `Operational_protocol.md`.
-- [/] Generate Supporting Workflow Documentation (Coding/Security standards).
-- [ ] Perform a consistency audit across the `docs/` directory.
+- [x] Generate Supporting Workflow Documentation (Coding/Security standards).
+- [x] Perform a consistency audit across the `docs/` directory.
 
 ## Success Criteria
 - The "Source of Truth Quartet" is established and in sync.
