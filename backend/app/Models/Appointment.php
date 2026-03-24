@@ -7,14 +7,16 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Traits\AuditLogTrait;
 use App\Traits\HasAmendments;
+use App\Traits\BelongsToBranch;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Appointment extends Model
 {
-    use HasFactory, BelongsToTenant, AuditLogTrait, HasAmendments;
+    use HasFactory, BelongsToTenant, AuditLogTrait, HasAmendments, BelongsToBranch;
 
     protected $fillable = [
         'tenant_id',
+        'branch_id',
         'patient_id',
         'doctor_id',
         'appointment_date',

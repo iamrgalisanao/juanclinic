@@ -29,6 +29,13 @@ class AuthController extends Controller
 
         $token = $user->createToken($request->device_name)->plainTextToken;
 
+        // HIS Audit Log: Mandatory for secure session initiation
+        $user->logAudit('LOGIN', [
+            'device' => $request->device_name,
+            'ip' => $request->ip(),
+            'user_agent' => $request->userAgent()
+        ]);
+
         return response()->json([
             'token' => $token,
             'user' => [
@@ -47,7 +54,13 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
-        $request->user()->currentAccessToken()->delete();
+        $user = $request->user();
+        $user->currentAccessToken()->delete();
+
+        // HIS Audit Log: Mandatory for secure session termination
+        $user->logAudit('LOGOUT', [
+            'ip' => $request->ip()
+        ]);
 
         return response()->json(['message' => 'Logged out successfully']);
     }

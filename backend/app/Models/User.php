@@ -10,10 +10,11 @@ use Laravel\Sanctum\HasApiTokens;
 
 use App\Traits\BelongsToTenant;
 use App\Traits\AuditLogTrait;
+use App\Traits\BelongsToBranch;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable, BelongsToTenant, AuditLogTrait;
+    use HasApiTokens, HasFactory, Notifiable, BelongsToTenant, AuditLogTrait, BelongsToBranch;
 
     /**
      * The attributes that are mass assignable.

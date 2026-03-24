@@ -7,13 +7,15 @@ use Illuminate\Database\Eloquent\Model;
 use App\Traits\BelongsToTenant;
 use App\Traits\AuditLogTrait;
 use App\Traits\HasAmendments;
+use App\Traits\BelongsToBranch;
 
 class ClinicalNote extends Model
 {
-    use HasFactory, BelongsToTenant, AuditLogTrait, HasAmendments;
+    use HasFactory, BelongsToTenant, AuditLogTrait, HasAmendments, BelongsToBranch;
 
     protected $fillable = [
         'tenant_id',
+        'branch_id',
         'patient_id',
         'author_id',
         'template_id',

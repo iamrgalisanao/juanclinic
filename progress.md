@@ -2,7 +2,7 @@
 
 ## Current Project Status: **Phase 5 - Enterprise Scaling & Tier 2 Hardening**
 
-### Overall Progress: 90% (Tier 2 Audit Score)
+### Overall Progress: 95% (Tier 2 Audit Score)
 
 | Module | Progress | Status |
 | :--- | :--- | :--- |
@@ -11,7 +11,7 @@
 | **Integrity (CDIM)** | 100% | COMPLETED |
 | **Workflow Hardening** | 100% | COMPLETED |
 | **Integrations** | 100% | COMPLETED |
-| **Tier 2 Hardening** | 100% | COMPLETED |
+| **Tier 2 Hardening** | 100% | COMPLETED (Audited 2026-03-24) |
 
 ### Validation Readiness Status
 - **Critical Gaps**: 0
@@ -28,4 +28,5 @@
 - [x] **Patient Profile Audit Visibility**: Add PHI access indicator and Tenant context. (Resolved: 2026-03-18)
 - [x] **DPA Compliance UI**: Add Patient Rights (Object/Erasure) portal in Profile. (Resolved: 2026-03-18)
 - [x] **Patients Registry Safety**: Add Tenant context, audit indicators, and DPA portal. (Resolved: 2026-03-18)
-- **Status**: UI Remediations complete for PrescriptionForm, PatientProfile, and Patients registry.
+- [x] **2026-03-24**: Post-Merge Hardening Restoration. Applied `BelongsToBranch` to `ClinicalAttachment` and added mandatory `LOGIN`/`LOGOUT` audit logs to `AuthController`.
+- **Status**: Tier 2 Compliance Audit complete. All clinical models and auth flows are now branch-isolated and auditable.

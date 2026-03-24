@@ -3,15 +3,18 @@ namespace App\Models;
 
 use App\Traits\BelongsToTenant;
 use App\Traits\AuditLogTrait;
+use App\Traits\HasAmendments;
+use App\Traits\BelongsToBranch;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class ClinicalAttachment extends Model
 {
-    use HasFactory, BelongsToTenant, AuditLogTrait;
+    use HasFactory, BelongsToTenant, AuditLogTrait, HasAmendments, BelongsToBranch;
 
     protected $fillable = [
         'tenant_id',
+        'branch_id',
         'patient_id',
         'file_name',
         'file_path',

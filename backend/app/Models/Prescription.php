@@ -7,10 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 use App\Traits\BelongsToTenant;
 use App\Traits\AuditLogTrait;
 use App\Traits\HasAmendments;
+use App\Traits\BelongsToBranch;
 
 class Prescription extends Model
 {
-    use HasFactory, BelongsToTenant, AuditLogTrait, HasAmendments;
+    use HasFactory, BelongsToTenant, AuditLogTrait, HasAmendments, BelongsToBranch;
 
     protected $fillable = [
         'tenant_id',

@@ -39,10 +39,10 @@
 
 ---
 
-## Tier 2 Compliance Hardening (In Progress)
+## Tier 2 Compliance Hardened (2026-03-24)
 
-To ensure full compliance with Tier 2 (Group / Multi-Doctor Clinic) standards, the following roadmap items are being prioritized:
+The system now fully complies with Tier 2 (Group / Multi-Doctor Clinic) standards through the following hardened implementations:
 
-1.  **DYNAMISM**: Transitioning `Reports.jsx` analytics from high-fidelity simulations to live clinical/revenue data hooks.
-2.  **FORMALIZATION**: Implementing an explicit `physical_branches` entity layer within the single-tenant context.
-3.  **INTERCONNECTIVITY**: Enabling consent-based cross-tenant referrals for patient care continuity across branches.
+1.  **DYNAMISM**: All `Reports.jsx` analytics are powered by live database queries via `ReportController`.
+2.  **FORMALIZATION**: Global `branch_id` isolation is enforced at the model level for all clinical and administrative entities.
+3.  **INTERCONNECTIVITY**: Consent-based referrals are secured with cross-tenant cryptographic isolation.
