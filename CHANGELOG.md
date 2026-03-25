@@ -8,6 +8,17 @@
 - **Offline Action Matrix**: Categorized clinical actions for low-connectivity HIS operations.
 - **Deployment Topology**: Mapped Cloud-SaaS, Edge, and Client device runtime architecture.
 - **Client-Server Security Model**: Documented trust boundaries and tenant-isolation guardrails.
+- **HL7 Integration Guide**: Documented production ingestion flow (MLLP/TCP) and backend PID mapping service.
+- **Medicine Management Pagination**: Server-side pagination for inventory scaling (10, 20, 50, 100 per page).
+
+### Changed
+- **Frontend Navigation**: Grouped-left pagination footer for consistency with Patient Registry.
+- **App.jsx & Sidebar.jsx**: Harmonized `DIAGNOSTIC_APPROVER` and `TECH` roles to support clinical messaging and diagnostic review.
+
+### Fixed
+- **RBAC Blocker**: Resolved 403 Forbidden errors for the `DIAGNOSTIC_APPROVER` role on patient records, history, and analytical reports.
+- **Dashboard UX**: Restored vertical scrolling for the main content area in `App.jsx`.
+- **Sync Integrity**: Hardened prescription fetching to wait for valid `activeBranch` context.
 
 ## [2026-03-21] - Workflow Hardening & Financial Integration (Phase 4 Finalization)
 

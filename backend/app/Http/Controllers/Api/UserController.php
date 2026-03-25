@@ -11,9 +11,15 @@ class UserController extends Controller
     /**
      * Display a listing of users/doctors.
      */
-    public function index()
+    public function index(Request $request)
     {
-        return User::where('id', '!=', auth()->id())->get();
+        $query = User::where('id', '!=', auth()->id());
+
+        if ($request->has('role')) {
+            $query->where('role', $request->role);
+        }
+
+        return $query->get();
     }
 
     /**

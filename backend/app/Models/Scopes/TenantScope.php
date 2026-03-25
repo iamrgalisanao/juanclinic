@@ -26,7 +26,10 @@ class TenantScope implements Scope
         }
 
         if ($tenantId) {
-            $builder->where('tenant_id', $tenantId);
+            $builder->where(function ($query) use ($tenantId) {
+                $query->where('tenant_id', $tenantId)
+                      ->orWhereNull('tenant_id');
+            });
         }
     }
 }

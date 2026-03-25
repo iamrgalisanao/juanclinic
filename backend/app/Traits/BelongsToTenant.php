@@ -25,7 +25,7 @@ trait BelongsToTenant
                 $tenantId = session('tenant_id');
             }
 
-            if ($tenantId) {
+            if ($tenantId && !$model->tenant_id) {
                 $model->tenant_id = $tenantId;
             }
         });

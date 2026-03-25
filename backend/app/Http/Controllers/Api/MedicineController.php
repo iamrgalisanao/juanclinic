@@ -23,7 +23,7 @@ class MedicineController extends Controller
             });
         }
 
-        return $query->limit(20)->get();
+        return $query->paginate($request->input('per_page', 20));
     }
 
     /**

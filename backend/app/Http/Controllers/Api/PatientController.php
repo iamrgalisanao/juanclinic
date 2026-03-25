@@ -7,10 +7,22 @@ use Illuminate\Http\Request;
 
 class PatientController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $this->authorize('viewAny', \App\Models\Patient::class);
-        return \App\Models\Patient::all();
+        
+        $query = \App\Models\Patient::query();
+
+        if ($request->has('search')) {
+            $search = $request->input('search');
+            $query->where(function($q) use ($search) {
+                $q->where('first_name', 'like', "%{$search}%")
+                  ->orWhere('last_name', 'like', "%{$search}%")
+                  ->orWhere('patient_external_id', 'like', "%{$search}%");
+            });
+        }
+
+        return $query->latest()->paginate($request->input('per_page', 20));
     }
 
     public function store(Request $request)
@@ -18,7 +30,7 @@ class PatientController extends Controller
         $this->authorize('create', \App\Models\Patient::class);
 
         $validated = $request->validate([
-            'patient_external_id' => 'nullable|string',
+            'patient_external_id' => 'required|string|unique:patients,patient_external_id',
             'first_name' => 'required|string',
             'last_name' => 'required|string',
             'dob' => 'required|date',

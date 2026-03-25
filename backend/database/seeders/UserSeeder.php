@@ -19,6 +19,7 @@ class UserSeeder extends Seeder
                 'password' => bcrypt('password'),
                 'role' => 'DOCTOR',
                 'tenant_id' => 1,
+                'branch_id' => 1, // Alpha - Main Office
             ]
         );
 
@@ -29,6 +30,7 @@ class UserSeeder extends Seeder
                 'password' => bcrypt('password'),
                 'role' => 'DOCTOR',
                 'tenant_id' => 2,
+                'branch_id' => 3, // Beta - Central Clinic (Assuming sequential IDs or using logic)
             ]
         );
 
@@ -39,6 +41,7 @@ class UserSeeder extends Seeder
                 'password' => bcrypt('password'),
                 'role' => 'TECH',
                 'tenant_id' => 1,
+                'branch_id' => 2, // Alpha - Downtown Center
             ]
         );
 
@@ -49,6 +52,7 @@ class UserSeeder extends Seeder
                 'password' => bcrypt('password'),
                 'role' => 'DIAGNOSTIC_APPROVER',
                 'tenant_id' => 1,
+                'branch_id' => 2, // Supporting Downtown branch
             ]
         );
 

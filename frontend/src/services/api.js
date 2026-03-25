@@ -9,6 +9,37 @@ const api = axios.create({
     },
 });
 
+// Initial token restoration to prevent 401 race conditions
+const initialToken = localStorage.getItem('auth_token');
+if (initialToken) {
+    api.defaults.headers.common['Authorization'] = `Bearer ${initialToken}`;
+}
+
+// Response interceptor for automatic 401 handling
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response && error.response.status === 401) {
+            // Only clear and redirect if not on the login call itself
+            const isLoginRequest = error.config.url.includes('/auth/login');
+            if (!isLoginRequest) {
+                console.warn('Unauthorized request detected. Clearing session and redirecting...');
+                localStorage.removeItem('auth_token');
+                localStorage.removeItem('auth_user');
+                delete api.defaults.headers.common['Authorization'];
+                
+                // We force a page reload to reset the app state to the login view
+                // This is a robust way to ensure all background syncs and intervals stop
+                if (typeof window !== 'undefined') {
+                    window.location.hash = '#dashboard'; // Reset hash
+                    window.location.reload();
+                }
+            }
+        }
+        return Promise.reject(error);
+    }
+);
+
 export const setTenantToken = (tenantId) => {
     api.defaults.headers.common['X-Tenant-ID'] = tenantId;
 };
@@ -21,12 +52,10 @@ export const setBranchToken = (branchId) => {
     }
 };
 
-export const setSimulatedUser = (userId) => {
-    api.defaults.headers.common['X-Simulated-User'] = userId;
-};
 
-export const getPatients = async () => {
-    const response = await api.get('/patients');
+
+export const getPatients = async (params = {}) => {
+    const response = await api.get('/patients', { params });
     return response.data;
 };
 
@@ -143,8 +172,8 @@ export const deleteAppointment = async (id) => {
 };
 
 // Doctors / Staff API
-export const getDoctors = async () => {
-    const response = await api.get('/users');
+export const getDoctors = async (params = {}) => {
+    const response = await api.get('/users', { params });
     return response.data;
 };
 
@@ -209,8 +238,8 @@ export const updatePrescription = async (id, data) => {
 };
 
 // Medicine API
-export const getMedicines = async (search = '') => {
-    const response = await api.get('/medicines', { params: { search } });
+export const getMedicines = async (params = {}) => {
+    const response = await api.get('/medicines', { params });
     return response.data;
 };
 

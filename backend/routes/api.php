@@ -27,10 +27,10 @@ Route::get('branches', [\App\Http\Controllers\Api\BranchController::class, 'inde
 Route::apiResource('branches', \App\Http\Controllers\Api\BranchController::class)->except(['index'])->middleware(['auth:sanctum', 'tenant_user', 'role:ADMIN']);
 
 Route::group(['middleware' => ['auth:sanctum', 'tenant_user', 'branch_user']], function () {
-    Route::apiResource('patients', \App\Http\Controllers\Api\PatientController::class)->middleware('role:DOCTOR,ADMIN,FRONT_DESK');
+    Route::apiResource('patients', \App\Http\Controllers\Api\PatientController::class)->middleware('role:DOCTOR,ADMIN,FRONT_DESK,DIAGNOSTIC_APPROVER');
     Route::apiResource('clinical-notes', \App\Http\Controllers\Api\ClinicalNoteController::class)->middleware('role:DOCTOR,ADMIN');
     Route::get('clinical-templates', [\App\Http\Controllers\Api\ClinicalTemplateController::class, 'index'])->middleware('role:DOCTOR,ADMIN');
-    Route::get('patients/{patient}/history', [\App\Http\Controllers\Api\PatientHistoryController::class, 'show'])->middleware('role:DOCTOR,ADMIN');
+    Route::get('patients/{patient}/history', [\App\Http\Controllers\Api\PatientHistoryController::class, 'show'])->middleware('role:DOCTOR,ADMIN,DIAGNOSTIC_APPROVER');
     Route::get('orders/worklist', [\App\Http\Controllers\Api\OrderController::class, 'worklist'])->middleware('role:ADMIN,TECH,DIAGNOSTIC_APPROVER');
     Route::apiResource('orders', \App\Http\Controllers\Api\OrderController::class)->middleware('role:DOCTOR,ADMIN,TECH,DIAGNOSTIC_APPROVER');
     Route::apiResource('prescriptions', \App\Http\Controllers\Api\PrescriptionController::class)->middleware('role:DOCTOR,ADMIN');
@@ -44,18 +44,18 @@ Route::group(['middleware' => ['auth:sanctum', 'tenant_user', 'branch_user']], f
     Route::apiResource('referrals', \App\Http\Controllers\Api\ReferralController::class);
     Route::put('referrals/{referral}/accept', [\App\Http\Controllers\Api\ReferralController::class, 'accept']);
     Route::get('audit-logs', [\App\Http\Controllers\Api\AuditLogController::class, 'index'])->middleware('role:ADMIN,DOCTOR');
-    Route::get('reports/dashboard', [\App\Http\Controllers\Api\ReportController::class, 'dashboard'])->middleware('role:ADMIN,FRONT_DESK,DOCTOR');
-    Route::get('reports/benchmarking', [\App\Http\Controllers\Api\ReportController::class, 'benchmarking'])->middleware('role:ADMIN,FRONT_DESK,DOCTOR');
+    Route::get('reports/dashboard', [\App\Http\Controllers\Api\ReportController::class, 'dashboard'])->middleware('role:ADMIN,FRONT_DESK,DOCTOR,DIAGNOSTIC_APPROVER');
+    Route::get('reports/benchmarking', [\App\Http\Controllers\Api\ReportController::class, 'benchmarking'])->middleware('role:ADMIN,FRONT_DESK,DOCTOR,DIAGNOSTIC_APPROVER');
     Route::get('messages', [\App\Http\Controllers\Api\MessageController::class, 'index']);
     Route::post('messages/groups', [\App\Http\Controllers\Api\MessageController::class, 'createGroup']);
     Route::get('messages/{conversation}', [\App\Http\Controllers\Api\MessageController::class, 'show']);
     Route::post('messages', [\App\Http\Controllers\Api\MessageController::class, 'store']);
-    Route::get('patients/{patient}/attachments', [\App\Http\Controllers\Api\AttachmentController::class, 'index'])->middleware('role:DOCTOR,ADMIN,TECH');
+    Route::get('patients/{patient}/attachments', [\App\Http\Controllers\Api\AttachmentController::class, 'index'])->middleware('role:DOCTOR,ADMIN,TECH,DIAGNOSTIC_APPROVER');
     Route::post('attachments', [\App\Http\Controllers\Api\AttachmentController::class, 'store'])->middleware('role:DOCTOR,ADMIN,TECH');
     Route::get('attachments/{id}/download', [\App\Http\Controllers\Api\AttachmentController::class, 'download'])->middleware('role:DOCTOR,ADMIN,TECH');
     Route::delete('attachments/{id}', [\App\Http\Controllers\Api\AttachmentController::class, 'destroy'])->middleware('role:DOCTOR,ADMIN,TECH');
-    Route::get('pharmacy/worklist', [\App\Http\Controllers\Api\PharmacyController::class, 'worklist'])->middleware('role:ADMIN,TECH');
-    Route::post('pharmacy/dispense/{id}', [\App\Http\Controllers\Api\PharmacyController::class, 'dispense'])->middleware('role:ADMIN,TECH');
+    Route::get('pharmacy/worklist', [\App\Http\Controllers\Api\PharmacyController::class, 'worklist'])->middleware('role:ADMIN,TECH,DOCTOR');
+    Route::post('pharmacy/dispense/{id}', [\App\Http\Controllers\Api\PharmacyController::class, 'dispense'])->middleware('role:ADMIN,TECH,DOCTOR');
 
     // Offline Sync Endpoints
     Route::get('sync/pull', [\App\Http\Controllers\Api\SyncController::class, 'pull']);

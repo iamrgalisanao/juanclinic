@@ -13,6 +13,11 @@ class BranchScope implements Scope
      */
     public function apply(Builder $builder, Model $model): void
     {
+        // Global Admins (null tenant_id) bypass branch filtering for multi-tenant management
+        if (auth()->check() && is_null(auth()->user()->tenant_id)) {
+            return;
+        }
+
         if (app()->bound('branch')) {
             $builder->where($model->getTable() . '.branch_id', app('branch')->id);
         }

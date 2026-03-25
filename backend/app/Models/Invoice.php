@@ -16,9 +16,13 @@ class Invoice extends Model
         'tenant_id',
         'branch_id',
         'patient_id',
-        'order_id', // Link to Lab/Rad order
+        'order_id',
         'invoice_number',
-        'total_amount',
+        'subtotal',
+        'vat_amount',
+        'discount_amount',
+        'discount_type',
+        'net_amount',
         'status', // UNPAID, PARTIAL, PAID
     ];
 

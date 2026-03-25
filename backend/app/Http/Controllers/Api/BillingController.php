@@ -22,16 +22,48 @@ class BillingController extends Controller
 
         $validated = $request->validate([
             'patient_id' => 'required|exists:patients,id',
+            'branch_id' => 'required|exists:branches,id',
             'order_id' => 'nullable|exists:orders,id',
             'prescription_ids' => 'nullable|array',
             'prescription_ids.*' => 'exists:prescriptions,id',
-            'total_amount' => 'required|numeric',
+            'subtotal' => 'required|numeric',
+            'discount_type' => 'nullable|string|in:NONE,SENIOR,PWD',
         ]);
 
-        $validated['invoice_number'] = 'INV-' . strtoupper(uniqid());
-        $validated['status'] = 'UNPAID';
+        $subtotal = $validated['subtotal'];
+        $vatAmount = 0;
+        $discountAmount = 0;
+        $netAmount = 0;
 
-        $invoice = Invoice::create($request->only(['patient_id', 'order_id', 'total_amount', 'invoice_number', 'status']));
+        if ($request->discount_type === 'SENIOR' || $request->discount_type === 'PWD') {
+            // PH Law: VAT Exempt + 20% Discount
+            $vExempt = $subtotal / 1.12;
+            $discountAmount = $vExempt * 0.20;
+            $netAmount = $vExempt - $discountAmount;
+            $vatAmount = 0; // VAT Exempt
+        } else {
+            // Standard: Inclusive VAT
+            $netAmount = $subtotal;
+            $vatAmount = $subtotal - ($subtotal / 1.12);
+        }
+
+        // Sequential BIR-compliant ID (Simulated with latest count)
+        $count = Invoice::where('branch_id', $validated['branch_id'])->count() + 1;
+        $invoiceNumber = 'INV-' . str_pad($validated['branch_id'], 2, '0', STR_PAD_LEFT) . '-' . date('Y') . '-' . str_pad($count, 6, '0', STR_PAD_LEFT);
+
+        $invoice = Invoice::create([
+            'tenant_id' => auth()->user()->tenant_id,
+            'branch_id' => $validated['branch_id'],
+            'patient_id' => $validated['patient_id'],
+            'order_id' => $validated['order_id'] ?? null,
+            'invoice_number' => $invoiceNumber,
+            'subtotal' => $subtotal,
+            'vat_amount' => $vatAmount,
+            'discount_amount' => $discountAmount,
+            'discount_type' => $validated['discount_type'] ?? 'NONE',
+            'net_amount' => $netAmount,
+            'status' => 'UNPAID',
+        ]);
         
         if ($request->has('prescription_ids')) {
             Prescription::whereIn('id', $request->prescription_ids)
@@ -56,15 +88,16 @@ class BillingController extends Controller
         
         $payment = Payment::create([
             'tenant_id' => $invoice->tenant_id,
+            'branch_id' => $invoice->branch_id,
             'invoice_id' => $invoice->id,
             'amount' => $validated['amount'],
             'payment_method' => $validated['payment_method'],
             'transaction_id' => $validated['transaction_id'] ?? null,
         ]);
 
-        // Update invoice status
+        // Update invoice status based on net_amount
         $totalPaid = $invoice->payments()->sum('amount');
-        if ($totalPaid >= $invoice->total_amount) {
+        if ($totalPaid >= $invoice->net_amount) {
             $invoice->update(['status' => 'PAID']);
         } elseif ($totalPaid > 0) {
             $invoice->update(['status' => 'PARTIAL']);

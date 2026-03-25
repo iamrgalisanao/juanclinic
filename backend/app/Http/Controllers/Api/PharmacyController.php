@@ -34,13 +34,28 @@ class PharmacyController extends Controller
             return response()->json(['message' => 'Prescription is no longer active'], 422);
         }
 
+        // 1. Stock Guard Check
+        if ($prescription->medicine_id && $prescription->quantity) {
+            $medicine = Medicine::find($prescription->medicine_id);
+            if (!$medicine || $medicine->quantity < $prescription->quantity) {
+                return response()->json([
+                    'message' => 'Insufficient stock for requested medication.',
+                    'errors' => ['medicine_id' => ['Stock unavailable.']]
+                ], 422);
+            }
+
+            // Deduct Stock
+            $medicine->decrement('quantity', $prescription->quantity);
+        }
+
+        // 2. Dispense Audit
         $prescription->update([
             'status' => 'COMPLETED',
             'dispensed_at' => now(),
             'dispensed_by' => Auth::id(),
         ]);
 
-        // Create Invoice for the dispensed medication
+        // 3. Create Hardened Invoice (Tier 2 Compliant)
         $totalAmount = 0;
         if ($prescription->medicine_id && $prescription->quantity) {
             $medicine = Medicine::find($prescription->medicine_id);
@@ -49,11 +64,20 @@ class PharmacyController extends Controller
             }
         }
 
+        // Use the new Billing logic or directly call the storeInvoice logic (here simplified but following the same schema)
+        $count = Invoice::where('branch_id', $prescription->branch_id)->count() + 1;
+        $invoiceNumber = 'INV-' . str_pad($prescription->branch_id, 2, '0', STR_PAD_LEFT) . '-' . date('Y') . '-' . str_pad($count, 6, '0', STR_PAD_LEFT);
+
         $invoice = Invoice::create([
             'tenant_id' => $prescription->tenant_id,
+            'branch_id' => $prescription->branch_id,
             'patient_id' => $prescription->patient_id,
-            'invoice_number' => 'INV-' . strtoupper(uniqid()),
-            'total_amount' => $totalAmount,
+            'invoice_number' => $invoiceNumber,
+            'subtotal' => $totalAmount,
+            'vat_amount' => $totalAmount - ($totalAmount / 1.12), // Standard Inclusive VAT
+            'discount_amount' => 0,
+            'discount_type' => 'NONE',
+            'net_amount' => $totalAmount,
             'status' => 'UNPAID',
         ]);
 
@@ -61,7 +85,7 @@ class PharmacyController extends Controller
         $prescription->update(['invoice_id' => $invoice->id]);
 
         return response()->json([
-            'message' => 'Medication dispensed & invoice generated successfully',
+            'message' => 'Medication dispensed & standard invoice generated successfully',
             'prescription' => $prescription->load(['patient', 'physician', 'medicine', 'dispenser']),
             'invoice' => $invoice
         ]);

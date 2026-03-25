@@ -10,8 +10,9 @@ const RegisterPatientForm = ({ onPatientAdded, onClose, activeTenant }) => {
         dob: '',
         gender: 'M',
         contact: '',
-        patient_external_id: 'PAT-' + Math.floor(1000 + Math.random() * 9000),
+        patient_external_id: 'PAT-' + Date.now().toString(36).toUpperCase(),
     });
+    const [errors, setErrors] = useState({});
 
     const [loading, setLoading] = useState(false);
 
@@ -24,38 +25,37 @@ const RegisterPatientForm = ({ onPatientAdded, onClose, activeTenant }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
-
+        setErrors({});
         const tenantId = activeTenant?.id;
 
+        // Validation for Contact (RA 10173 Compliance)
+        const contactRegex = /^(09|\+639)\d{9}$/;
+        if (!contactRegex.test(formData.contact)) {
+            setErrors({ contact: ['Invalid mobile number. Use +639XX-XXX-XXXX format.'] });
+            setStep(2); // Jump back to contact step
+            setLoading(false);
+            return;
+        }
+
         try {
-            if (navigator.onLine) {
-                const response = await registerPatient(formData);
-                onPatientAdded(response.data);
-                // Also cache locally for faster subsequent loads
-                await saveToLocal('patients', { ...response.data, tenant_id: tenantId });
-            } else {
-                throw new Error('Offline');
-            }
-        } catch (err) {
-            console.warn('Sync registration failed, queuing for later:', err);
-
-            // Create a temporary local record for immediate UI update
-            const tempPatient = {
+            const registeredPatient = await registerPatient({
                 ...formData,
-                id: 'TEMP-' + Date.now(),
-                tenant_id: tenantId,
-                updated_at: new Date().toISOString(),
-                is_pending_sync: true
-            };
-
-            // Save to Local DB
-            await saveToLocal('patients', tempPatient);
-
-            // Add to Sync Queue
-            await addToSyncQueue(tenantId, 'POST', '/patients', formData);
-
-            onPatientAdded(tempPatient);
-            alert('Offline Mode: Patient saved locally and will sync when online.');
+                tenant_id: tenantId
+            });
+            onPatientAdded(registeredPatient);
+            // Also cache locally for faster subsequent loads
+            await saveToLocal('patients', { ...registeredPatient, tenant_id: tenantId });
+        } catch (err) {
+            if (err.response && err.response.status === 422) {
+                setErrors(err.response.data.errors);
+                // Auto-jump to clinical demographics if error is there
+                if (err.response.data.errors.first_name || err.response.data.errors.last_name || err.response.data.errors.dob) setStep(1);
+                else if (err.response.data.errors.contact) setStep(2);
+            } else if (err.response && err.response.status === 409) {
+                alert("Critical: Potential duplicate patient detected in the secure clinical registry.");
+            } else {
+                alert(`Registration Failed: ${err.message || 'Server connection error.'}`);
+            }
         } finally {
             setLoading(false);
         }
@@ -107,6 +107,7 @@ const RegisterPatientForm = ({ onPatientAdded, onClose, activeTenant }) => {
                                 className="w-full bg-his-slate-50 border-2 border-transparent focus:border-his-green-500/10 focus:bg-white rounded-2xl p-4 text-sm font-bold text-slate-700 outline-none transition-all placeholder:text-slate-300"
                                 placeholder="e.g. Juan"
                             />
+                            {errors.first_name && <p className="text-[10px] font-bold text-rose-500 mt-2 italic px-1">{errors.first_name[0]}</p>}
                         </div>
                         <div className="col-span-1">
                             <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 pl-1">Last Name</label>
@@ -117,6 +118,7 @@ const RegisterPatientForm = ({ onPatientAdded, onClose, activeTenant }) => {
                                 className="w-full bg-his-slate-50 border-2 border-transparent focus:border-his-green-500/10 focus:bg-white rounded-2xl p-4 text-sm font-bold text-slate-700 outline-none transition-all placeholder:text-slate-300"
                                 placeholder="e.g. Dela Cruz"
                             />
+                            {errors.last_name && <p className="text-[10px] font-bold text-rose-500 mt-2 italic px-1">{errors.last_name[0]}</p>}
                         </div>
                         <div className="col-span-1">
                             <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 pl-1">Date of Birth</label>
@@ -154,6 +156,7 @@ const RegisterPatientForm = ({ onPatientAdded, onClose, activeTenant }) => {
                                 className="w-full bg-his-slate-50 border-2 border-transparent focus:border-his-green-500/10 focus:bg-white rounded-2xl p-4 text-sm font-bold text-slate-700 outline-none transition-all placeholder:text-slate-300"
                                 placeholder="+63 9xx xxx xxxx"
                             />
+                            {errors.contact && <p className="text-[10px] font-bold text-rose-500 mt-2 italic px-1">{errors.contact[0]}</p>}
                         </div>
                         <div>
                             <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 pl-1">External System ID</label>

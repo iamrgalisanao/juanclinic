@@ -46,3 +46,5 @@ The system now fully complies with Tier 2 (Group / Multi-Doctor Clinic) standard
 1.  **DYNAMISM**: All `Reports.jsx` analytics are powered by live database queries via `ReportController`.
 2.  **FORMALIZATION**: Global `branch_id` isolation is enforced at the model level for all clinical and administrative entities.
 3.  **INTERCONNECTIVITY**: Consent-based referrals are secured with cross-tenant cryptographic isolation.
+4.  **SCALABILITY**: Implemented server-side pagination for **Medicine Management**, ensuring inventory performance for large multi-branch stocks.
+5.  **COORDINATION**: Harmonized `DIAGNOSTIC_APPROVER` RBAC to allow direct clinical messaging between Radiologists/Pathologists and ordering physicians.

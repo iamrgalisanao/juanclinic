@@ -128,6 +128,7 @@ Segregation Rule:
 | Clinic Admin | C U D | C U | R | R |
 | Clinical Provider | X | X | R (limited) | X |
 | Lab Technician | X | X | X | X |
+| Diagnostic Approver | X | X | R (results audit) | X |
 | Front Desk | X | X | X | X |
 
 ### Financial & Inventory Controls
@@ -137,6 +138,19 @@ Segregation Rule:
 | Clinic Admin | R | U D | R | R C U |
 | Front Desk | R | X | X | X |
 | Pharmacy Tech | X | X | X | X |
+
+---
+
+### Clinical Messaging & Coordination
+
+| Role | Access Messages | Create Group | Broadcast Notification | View Conversations |
+|------|-----------------|--------------|-----------------------|-------------------|
+| Clinical Provider | R C | C | ✓ | R |
+| Lab Technician | R C | X | X | R (limited context) |
+| Radiology Tech | R C | X | X | R (limited context) |
+| Diagnostic Approver | R C | C | ✓ | R |
+| Clinic Admin | R C | C | ✓ | R |
+| Front Desk | R C | X | X | R (limited context) |
 
 ---
 

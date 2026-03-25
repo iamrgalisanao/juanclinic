@@ -1,7 +1,7 @@
 import React from 'react';
 import { useSyncStatus } from '../services/syncService';
 
-const TopBar = ({ activeTenant, tenants, onTenantChange, activeBranch, branches, onBranchChange, currentUser, onUserSwitch, availableUsers, onSidebarToggle, onLogout }) => {
+const TopBar = ({ activeTenant, tenants, onTenantChange, activeBranch, branches, onBranchChange, currentUser, onSidebarToggle, onLogout }) => {
     const { isOnline, lastSync } = useSyncStatus(activeTenant?.id);
 
     return (
@@ -92,20 +92,6 @@ const TopBar = ({ activeTenant, tenants, onTenantChange, activeBranch, branches,
                 </div>
 
                 <div className="flex items-center gap-4">
-                    {/* Dev User Switcher - Enabled for all roles in Demo mode */}
-                    <select
-                        className="text-[10px] font-black uppercase bg-his-slate-100 border-none rounded-lg px-2 py-1 outline-none text-slate-500 hover:text-his-green-600 transition-colors cursor-pointer"
-                        value={currentUser.id}
-                        onChange={(e) => {
-                            const user = availableUsers.find(u => u.id === parseInt(e.target.value));
-                            if (user) onUserSwitch(user);
-                        }}
-                    >
-                        {availableUsers.map(u => (
-                            <option key={u.id} value={u.id}>{u.role}: {u.name}</option>
-                        ))}
-                    </select>
-
                     <div className="flex items-center gap-4 pl-6 border-l border-slate-100">
                         <div className="text-right">
                             <p className="text-sm font-black text-slate-900 leading-none">{currentUser.name}</p>

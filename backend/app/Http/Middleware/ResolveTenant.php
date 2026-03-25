@@ -17,6 +17,10 @@ class ResolveTenant
     {
         $tenantId = $request->header('X-Tenant-ID');
 
+        if (!$tenantId) {
+            $tenantId = $request->input('tenant_id');
+        }
+
         if (!$tenantId && $request->hasSession()) {
             $tenantId = $request->session()->get('tenant_id');
         }

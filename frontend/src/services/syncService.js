@@ -28,6 +28,7 @@ export const useSyncStatus = (tenantId) => {
 };
 
 export const syncAll = async (tenantId) => {
+    if (!tenantId) return;
     console.log('Starting sync for tenant:', tenantId);
 
     try {
@@ -39,7 +40,9 @@ export const syncAll = async (tenantId) => {
 
         console.log('Sync completed successfully');
     } catch (error) {
-        console.error('Sync failed:', error);
+        // Axios interceptor handles 401s by reloading, 
+        // but we catch other errors here to prevent console noise.
+        console.error('Sync failed:', error.message);
     }
 };
 

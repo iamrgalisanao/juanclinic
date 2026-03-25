@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getPharmacyWorklist, dispenseMedication } from '../services/api';
 
-const PharmacyWorklist = () => {
+const PharmacyWorklist = ({ activeBranch, currentUser }) => {
     const [prescriptions, setPrescriptions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -21,8 +21,10 @@ const PharmacyWorklist = () => {
     };
 
     useEffect(() => {
-        fetchWorklist();
-    }, []);
+        if (activeBranch) {
+            fetchWorklist();
+        }
+    }, [activeBranch]);
 
     const handleDispense = async (id) => {
         try {

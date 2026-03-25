@@ -54,4 +54,25 @@ trait AuditLogTrait
             'user_agent' => request()->userAgent(),
         ]);
     }
+
+    /**
+     * Manually record a custom audit event.
+     */
+    public function logAudit($event, $payload = null)
+    {
+        // HIS Audit: Ensure tenant context is resolved for the current user/model
+        $tenantId = $this->tenant_id ?? (app()->bound('tenant') ? app('tenant')->id : 0);
+        
+        \App\Models\AuditLog::create([
+            'tenant_id' => $tenantId,
+            'user_id' => \Illuminate\Support\Facades\Auth::id() ?? $this->id,
+            'event' => $event,
+            'auditable_type' => get_class($this),
+            'auditable_id' => $this->id,
+            'old_values' => null,
+            'new_values' => $payload,
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->userAgent(),
+        ]);
+    }
 }

@@ -65,14 +65,14 @@ const Appointments = ({ activeTenant, currentUser }) => {
     useEffect(() => {
         const fetchPatients = async () => {
             try {
-                const data = await getPatients();
-                setPatientsList(data);
+                const response = await getPatients({ per_page: 100 });
+                setPatientsList(response.data || []);
             } catch (err) { console.error('Failed to fetch patients', err); }
         };
 
         const fetchDoctors = async () => {
             try {
-                const data = await getDoctors();
+                const data = await getDoctors({ role: 'DOCTOR' });
                 setDoctorsList(data);
             } catch (err) { console.error('Failed to fetch doctors', err); }
         };

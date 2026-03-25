@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { getPatients, getTenants, setTenantToken, getOrders, ingestHL7, updateOrder, setSimulatedUser, getAuditLogs, getPrescriptions, getBranches, setBranchToken, getDashboardReports, getDoctors } from './services/api';
+import { getPatients, getTenants, setTenantToken, getOrders, ingestHL7, updateOrder, getAuditLogs, getPrescriptions, getBranches, setBranchToken, getDashboardReports, getDoctors } from './services/api';
 import { setEchoAuthHeader } from './services/echo';
 import { startAutoSync } from './services/syncService';
 import Sidebar from './components/Sidebar';
@@ -26,23 +26,10 @@ import HelpCenter from './views/HelpCenter';
 import Login from './views/Login';
 import api from './services/api';
 
-// Simulated Users (Mapped to DB Seeders)
-const SIMULATED_USERS = [
-    { id: 1, name: 'Dr. Sarah Connor', role: 'DOCTOR', tenant_id: 1, branch_id: 1, email: 'sarah@clinic.com' },
-    { id: 2, name: 'Dr. Gregory House', role: 'DOCTOR', tenant_id: 2, branch_id: 3, email: 'house@clinic.com' },
-    { id: 3, name: 'Tim Tech', role: 'TECH', tenant_id: 1, branch_id: 2, email: 'tech@clinic.com' },
-    { id: 4, name: 'Amy Approver', role: 'DIAGNOSTIC_APPROVER', tenant_id: 1, branch_id: null, email: 'approver@clinic.com' },
-    { id: 5, name: 'System Admin', role: 'ADMIN', tenant_id: null, branch_id: null, email: 'admin@juanclinic.com' }
-];
-
-const getInitialSimulatedUser = () => {
+// Authentication persistence helpers
+const getInitialAuthUser = () => {
     const savedUser = localStorage.getItem('auth_user');
-    if (savedUser) return JSON.parse(savedUser);
-
-    // Fallback search by email for backward compatibility with switch logic
-    const savedEmail = localStorage.getItem('simulated_user_email');
-    if (!savedEmail) return null;
-    return SIMULATED_USERS.find(u => u.email === savedEmail) || null;
+    return savedUser ? JSON.parse(savedUser) : null;
 };
 
 function App() {
@@ -56,7 +43,7 @@ function App() {
     const [showRegister, setShowRegister] = useState(false);
     const [selectedPatient, setSelectedPatient] = useState(null);
     const [prescriptions, setPrescriptions] = useState([]);
-    const [currentUser, setCurrentUser] = useState(getInitialSimulatedUser);
+    const [currentUser, setCurrentUser] = useState(getInitialAuthUser);
     const [userToken, setUserToken] = useState(() => localStorage.getItem('auth_token'));
     const [dashboardStats, setDashboardStats] = useState(null);
     const [doctorsCount, setDoctorsCount] = useState(0);
@@ -64,25 +51,15 @@ function App() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isTransitioning, setIsTransitioning] = useState(false);
 
-    // Initial token setup for Axios
-    useEffect(() => {
-        if (userToken) {
-            api.defaults.headers.common['Authorization'] = `Bearer ${userToken}`;
-        }
-    }, []);
+
 
     // Sync currentUser to API Headers & LocalStorage
     useEffect(() => {
         if (currentUser) {
-            setSimulatedUser(currentUser.id);
             setEchoAuthHeader(currentUser.email);
             localStorage.setItem('auth_user', JSON.stringify(currentUser));
-            if (currentUser.email) {
-                localStorage.setItem('simulated_user_email', currentUser.email);
-            }
         } else {
             localStorage.removeItem('auth_user');
-            localStorage.removeItem('simulated_user_email');
         }
     }, [currentUser]);
 
@@ -137,26 +114,27 @@ function App() {
 
     // Handle Offline Sync Lifecycle
     useEffect(() => {
-        if (activeTenant?.id) {
+        // Only start sync if we have an active tenant AND a current user
+        if (activeTenant?.id && currentUser) {
             const stopSync = startAutoSync(activeTenant.id);
             return () => stopSync && stopSync();
         }
-    }, [activeTenant]);
+    }, [activeTenant, currentUser]);
 
     const [activeView, setActiveView] = useState(() => {
         const hash = window.location.hash.replace('#', '');
         return ['dashboard', 'worklist', 'messages', 'message', 'appointments', 'appointment', 'patients', 'doctors', 'reports', 'audit', 'patient_profile', 'pharmacy', 'billing', 'clinical_notes', 'medicine_management', 'referrals', 'branch_management'].includes(hash) ? hash : 'dashboard';
     });
 
-    // Hash sync: State -> URL
+    // Hash sync: State -> URL + Context-aware data fetching
     useEffect(() => {
         window.location.hash = activeView;
-    }, [activeView]);
-
-    // Hash sync: URL -> State (Back/Forward buttons)
-    useEffect(() => {
-        if (activeView === 'pharmacy') fetchPrescriptions();
-    }, [activeView, activeTenant]);
+        
+        // Wait for both tenant and branch to be aligned if we are on a contextual view
+        if (activeView === 'pharmacy' && activeTenant && activeBranch) {
+            fetchPrescriptions();
+        }
+    }, [activeView, activeTenant, activeBranch]);
 
 
     const fetchPrescriptions = async () => {
@@ -189,11 +167,24 @@ function App() {
         localStorage.setItem('auth_token', token);
         localStorage.setItem('auth_user', JSON.stringify(user));
         localStorage.setItem('simulated_user_email', user.email);
-
-        if (tenant) {
-            setActiveTenant(tenant);
-        }
     };
+
+    useEffect(() => {
+        if (tenants.length > 0 && !activeTenant) {
+            // Default to user's assigned tenant if available, otherwise first in list
+            const userTenant = currentUser?.tenant_id 
+                ? tenants.find(t => t.id === currentUser.tenant_id) 
+                : null;
+            
+            setActiveTenant(userTenant || tenants[0] || null);
+        }
+    }, [tenants, activeTenant, currentUser]);
+
+    useEffect(() => {
+        if (activeTenant) {
+            setTenantToken(activeTenant.id);
+        }
+    }, [activeTenant]);
 
     const handleLogout = () => {
         setCurrentUser(null);
@@ -233,7 +224,7 @@ function App() {
             const results = await Promise.all(fetchPromises);
             setOrders(results[0]);
             if (results.length > 1) {
-                setPatients(results[1]);
+                setPatients(results[1]?.data || []);
             } else {
                 setPatients([]); // Clear patients if no access
             }
@@ -260,7 +251,7 @@ function App() {
                 ['ADMIN', 'DOCTOR', 'FRONT_DESK'].includes(currentUser.role) ? getPatients() : Promise.resolve([])
             ]);
             setOrders(orderData);
-            setPatients(patientData);
+            setPatients(patientData?.data || []);
             await fetchDashboardData();
         } catch (err) {
             console.error("Failed to fetch branch data", err);
@@ -272,13 +263,13 @@ function App() {
     const fetchDashboardData = async () => {
         try {
             const [stats, docs, logs] = await Promise.all([
-                getDashboardReports(),
+                ['ADMIN', 'DOCTOR', 'FRONT_DESK'].includes(currentUser.role) ? getDashboardReports() : Promise.resolve(null),
                 getDoctors(),
-                getAuditLogs({ limit: 5 })
+                ['ADMIN', 'DOCTOR'].includes(currentUser.role) ? getAuditLogs({ limit: 5 }) : Promise.resolve([])
             ]);
             setDashboardStats(stats);
             setDoctorsCount(docs.filter(u => u.role === 'DOCTOR').length);
-            setRecentActivity(logs.slice(0, 5));
+            setRecentActivity(logs.length ? logs.slice(0, 5) : []);
         } catch (err) {
             console.error("Dashboard fetch failed", err);
         }
@@ -289,30 +280,49 @@ function App() {
         setShowRegister(false);
     };
 
-    const handleSimulateHL7 = async () => {
-        if (!activeTenant || patients.length === 0) return;
-        const targetPatient = patients[0];
-        const mockHL7 = `MSH|^~\\&|SENDING_APP|SENDING_FACILITY|RECEIVING_APP|RECEIVING_FACILITY|202602282241||ORM^O01|MSGID123|P|2.3\rPID|1||${targetPatient.patient_external_id}||${targetPatient.last_name}^${targetPatient.first_name}||${targetPatient.dob}|M\rOBR|1|ORDER123||LAB_CBC^Complete Blood Count|||202602282241||||||||||||||||||STAT`;
-
-        setLoading(true);
-        try {
-            await ingestHL7(mockHL7);
-            const orderData = await getOrders();
-            setOrders(orderData);
-            alert("HL7 Message Ingested & Order Created!");
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    if (!userToken) {
+    if (!currentUser) {
         return <Login onLoginSuccess={handleLoginSuccess} />;
     }
 
+    // RBAC Component Guard Logic
+    const isRestricted = (view) => {
+        const rolePermissions = {
+            'dashboard': ['ADMIN', 'DOCTOR', 'TECH', 'DIAGNOSTIC_APPROVER', 'FRONT_DESK'],
+            'worklist': ['ADMIN', 'TECH', 'DIAGNOSTIC_APPROVER'],
+            'messages': ['ADMIN', 'DOCTOR', 'TECH', 'DIAGNOSTIC_APPROVER'],
+            'appointments': ['ADMIN', 'DOCTOR', 'FRONT_DESK'],
+            'pharmacy': ['ADMIN', 'DOCTOR', 'TECH'],
+            'medicine_management': ['ADMIN', 'DOCTOR', 'TECH'],
+            'billing': ['ADMIN', 'FRONT_DESK'],
+            'clinical_notes': ['ADMIN', 'DOCTOR'],
+            'patients': ['ADMIN', 'DOCTOR', 'FRONT_DESK', 'DIAGNOSTIC_APPROVER'],
+            'doctors': ['ADMIN'],
+            'reports': ['ADMIN', 'FRONT_DESK', 'DOCTOR', 'DIAGNOSTIC_APPROVER'],
+            'audit': ['ADMIN'],
+            'tenant_management': ['ADMIN'],
+            'branch_management': ['ADMIN'],
+            'patient_profile': ['ADMIN', 'DOCTOR', 'FRONT_DESK', 'DIAGNOSTIC_APPROVER']
+        };
+
+        const allowedRoles = rolePermissions[view];
+        if (!allowedRoles) return false; // Non-protected views (help, guide)
+
+        const isAllowed = allowedRoles.includes(currentUser.role);
+        
+        // Global Only items (Organization Settings)
+        if (view === 'tenant_management' && currentUser.tenant_id !== null) return true; // Restricted to global admins
+        
+        return !isAllowed;
+    };
+
+    // Auto-redirect if unauthorized view is requested via Hash
+    if (isRestricted(activeView)) {
+        console.warn(`RBAC: Unauthorized access attempt to [${activeView}] by ${currentUser.role}. Redirecting to safety.`);
+        setActiveView('dashboard');
+    }
+
     return (
-        <div className="flex bg-[#F8FAFC] min-h-screen font-sans text-slate-900 scroll-smooth relative overflow-x-hidden">
+        <div className="flex h-screen bg-slate-50 text-slate-900 font-sans overflow-hidden">
             {/* Mobile Sidebar Backdrop */}
             {isSidebarOpen && (
                 <div
@@ -333,7 +343,7 @@ function App() {
                 onClose={() => setIsSidebarOpen(false)}
             />
 
-            <main className={`flex-1 min-w-0 transition-all duration-300 ${isSidebarOpen ? 'lg:ml-64' : 'ml-0 lg:ml-64'}`}>
+            <main className={`flex-1 min-w-0 h-screen overflow-y-auto transition-all duration-300 ${isSidebarOpen ? 'lg:ml-64' : 'ml-0 lg:ml-64'}`}>
                 <TopBar
                     activeTenant={activeTenant}
                     tenants={tenants}
@@ -343,30 +353,7 @@ function App() {
                     onBranchChange={handleBranchChange}
                     currentUser={currentUser}
                     onSidebarToggle={() => setIsSidebarOpen(!isSidebarOpen)}
-                    onUserSwitch={async (user) => {
-                        setIsTransitioning(true);
-                        setPatients([]); // Clear potentially unauthorized data
-                        setOrders([]);
-                        
-                        // Critical: Update header immediately before any state triggers fetch hooks
-                        setSimulatedUser(user.id);
-                        setEchoAuthHeader(user.email);
-                        
-                        setCurrentUser(user);
-                        
-                        // If we already have an active tenant, re-evaluate branch for new user context
-                        if (activeTenant && branches.length > 0) {
-                            let newBranch = null;
-                            if (user.branch_id) {
-                                newBranch = branches.find(b => b.id === user.branch_id);
-                            }
-                            if (!newBranch) newBranch = branches[0];
-                            setActiveBranch(newBranch);
-                            setBranchToken(newBranch?.id);
-                        }
-                    }}
                     onLogout={handleLogout}
-                    availableUsers={SIMULATED_USERS}
                 />
 
                 <div className="p-10 space-y-10 max-w-[1600px] mx-auto">
@@ -392,10 +379,6 @@ function App() {
                                                         <p className="text-sm font-bold text-slate-400 mt-2">Welcome back, <span className="text-his-green-500">{currentUser.name.split(' ')[currentUser.name.split(' ').length - 1]}</span>. Here's what's happening today.</p>
                                                     </div>
                                                     <div className="flex gap-3">
-                                                        <button onClick={handleSimulateHL7} className="px-6 py-3 bg-white text-purple-600 text-xs font-black rounded-2xl hover:bg-purple-50 transition-all uppercase tracking-widest border border-purple-100 shadow-sm flex items-center gap-2 group">
-                                                            <div className="w-2 h-2 rounded-full bg-purple-400 animate-pulse group-hover:bg-purple-600" />
-                                                            Ingest HL7
-                                                        </button>
                                                         <button onClick={() => setShowRegister(true)} className="px-6 py-3 bg-his-green-500 text-white text-xs font-black rounded-2xl hover:bg-his-green-600 transition-all uppercase tracking-widest shadow-xl shadow-his-green-500/20 flex items-center gap-2">
                                                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 4v16m8-8H4" /></svg>
                                                             New Patient
@@ -614,7 +597,7 @@ function App() {
                                     case 'appointment':
                                         return <Appointments activeTenant={activeTenant} currentUser={currentUser} />;
                                     case 'pharmacy':
-                                        return <PharmacyWorklist />;
+                                        return <PharmacyWorklist activeBranch={activeBranch} currentUser={currentUser} />;
                                     case 'medicine_management':
                                         return <MedicineManagement />;
                                     case 'billing':

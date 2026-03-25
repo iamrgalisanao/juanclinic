@@ -6,14 +6,31 @@ const Patients = ({ onOpenPatient, onNewPatient, activeTenant }) => {
     const [patients, setPatients] = useState([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
+    const [perPage, setPerPage] = useState(20);
+    const [pagination, setPagination] = useState({
+        currentPage: 1,
+        lastPage: 1,
+        total: 0
+    });
 
     useEffect(() => {
         const load = async () => {
             setLoading(true);
             try {
                 if (navigator.onLine) {
-                    const data = await getPatients();
-                    setPatients(data);
+                    const response = await getPatients({
+                        page: pagination.currentPage,
+                        search: search.trim(),
+                        per_page: perPage
+                    });
+                    
+                    // Laravel Paginator returns { data: [], current_page: 1, last_page: x, total: y }
+                    setPatients(response.data || []);
+                    setPagination({
+                        currentPage: response.current_page,
+                        lastPage: response.last_page,
+                        total: response.total
+                    });
                 } else {
                     throw new Error('Offline');
                 }
@@ -28,15 +45,25 @@ const Patients = ({ onOpenPatient, onNewPatient, activeTenant }) => {
             }
         };
         load();
-    }, [activeTenant]);
+    }, [activeTenant, pagination.currentPage, search, perPage]);
 
-    const normalizedSearch = search.trim().toLowerCase();
-    const filteredPatients = patients.filter((p) => {
-        if (!normalizedSearch) return true;
-        const fullName = `${p.first_name || ''} ${p.last_name || ''}`.toLowerCase();
-        const mrn = (p.patient_external_id || '').toLowerCase();
-        return fullName.includes(normalizedSearch) || mrn.includes(normalizedSearch);
-    });
+    const handlePageChange = (newPage) => {
+        if (newPage >= 1 && newPage <= pagination.lastPage) {
+            setPagination(prev => ({ ...prev, currentPage: newPage }));
+        }
+    };
+
+    const handleSearchChange = (e) => {
+        setSearch(e.target.value);
+        setPagination(prev => ({ ...prev, currentPage: 1 })); // Reset to page 1 on search
+    };
+
+    const handlePerPageChange = (e) => {
+        setPerPage(parseInt(e.target.value, 10));
+        setPagination(prev => ({ ...prev, currentPage: 1 })); // Reset to page 1 on limit change
+    };
+
+    const filteredPatients = patients; // Filtering is now server-side
 
     return (
         <div className="bg-white rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-10 shadow-sleek border border-his-slate-100 flex flex-col gap-6 md:gap-8">
@@ -63,7 +90,7 @@ const Patients = ({ onOpenPatient, onNewPatient, activeTenant }) => {
                         <input
                             type="text"
                             value={search}
-                            onChange={(e) => setSearch(e.target.value)}
+                            onChange={handleSearchChange}
                             placeholder="Search by name or MRN..."
                             className="w-full bg-slate-50 border border-his-slate-100 rounded-xl px-4 py-3 text-sm font-medium text-slate-700 focus:ring-4 focus:ring-his-green-500/10 focus:border-his-green-400 outline-none transition-all placeholder:text-slate-300"
                         />
@@ -186,9 +213,53 @@ const Patients = ({ onOpenPatient, onNewPatient, activeTenant }) => {
                 </>
             )}
             <div className="mt-4 pt-6 border-t border-slate-50 flex items-center justify-between">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                    Showing {filteredPatients.length} active records
-                </p>
+                <div className="flex flex-col gap-2">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                        Showing {filteredPatients.length} of {pagination.total} active records
+                    </p>
+                    <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2">
+                            <span className="text-[9px] font-black uppercase text-slate-400 tracking-tighter">Per Page:</span>
+                            <select
+                                value={perPage}
+                                onChange={handlePerPageChange}
+                                className="bg-his-slate-50 border border-slate-100 rounded-lg text-[10px] font-black px-2 py-1 outline-none focus:ring-2 focus:ring-his-green-500/20"
+                            >
+                                <option value={10}>10</option>
+                                <option value={20}>20</option>
+                                <option value={50}>50</option>
+                                <option value={100}>100</option>
+                            </select>
+                        </div>
+                        <div className="flex items-center gap-2 border-l border-slate-100 pl-4">
+                            <button
+                                onClick={() => handlePageChange(pagination.currentPage - 1)}
+                                disabled={pagination.currentPage === 1 || loading}
+                                className="p-2 rounded-lg border border-slate-100 text-slate-400 disabled:opacity-30 hover:bg-slate-50 transition-all"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
+                            </button>
+                            <div className="flex items-center gap-1">
+                                {[...Array(pagination.lastPage)].map((_, i) => (
+                                    <button
+                                        key={i + 1}
+                                        onClick={() => handlePageChange(i + 1)}
+                                        className={`w-8 h-8 rounded-lg text-[10px] font-black transition-all ${pagination.currentPage === i + 1 ? 'bg-his-green-500 text-white shadow-lg shadow-his-green-500/20' : 'text-slate-400 hover:bg-slate-50'}`}
+                                    >
+                                        {i + 1}
+                                    </button>
+                                ))}
+                            </div>
+                            <button
+                                onClick={() => handlePageChange(pagination.currentPage + 1)}
+                                disabled={pagination.currentPage === pagination.lastPage || loading}
+                                className="p-2 rounded-lg border border-slate-100 text-slate-400 disabled:opacity-30 hover:bg-slate-50 transition-all"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
                 <button className="flex items-center gap-2 text-his-green-600 hover:text-his-green-700 transition-all group">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
                     <span className="text-[10px] font-black uppercase tracking-widest group-hover:underline">Privacy & DPA Management</span>

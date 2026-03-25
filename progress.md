@@ -29,4 +29,5 @@
 - [x] **DPA Compliance UI**: Add Patient Rights (Object/Erasure) portal in Profile. (Resolved: 2026-03-18)
 - [x] **Patients Registry Safety**: Add Tenant context, audit indicators, and DPA portal. (Resolved: 2026-03-18)
 - [x] **2026-03-24**: Post-Merge Hardening Restoration. Applied `BelongsToBranch` to `ClinicalAttachment` and added mandatory `LOGIN`/`LOGOUT` audit logs to `AuthController`.
+- [x] **2026-03-25**: Advanced Management & Coordination. Implemented Medicine Pagination (Server-side) and synchronized `DIAGNOSTIC_APPROVER` RBAC for clinical coordination and historical review.
 - **Status**: Tier 2 Compliance Audit complete. All clinical models and auth flows are now branch-isolated and auditable.
