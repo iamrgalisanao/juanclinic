@@ -9,9 +9,13 @@ const RegisterPatientForm = ({ onPatientAdded, onClose, activeTenant }) => {
         last_name: '',
         dob: '',
         gender: 'M',
+        gestational_weeks: '',
+        birth_weight_g: '',
+        apgar_score: '',
         contact: '',
         patient_external_id: 'PAT-' + Date.now().toString(36).toUpperCase(),
     });
+    const [isPediatric, setIsPediatric] = useState(false);
     const [errors, setErrors] = useState({});
 
     const [loading, setLoading] = useState(false);
@@ -58,6 +62,17 @@ const RegisterPatientForm = ({ onPatientAdded, onClose, activeTenant }) => {
             }
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleDobChange = (dob) => {
+        setFormData({ ...formData, dob });
+        if (dob) {
+            const birthDate = new Date(dob);
+            const ageInMonths = (new Date() - birthDate) / (1000 * 60 * 60 * 24 * 30.44);
+            setIsPediatric(ageInMonths < 24); // Show supplement for children under 2 years
+        } else {
+            setIsPediatric(false);
         }
     };
 
@@ -126,7 +141,7 @@ const RegisterPatientForm = ({ onPatientAdded, onClose, activeTenant }) => {
                                 type="date"
                                 required
                                 value={formData.dob}
-                                onChange={e => setFormData({ ...formData, dob: e.target.value })}
+                                onChange={e => handleDobChange(e.target.value)}
                                 className="w-full bg-his-slate-50 border-2 border-transparent focus:border-his-green-500/10 focus:bg-white rounded-2xl p-4 text-sm font-bold text-slate-700 outline-none transition-all"
                             />
                         </div>
@@ -142,6 +157,53 @@ const RegisterPatientForm = ({ onPatientAdded, onClose, activeTenant }) => {
                                 <option value="O">Other</option>
                             </select>
                         </div>
+
+                        {isPediatric && (
+                            <div className="col-span-2 mt-4 p-6 bg-blue-50/50 rounded-[2rem] border border-blue-100/50 space-y-6 animate-in zoom-in-95 duration-500">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-xl bg-blue-500 text-white flex items-center justify-center">
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h4 className="text-[10px] font-black text-blue-900 uppercase tracking-widest">Neonatal Supplement</h4>
+                                        <p className="text-[9px] font-bold text-blue-500 uppercase tracking-tighter">Required for gestational age correction</p>
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-3 gap-4">
+                                    <div>
+                                        <label className="block text-[9px] font-black text-blue-400 uppercase tracking-widest mb-2 px-1">Gestational Weeks</label>
+                                        <input
+                                            type="number"
+                                            placeholder="40"
+                                            value={formData.gestational_weeks}
+                                            onChange={e => setFormData({ ...formData, gestational_weeks: e.target.value })}
+                                            className="w-full bg-white border border-blue-100 rounded-xl p-3 text-xs font-bold text-slate-700 outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[9px] font-black text-blue-400 uppercase tracking-widest mb-2 px-1">Birth Weight (g)</label>
+                                        <input
+                                            type="number"
+                                            placeholder="3200"
+                                            value={formData.birth_weight_g}
+                                            onChange={e => setFormData({ ...formData, birth_weight_g: e.target.value })}
+                                            className="w-full bg-white border border-blue-100 rounded-xl p-3 text-xs font-bold text-slate-700 outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[9px] font-black text-blue-400 uppercase tracking-widest mb-2 px-1">APGAR Score</label>
+                                        <input
+                                            placeholder="9/10"
+                                            value={formData.apgar_score}
+                                            onChange={e => setFormData({ ...formData, apgar_score: e.target.value })}
+                                            className="w-full bg-white border border-blue-100 rounded-xl p-3 text-xs font-bold text-slate-700 outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
 
