@@ -1,5 +1,49 @@
 # JuanClinic HIS - Developer Changelog
 
+## [2026-03-29] - Pediatrics Dashboard Stabilization & Roadmap Update
+
+### Added
+- **Universal Triage & Vitals Module**: Added to **Phase 7** of the roadmap to satisfy clinical encounter requirements for BP, PR, RR, Temp, and BMI.
+- **Growth Chart Stability**: Added explicit numerical casting for all growth metrics (Weight, Height, HC) to prevent formatting crashes from string-type API responses.
+
+### Changed
+- **Pediatrics Dashboard**: Refactored prop-drilling to use a stable `patient` object throughout the component hierarchy.
+- **Patient Profile Updates**: Enforced mandatory `amendment_reason` for demographic changes (e.g., gender correction) to maintain CDIM compliance and audit trail integrity.
+- **Roadmap Realignment**: Marked **Advanced Pediatrics Suite** and **Immunization Management** as [x] COMPLETED following successful feature verification.
+
+### Fixed
+- **ReferenceError**: Resolved `patient is not defined` in `PediatricsDashboard.jsx`.
+- **TypeError**: Resolved `dataPoint.value?.toFixed is not a function` in `GrowthChart.jsx` via robust type-checking and null safety.
+
+## [2026-03-26] - Hardened SDE & Appointment Recovery
+
+### Added
+- **Hardened SDE (Structured Data Entry)**: Hierarchical symptom selection with **SNOMED CT Concept ID** mapping (e.g., Cough: `49727002`).
+- **Within Normal Limits (WNL) Logic**: System-specific "Pertinent Negative" toggles with automated state clearing.
+- **SDE Rendering Engine**: Narrative-style tag summaries for SDE data in the clinical timeline.
+
+### Changed
+- **Operational Protocol (DS-013)**: Implemented strict **User-Led Validation** model, requiring human clinical verification of all AI-generated features.
+- **Appointment Validation**: Removed redundant `branch_id` requirement from the backend validator to allow automatic `BelongsToBranch` trait resolution.
+
+### Fixed
+- **Appointment 422 Error**: Resolved "Unprocessable Content" failure caused by missing `branch_id` in the frontend payload.
+
+### Strategic Planning
+- **Roadmap Expansion (Phase 7)**: Formalized the inclusion of **Patient Notification Engine** (SMS/Email) and **Advanced Pediatrics Suite** (WHO Percentiles/Vaccination Tracker) in `ROADMAP.md` and `spec.md`.
+
+### Added
+- [x] **Multi-Tenant Notification Engine**: 
+    - Implemented `JuanClinicNotification` base class with `ShouldQueue` and `ShouldBeEncrypted` protocols.
+    - Custom `TenantDatabaseChannel` with automatic `tenant_id`/`branch_id` injection and **AES-256 PHI encryption at rest**.
+    - Dynamic `NotificationSettingsManager` for per-tenant SMTP and SMS provider configuration.
+    - **Observability Layer**: Automated `notification_logs` for clinical non-repudiation and delivery tracking.
+    - **Security Hardware**: Per-tenant rate limiting and generic "Privacy-First" messaging standards.
+- [x] **Maintenance & Bug Fixes**:
+    - Resolved **"Double Entry" error** for Dr. John Watson in appointment dropdowns by merging redundant accounts (IDs 6 & 7) and unifying clinical audit trails.
+    - Corrected migration data types and foreign key references for `physical_branches`.
+- **Appointment Reminder**: Triggered automated patient alerts (Email/Database) immediately upon appointment booking in `AppointmentController`.
+
 ## [2026-03-24] - Documentation Hardening & Roadmap Alignment
 
 ### Added

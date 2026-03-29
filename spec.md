@@ -60,9 +60,13 @@ The system supports worklists that allow shared staff (e.g., Lab/Rad Techs) to p
 - **Tech Flow**: Lab/Rad Technicians enter results as structured JSON.
 - **Approver Flow**: Diagnostic Approvers (e.g., Pathologists, Radiologists) review and sign off on results.
 
-### 5.4 Secure Messaging
-- Real-time communication between clinical staff via private channels (Laravel Reverb/Echo).
-- Context-aware conversations linked to patients or specific orders.
+### 5.4 Secure Messaging & Notifications
+- **Staff-to-Staff**: Real-time communication via private channels (Laravel Reverb/Echo).
+- **Patient Notifications**: Multi-channel (SMS/Email) alerts for appointment scheduling, status updates, and critical result notifications.
+
+### 5.5 Advanced Specialty Modules
+- **Pediatrics**: WHO/CDC Standardized Growth Charts with Z-score overlays.
+- **Immunization**: Comprehensive tracking of childhood and adult vaccination schedules.
 
 ---
 

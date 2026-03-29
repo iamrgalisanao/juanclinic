@@ -23,7 +23,7 @@
 - [x] **Multi-Branch Entity Layer & Cashiering Module**
 - [x] **Patient Document Uploads (Clinical Attachments)**
 
-## Phase 5: Enterprise Scaling & Tier 2 Hardening (ACTIVE)
+## Phase 5: Enterprise Scaling & Tier 2 Hardening (COMPLETED)
 
 ### Tier 2 Compliance Hardening
 - [x] **Dynamic Management Reports**: Transition `Reports.jsx` from simulated to live clinical/revenue data.
@@ -34,3 +34,15 @@
 - [x] **Advanced Analytics**: Cross-branch performance benchmarking and custom reporting.
 - [x] **Specialty Clinical Forms**: Pediatric growth charts and specialty specific encounter templates.
 - [x] **Offline Sync**: CLINICAL CONTINUITY mode for tablet/mobile context.
+
+## Phase 6: Hospital-Grade Integrations (PLANNING)
+- [ ] HL7 Transport Gateway (Mirth Connect / FHIR Bridge)
+- [ ] RIS/PACS Image Archiving (DICOM Integration)
+- [ ] Enterprise Master Patient Index (EMPI) Hardware Sync
+- [ ] Insurance (PhilHealth) Automated eClaims Bridge
+
+## Phase 7: Advanced Patient Engagement & Specialty Care (PLANNING)
+- [ ] **Universal Triage & Vitals Module**: Mandatory capture of BP, PR, RR, Temp, and BMI for every patient encounter.
+- [x] **Advanced Pediatrics Suite**: WHO/CDC Growth Percentile Z-score overlays and Head Circumference tracking.
+- [x] **Immunization Management**: Digital Vaccination Tracker with automated milestone alerts for childhood immunizations.
+- [ ] **Patient Portal v1**: Secure, read-only web access for patients to download HL7-compliant summaries and diagnostic reports.

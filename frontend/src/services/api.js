@@ -20,10 +20,11 @@ api.interceptors.response.use(
     (response) => response,
     (error) => {
         if (error.response && error.response.status === 401) {
+            const url = error.config.url;
             // Only clear and redirect if not on the login call itself
-            const isLoginRequest = error.config.url.includes('/auth/login');
+            const isLoginRequest = url.includes('/auth/login');
             if (!isLoginRequest) {
-                console.warn('Unauthorized request detected. Clearing session and redirecting...');
+                console.warn(`Unauthorized request to [${url}] detected. Clearing session and redirecting...`);
                 localStorage.removeItem('auth_token');
                 localStorage.removeItem('auth_user');
                 delete api.defaults.headers.common['Authorization'];
@@ -59,6 +60,11 @@ export const getPatients = async (params = {}) => {
     return response.data;
 };
 
+export const getPatient = async (id) => {
+    const response = await api.get(`/patients/${id}`);
+    return response.data;
+};
+
 export const getPatientHistory = async (patientId) => {
     const response = await api.get(`/patients/${patientId}/history`);
     return response.data;
@@ -66,6 +72,11 @@ export const getPatientHistory = async (patientId) => {
 
 export const getOrders = async () => {
     const response = await api.get('/orders');
+    return response.data;
+};
+
+export const createOrder = async (data) => {
+    const response = await api.post('/orders', data);
     return response.data;
 };
 
@@ -355,6 +366,27 @@ export const getDashboardReports = async (params = {}) => {
 
 export const getBranchBenchmarking = async (params = {}) => {
     const response = await api.get('/reports/benchmarking', { params });
+    return response.data;
+};
+
+// Pediatrics API
+export const getPediatricHistory = async (patientId, type = 'growth') => {
+    const response = await api.get(`/patients/${patientId}/pediatrics/${type}`);
+    return response.data;
+};
+
+export const storeGrowthRecord = async (patientId, data) => {
+    const response = await api.post(`/patients/${patientId}/pediatrics/growth`, data);
+    return response.data;
+};
+
+export const storeImmunizationRecord = async (patientId, data) => {
+    const response = await api.post(`/patients/${patientId}/pediatrics/immunizations`, data);
+    return response.data;
+};
+
+export const getPediatricStandards = async (params) => {
+    const response = await api.get('/pediatrics/standards', { params });
     return response.data;
 };
 

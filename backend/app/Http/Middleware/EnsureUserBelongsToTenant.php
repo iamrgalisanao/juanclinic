@@ -33,6 +33,9 @@ class EnsureUserBelongsToTenant
             return response()->json(['message' => 'User does not belong to this tenant.'], 403);
         }
 
+        // Load tenant-specific notification settings (SMTP, SMS API Keys, etc.)
+        app(\App\Services\NotificationSettingsManager::class)->loadSettings();
+
         return $next($request);
     }
 }

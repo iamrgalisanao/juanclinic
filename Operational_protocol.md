@@ -337,20 +337,14 @@ Hotfix work must still include:
 
 ---
 
-## 15. Completion Gate Reminder
+## 15. Completion and Handover Gate
 
-Before declaring a task complete, confirm:
-
-* required scans were addressed,
-* required reviews were completed,
-* validation evidence exists,
-* docs were updated where needed,
-* deviations were remediated or explicitly tracked,
-* unrelated risky changes were not silently included.
-
-### Rule
-
-The AI must not declare success based only on compilation or a single happy-path check.
+Before declaring a task complete, the AI must:
+1. **Update CHANGELOG.md**: Record all additions, changes, and fixes in the main developer changelog.
+2. **Provide Instructions**: Deliver a structured set of manual verification steps in the `walkthrough.md`.
+3. **Request Validation**: Use `notify_user` to prompt the user to execute the verification protocol.
+4. **No Safe-to-Declare**: The AI cannot declare "Success" or "Fixed" until the user has confirmed the validation results.
+5. **Evidence Capture**: If the user provides screenshots or logs of their manual test, they should be referenced.
 
 ---
 
@@ -378,14 +372,14 @@ Do not:
 * work on `main`,
 * jump into coding before classification,
 * skip risk tagging,
-* treat `console.log` removal as a full security scan,
+* **perform autonomous AI testing for clinical verification**,
 * force irrelevant documentation churn,
 * ignore unrelated local changes,
 * skip review because the change looks small,
 * treat hotfixes as exempt from discipline,
 * rely on AI generation without validation,
 * bypass protected-module review,
-* close tasks without evidence.
+* close tasks without providing manual verification instructions.
 
 ---
 
@@ -399,3 +393,18 @@ The AI must operate as a disciplined implementation partner that:
 * preserves reviewability,
 * respects protected business behavior,
 * and leaves behind enough evidence for others to trust the change.
+
+---
+
+## 19. Instruction-Based Validation Rule (DS-013)
+
+To ensure clinical safety and human-in-the-loop oversight, the followng protocol is STRICT:
+1. **AI Output**: For every fix or feature, the AI MUST output a "Validation Protocol" (Step-by-step).
+2. **User Input**: The User is the final authority on validation correctness.
+3. **No Bypass**: The AI is prohibited from using autonomous browser agents to simulate "Validation Success" without providing the user the means to verify.
+
+---
+
+## 20. Final Rule
+
+This protocol is mandatory because secure and maintainable delivery requires more than code generation. The User-Led Validation model ensures that the clinical user (the domain expert) verifies the behavior before it is committed to the project's 'Source of Truth'.

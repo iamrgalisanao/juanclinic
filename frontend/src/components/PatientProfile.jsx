@@ -4,7 +4,9 @@ import PrescriptionForm from './PrescriptionForm';
 import AttachmentManager from './AttachmentManager';
 import ReferralForm from './ReferralForm';
 import ClinicalNotesManager from './ClinicalNotesManager';
-import GrowthChart from './GrowthChart';
+import PediatricsDashboard from './clinical/PediatricsDashboard';
+import OrderForm from './OrderForm';
+import LabResultPrintView from './LabResultPrintView';
 
 const PatientProfile = ({ patientId, onBack }) => {
     const [data, setData] = useState(null);
@@ -17,6 +19,9 @@ const PatientProfile = ({ patientId, onBack }) => {
     const [showPrescriptionForm, setShowPrescriptionForm] = useState(false);
     const [showReferralForm, setShowReferralForm] = useState(false);
     const [activeTab, setActiveTab] = useState('TIMELINE'); // TIMELINE | ATTACHMENTS | NOTES | PEDIATRICS
+    const [showOrderForm, setShowOrderForm] = useState(false);
+    const [orderType, setOrderType] = useState('LAB'); // LAB | RAD
+    const [showPrintView, setShowPrintView] = useState(false);
 
     useEffect(() => {
         if (patientId) {
@@ -108,9 +113,25 @@ const PatientProfile = ({ patientId, onBack }) => {
                                 <div className="w-2 h-2 rounded-full bg-purple-400" />
                                 Medication Prescription
                             </button>
-                            <button className="w-full text-left px-6 py-3 text-[10px] font-black text-slate-600 uppercase tracking-widest hover:bg-his-green-50 hover:text-his-green-600 transition-colors flex items-center gap-3">
+                            <button 
+                                onClick={() => {
+                                    setOrderType('LAB');
+                                    setShowOrderForm(true);
+                                }}
+                                className="w-full text-left px-6 py-3 text-[10px] font-black text-slate-600 uppercase tracking-widest hover:bg-his-green-50 hover:text-his-green-600 transition-colors flex items-center gap-3"
+                            >
                                 <div className="w-2 h-2 rounded-full bg-blue-400" />
                                 Diagnostic Order (LAB)
+                            </button>
+                            <button 
+                                onClick={() => {
+                                    setOrderType('RAD');
+                                    setShowOrderForm(true);
+                                }}
+                                className="w-full text-left px-6 py-3 text-[10px] font-black text-slate-600 uppercase tracking-widest hover:bg-his-green-50 hover:text-his-green-600 transition-colors flex items-center gap-3"
+                            >
+                                <div className="w-2 h-2 rounded-full bg-purple-400" />
+                                Diagnostic Order (RAD)
                             </button>
                             <button
                                 onClick={() => setShowReferralForm(true)}
@@ -140,6 +161,7 @@ const PatientProfile = ({ patientId, onBack }) => {
                                 dob: formData.get('dob') || undefined,
                                 gender: formData.get('gender') || undefined,
                                 contact: formData.get('contact') || undefined,
+                                amendment_reason: formData.get('amendment_reason') || undefined,
                             };
                             try {
                                 await updatePatient(patient.id, payload);
@@ -147,6 +169,7 @@ const PatientProfile = ({ patientId, onBack }) => {
                                 setIsEditing(false);
                             } catch (err) {
                                 console.error('Failed to update patient', err);
+                                alert(err.response?.data?.message || 'Failed to update patient profile. Please ensure all fields are valid.');
                             } finally {
                                 setIsSubmitting(false);
                             }
@@ -197,6 +220,16 @@ const PatientProfile = ({ patientId, onBack }) => {
                                 defaultValue={patient.contact}
                                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold text-slate-900 focus:ring-4 focus:ring-his-green-500/10 focus:border-his-green-500 outline-none transition-all"
                             />
+                        </div>
+                        <div className="md:col-span-2 space-y-2 bg-amber-50/30 p-6 rounded-2xl border border-amber-100/50">
+                            <label className="text-[12px] font-black uppercase tracking-widest text-amber-700 ml-2">Amendment Reason</label>
+                            <input
+                                name="amendment_reason"
+                                required
+                                placeholder="Why is this clinical profile being modified?"
+                                className="w-full bg-white border border-amber-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-900 focus:ring-4 focus:ring-amber-500/10 focus:border-amber-500 outline-none transition-all"
+                            />
+                            <p className="text-[9px] font-bold text-amber-500/60 mt-1 px-2 italic">Required for CDIM non-repudiation and RA 10173 audit compliance.</p>
                         </div>
                         <div className="md:col-span-2 flex justify-end gap-3 pt-4">
                             <button
@@ -299,6 +332,26 @@ const PatientProfile = ({ patientId, onBack }) => {
                 />
             )}
 
+            {showOrderForm && (
+                <OrderForm 
+                    patientId={patient.id}
+                    type={orderType}
+                    onSuccess={() => {
+                        setShowOrderForm(false);
+                        fetchHistory();
+                    }}
+                    onCancel={() => setShowOrderForm(false)}
+                />
+            )}
+
+            {showPrintView && selectedOrder && (
+                <LabResultPrintView 
+                    order={selectedOrder}
+                    patient={patient}
+                    onClose={() => setShowPrintView(false)}
+                />
+            )}
+
             <div className="flex gap-4 border-b border-slate-100 px-4">
                 <button
                     onClick={() => setActiveTab('TIMELINE')}
@@ -330,7 +383,7 @@ const PatientProfile = ({ patientId, onBack }) => {
                 {/* Timeline */}
                 {activeTab === 'TIMELINE' && (
                     <>
-                        <div className="lg:col-span-2 space-y-6 md:space-y-8">
+                        <div className="lg:col-span-3 space-y-6 md:space-y-8">
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-2 md:px-4">
                                 <h3 className="text-sm font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-3">
                                     <div className="w-2 h-2 rounded-full bg-his-green-500" />
@@ -454,99 +507,178 @@ const PatientProfile = ({ patientId, onBack }) => {
                             </div>
                         </div>
 
-                        {/* Right Panel: Result Viewer */}
-                        <div className="space-y-8">
-                            <h3 className="text-sm font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-3 px-4">
-                                <div className="w-2 h-2 rounded-full bg-purple-500" />
-                                Finding Details
-                            </h3>
-
-                            <div className="bg-white rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-10 border border-his-slate-100 shadow-sleek min-h-[300px] md:min-h-[400px]">
-                                {selectedOrder ? (
-                                    <div className="animate-in fade-in duration-500">
-                                        <div className="flex justify-between items-start mb-8 border-b border-slate-50 pb-6">
+                        {/* Clinical Findings Modal overlay */}
+                        {(selectedOrder || selectedPrescription) && (
+                            <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[60] flex items-center justify-center p-4 md:p-6 animate-in fade-in duration-300">
+                                <div className="bg-white rounded-[2.5rem] w-full max-w-2xl shadow-2xl border border-white/20 overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-300">
+                                    {/* Modal Header */}
+                                    <div className="p-6 md:p-8 bg-his-slate-50 border-b border-slate-100 flex justify-between items-center">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-12 h-12 rounded-2xl bg-his-green-500 text-white flex items-center justify-center shadow-lg shadow-his-green-500/20">
+                                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+                                            </div>
                                             <div>
-                                                <h4 className="font-black text-slate-900 text-base">Results for Order #{selectedOrder.id}</h4>
-                                                <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">Verified on {new Date(selectedOrder.updated_at).toLocaleDateString()}</p>
-                                            </div>
-                                            <span className="px-3 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-black rounded-full uppercase">Finalized</span>
-                                        </div>
-
-                                        <div className="space-y-4">
-                                            {Object.entries(selectedOrder.result_data || {}).map(([key, value], idx) => (
-                                                <div key={idx} className="flex justify-between p-4 bg-his-slate-50/50 rounded-2xl border border-his-slate-50 group hover:bg-white hover:border-his-green-100 transition-all">
-                                                    <span className="text-xs font-bold text-slate-500 uppercase tracking-tight">{key}</span>
-                                                    <span className="text-xs font-black text-slate-900">{value}</span>
-                                                </div>
-                                            ))}
-                                        </div>
-
-                                        <div className="mt-10 pt-10 border-t border-dashed border-slate-100">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-full bg-his-slate-100 flex items-center justify-center text-xs font-black text-slate-400">SIG</div>
-                                                <div>
-                                                    <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Digitally Signed By</p>
-                                                    <p className="text-xs font-bold text-his-green-500 mt-0.5">Dr. Specialist Approver</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ) : selectedPrescription ? (
-                                    <div className="animate-in fade-in duration-500">
-                                        <div className="flex justify-between items-start mb-8 border-b border-slate-50 pb-6">
-                                            <div>
-                                                <h4 className="font-black text-slate-900 text-base">{selectedPrescription.medication_name}</h4>
-                                                <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">Prescribed on {new Date(selectedPrescription.created_at).toLocaleDateString()}</p>
-                                            </div>
-                                            <span className="px-3 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-black rounded-full uppercase">{selectedPrescription.status}</span>
-                                        </div>
-
-                                        <div className="space-y-6">
-                                            <div className="grid grid-cols-2 gap-4">
-                                                <div className="p-4 bg-his-slate-50/50 rounded-2xl border border-his-slate-50">
-                                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Dosage</p>
-                                                    <p className="text-sm font-black text-slate-900">{selectedPrescription.dosage}</p>
-                                                </div>
-                                                <div className="p-4 bg-his-slate-50/50 rounded-2xl border border-his-slate-50">
-                                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Frequency</p>
-                                                    <p className="text-sm font-black text-slate-900">{selectedPrescription.frequency}</p>
-                                                </div>
-                                                <div className="p-4 bg-his-slate-50/50 rounded-2xl border border-his-slate-50">
-                                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Duration</p>
-                                                    <p className="text-sm font-black text-slate-900">{selectedPrescription.duration}</p>
-                                                </div>
-                                            </div>
-
-                                            <div className="p-6 bg-his-green-50/30 rounded-3xl border border-his-green-100/50">
-                                                <p className="text-[9px] font-black text-his-green-600 uppercase tracking-widest mb-2">Instructions</p>
-                                                <p className="text-xs font-bold text-slate-700 leading-normal italic">
-                                                    "{selectedPrescription.instructions || 'No additional instructions provided.'}"
+                                                <h3 className="text-xl font-black text-slate-900 tracking-tight">
+                                                    {selectedOrder ? `${selectedOrder.order_type === 'RAD' ? 'Radiology Report' : 'Lab Results'}: Order #${selectedOrder.id}` : selectedPrescription?.medication_name}
+                                                </h3>
+                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
+                                                    Clinical Record • {new Date(selectedOrder?.updated_at || selectedPrescription?.created_at).toLocaleDateString()}
                                                 </p>
                                             </div>
+                                        </div>
+                                        <button 
+                                            onClick={() => {
+                                                setSelectedOrder(null);
+                                                setSelectedPrescription(null);
+                                            }}
+                                            className="w-10 h-10 rounded-xl bg-white border border-slate-100 text-slate-400 flex items-center justify-center hover:bg-slate-50 hover:text-slate-600 transition-all shadow-sm"
+                                        >
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+                                        </button>
+                                    </div>
 
-                                            {selectedPrescription.amendments?.length > 0 && (
-                                                <div className="mt-8">
-                                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-4">Clinical Amendment History</p>
-                                                    <div className="space-y-3">
-                                                        {selectedPrescription.amendments.map((am, i) => (
-                                                            <div key={i} className="text-[10px] p-3 border-l-2 border-amber-400 bg-amber-50/50 rounded-r-xl">
-                                                                <p className="font-black text-amber-700 underline uppercase tracking-tight">{am.reason}</p>
-                                                                <p className="text-slate-400 mt-1 font-bold">By {am.actor?.name} on {new Date(am.created_at).toLocaleString()}</p>
+                                    {/* Modal Content */}
+                                    <div className="flex-1 overflow-y-auto p-6 md:p-8 custom-scrollbar">
+                                        {selectedOrder ? (
+                                            <div className="space-y-6">
+                                                {selectedOrder.order_type === 'RAD' ? (
+                                                    <div className="space-y-6 animate-in fade-in duration-500">
+                                                        <div className="grid grid-cols-2 gap-4">
+                                                            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 uppercase tracking-widest text-[9px] font-black text-slate-400">
+                                                                Body Part: <span className="text-slate-900 ml-1 font-black">{selectedOrder.result_data?.body_part || 'Unspecified'}</span>
                                                             </div>
-                                                        ))}
+                                                            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 uppercase tracking-widest text-[9px] font-black text-slate-400">
+                                                                Modality: <span className="text-purple-600 ml-1 font-black">{selectedOrder.result_data?.modality || 'N/A'}</span>
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        <div className="space-y-4">
+                                                            <div className="space-y-2">
+                                                                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Clinical Findings</h4>
+                                                                <div className="p-6 bg-slate-50 border border-slate-100 rounded-[2rem] text-sm leading-[1.8] text-slate-700 whitespace-pre-wrap font-medium shadow-inner">
+                                                                    {selectedOrder.result_data?.findings}
+                                                                </div>
+                                                            </div>
+                                                            <div className="space-y-2">
+                                                                <h4 className="text-[10px] font-black text-his-green-600 uppercase tracking-widest ml-2">Final Impression</h4>
+                                                                <div className="p-6 bg-his-green-50/20 border border-his-green-100/30 rounded-[2rem] text-[15px] font-black text-slate-900 leading-relaxed shadow-sm">
+                                                                    {selectedOrder.result_data?.impression}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <>
+                                                        {/* Column Headers for Lab Results */}
+                                                        <div className="px-4 py-2 bg-slate-50 border border-slate-100 rounded-xl flex items-center text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">
+                                                            <div className="w-[35%]">Parameter</div>
+                                                            <div className="w-[20%]">Result</div>
+                                                            <div className="w-[45%]">Reference Info</div>
+                                                        </div>
+
+                                                        <div className="divide-y divide-slate-100 border border-slate-100 rounded-2xl overflow-hidden shadow-sm bg-white">
+                                                            {Object.entries(selectedOrder.result_data || {}).map(([key, data], idx) => {
+                                                                const isObject = typeof data === 'object' && data !== null;
+                                                                const val = isObject ? data.value : data;
+                                                                const range = isObject ? data.ref_range : null;
+                                                                const unit = isObject ? data.unit : null;
+
+                                                                return (
+                                                                    <div key={idx} className="flex px-4 py-4 hover:bg-slate-50/50 transition-colors items-center">
+                                                                        <div className="w-[35%] text-xs font-bold text-slate-600 truncate pr-4" title={key}>{key}</div>
+                                                                        <div className="w-[20%] flex items-center gap-1.5">
+                                                                            <span className="text-sm font-black text-his-green-600">{val || '--'}</span>
+                                                                            {unit && <span className="text-[9px] bg-slate-50 text-slate-400 px-1 py-0.5 rounded font-bold">{unit}</span>}
+                                                                        </div>
+                                                                        <div className="w-[45%] text-[10px] font-medium italic">
+                                                                            {range ? (
+                                                                                <span className="bg-blue-50 text-blue-600 px-2 py-1 rounded-md border border-blue-100/30">Ref: {range}</span>
+                                                                            ) : (
+                                                                                <span className="text-slate-300">--</span>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    </>
+                                                )}
+
+                                                <div className="mt-10 p-6 bg-his-slate-50/50 rounded-3xl border border-slate-100 border-dashed">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-black text-slate-400 border-2 border-white shadow-sm italic">Validated</div>
+                                                        <div>
+                                                            <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Digitally Verified By</p>
+                                                            <p className="text-xs font-bold text-his-green-600 mt-0.5 flex items-center gap-1.5">
+                                                                Clinical Specialist Approver
+                                                                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
+                                                            </p>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            )}
-                                        </div>
+                                            </div>
+                                        ) : selectedPrescription && (
+                                            <div className="space-y-6">
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div className="p-5 bg-his-slate-50/50 rounded-3xl border border-slate-100 hover:bg-white hover:border-his-green-100 transition-all group">
+                                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 group-hover:text-his-green-500 transition-colors">Dosage</p>
+                                                        <p className="text-sm font-black text-slate-900">{selectedPrescription.dosage}</p>
+                                                    </div>
+                                                    <div className="p-5 bg-his-slate-50/50 rounded-3xl border border-slate-100 hover:bg-white hover:border-his-green-100 transition-all group">
+                                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 group-hover:text-his-green-500 transition-colors">Frequency</p>
+                                                        <p className="text-sm font-black text-slate-900">{selectedPrescription.frequency}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="p-6 bg-his-green-50/30 rounded-3xl border border-his-green-100/50">
+                                                    <p className="text-[9px] font-black text-his-green-600 uppercase tracking-widest mb-2">Instructions</p>
+                                                    <p className="text-xs font-bold text-slate-700 leading-relaxed italic">
+                                                        "{selectedPrescription.instructions || 'Standard adherence protocol.'}"
+                                                    </p>
+                                                </div>
+                                                {selectedPrescription.amendments?.length > 0 && (
+                                                    <div className="pt-4">
+                                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-4">Clinical History</p>
+                                                        <div className="space-y-3">
+                                                            {selectedPrescription.amendments.map((am, i) => (
+                                                                <div key={i} className="text-[10px] p-4 border-l-4 border-amber-400 bg-amber-50/50 rounded-r-2xl">
+                                                                    <p className="font-black text-amber-700 uppercase tracking-tight underline underline-offset-4">{am.reason}</p>
+                                                                    <p className="text-slate-400 mt-2 font-bold flex justify-between items-center">
+                                                                        <span>By {am.actor?.name}</span>
+                                                                        <span>{new Date(am.created_at).toLocaleString()}</span>
+                                                                    </p>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
-                                ) : (
-                                    <div className="h-full flex flex-col items-center justify-center text-center py-20 opacity-40">
-                                        <svg className="w-16 h-16 text-slate-200 mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                                        <p className="text-sm font-bold text-slate-400">Select a finalized order or prescription<br />to view clinical details.</p>
+
+                                    {/* Modal Footer */}
+                                    <div className="p-6 md:p-8 border-t border-slate-100 bg-white flex justify-end gap-3">
+                                        {selectedOrder && (
+                                            <button 
+                                                onClick={() => setShowPrintView(true)}
+                                                className="px-6 py-3 bg-white text-his-green-500 text-[10px] font-black rounded-2xl border border-his-green-100 hover:bg-his-green-50 transition-all uppercase tracking-widest flex items-center gap-2"
+                                            >
+                                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 00-2 2h2m2 4h10a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+                                                Print Paper Copy
+                                            </button>
+                                        )}
+                                        <button 
+                                            onClick={() => {
+                                                setSelectedOrder(null);
+                                                setSelectedPrescription(null);
+                                            }}
+                                            className="px-6 py-3 bg-his-slate-900 text-white text-[10px] font-black rounded-2xl hover:bg-slate-800 transition-all uppercase tracking-widest"
+                                        >
+                                            Dismiss
+                                        </button>
                                     </div>
-                                )}
+                                </div>
                             </div>
-                        </div>
+                        )}
                     </>
                 )}
 
@@ -565,7 +697,7 @@ const PatientProfile = ({ patientId, onBack }) => {
 
                 {activeTab === 'PEDIATRICS' && (
                     <div className="lg:col-span-3">
-                        <GrowthChart notes={history.clinical_notes || []} />
+                        <PediatricsDashboard patientId={patient.id} patient={patient} />
                     </div>
                 )}
             </div>

@@ -164,13 +164,81 @@ const ClinicalNotesManager = ({ patientId, patient }) => {
 
                             <div className="text-slate-700 whitespace-pre-wrap">
                                 {typeof note.content === 'object' ? (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
-                                        {Object.entries(note.content).map(([key, val]) => (
-                                            <div key={key} className="flex flex-col">
-                                                <span className="text-[10px] uppercase text-slate-400 font-bold">{key.replace(/_/g, ' ')}</span>
-                                                <span className="text-sm font-medium">{val.toString()}</span>
-                                            </div>
-                                        ))}
+                                    <div className="flex flex-col gap-4">
+                                        {Object.entries(note.content).map(([key, val]) => {
+                                            // Specialized SDE Renderer
+                                            if (key === 'sde_content' && typeof val === 'object') {
+                                                return (
+                                                    <div key={key} className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                                                        <span className="text-[10px] uppercase text-indigo-500 font-extrabold tracking-widest block mb-2">
+                                                            Review of Systems (SDE)
+                                                        </span>
+                                                        <div className="space-y-3">
+                                                            {Object.entries(val).map(([systemId, systemData]) => {
+                                                                // Handle WNL (Within Normal Limits)
+                                                                if (systemData.wnl) {
+                                                                    return (
+                                                                        <div key={systemId} className="flex items-center gap-2 py-1">
+                                                                            <span className="text-[10px] font-bold text-slate-800 uppercase min-w-[120px]">
+                                                                                {systemId.replace(/_/g, ' ')}
+                                                                            </span>
+                                                                            <span className="text-[10px] bg-indigo-100 text-indigo-700 font-black px-2 py-0.5 rounded border border-indigo-200 flex items-center gap-1.5 uppercase tracking-tighter">
+                                                                                <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                                                                                Within Normal Limits
+                                                                            </span>
+                                                                            {systemData.remarks && (
+                                                                                <span className="text-[10px] text-slate-400 italic ml-2">
+                                                                                    ({systemData.remarks})
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
+                                                                    );
+                                                                }
+
+                                                                const symptoms = Object.entries(systemData.symptoms || {})
+                                                                    .map(([sId, sData]) => {
+                                                                        const mods = Object.entries(sData.modifiers || {})
+                                                                            .map(([mId, mVal]) => mVal)
+                                                                            .join(', ');
+                                                                        return `${sId.replace(/_/g, ' ')}${mods ? ` (${mods})` : ''}`;
+                                                                    });
+                                                                
+                                                                if (symptoms.length === 0 && !systemData.remarks) return null;
+
+                                                                return (
+                                                                    <div key={systemId} className="flex flex-col py-1">
+                                                                        <div className="flex items-center gap-2">
+                                                                            <span className="text-[10px] font-bold text-slate-800 uppercase min-w-[120px]">
+                                                                                {systemId.replace(/_/g, ' ')}
+                                                                            </span>
+                                                                            <div className="flex flex-wrap gap-2">
+                                                                                {symptoms.map(s => (
+                                                                                    <span key={s} className="text-[10px] text-indigo-900 bg-white px-2 py-0.5 rounded border border-indigo-200 font-semibold shadow-sm italic">
+                                                                                        {s}
+                                                                                    </span>
+                                                                                ))}
+                                                                            </div>
+                                                                        </div>
+                                                                        {systemData.remarks && (
+                                                                            <p className="text-[11px] text-slate-500 italic mt-1 ml-[120px]">
+                                                                                Note: {systemData.remarks}
+                                                                            </p>
+                                                                        )}
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            }
+
+                                            return (
+                                                <div key={key} className="flex flex-col">
+                                                    <span className="text-[10px] uppercase text-slate-400 font-bold tracking-widest">{key.replace(/_/g, ' ')}</span>
+                                                    <span className="text-sm font-medium text-slate-800">{typeof val === 'object' ? JSON.stringify(val) : val.toString()}</span>
+                                                </div>
+                                            );
+                                        })}
                                     </div>
                                 ) : (
                                     <p className="text-sm leading-relaxed">{note.content}</p>

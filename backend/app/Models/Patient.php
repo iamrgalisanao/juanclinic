@@ -10,9 +10,14 @@ use App\Traits\AuditLogTrait;
 
 use App\Traits\HasAmendments;
 
+use Illuminate\Notifications\Notifiable;
+
+/**
+ * @property \Carbon\Carbon $dob
+ */
 class Patient extends Model
 {
-    use HasFactory, BelongsToTenant, AuditLogTrait, HasAmendments, \App\Traits\BelongsToBranch;
+    use HasFactory, BelongsToTenant, AuditLogTrait, HasAmendments, \App\Traits\BelongsToBranch, Notifiable;
 
     protected $fillable = [
         'tenant_id',
@@ -30,6 +35,14 @@ class Patient extends Model
         'dob' => 'date',
         'metadata' => 'array',
     ];
+
+    /**
+     * Get the patient's full name.
+     */
+    public function getNameAttribute()
+    {
+        return "{$this->first_name} {$this->last_name}";
+    }
 
     /**
      * Get the branch where the patient was registered.

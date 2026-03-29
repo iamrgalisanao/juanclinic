@@ -1,4 +1,5 @@
 import React from 'react';
+import SDEForm from './SDEForm';
 
 const DynamicClinicalForm = ({ schema, formData, onChange }) => {
     const handleInputChange = (e) => {
@@ -37,6 +38,18 @@ const DynamicClinicalForm = ({ schema, formData, onChange }) => {
                                 </option>
                             ))}
                         </select>
+                    ) : field.type === 'sde' ? (
+                        <SDEForm
+                            config={field.config}
+                            value={formData[field.name] || {}}
+                            onChange={(systemId, systemData) => {
+                                const newSdeValue = {
+                                    ...(formData[field.name] || {}),
+                                    [systemId]: systemData
+                                };
+                                onChange(field.name, newSdeValue);
+                            }}
+                        />
                     ) : (
                         <input
                             type={field.type}

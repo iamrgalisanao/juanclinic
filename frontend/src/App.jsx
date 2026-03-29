@@ -50,6 +50,7 @@ function App() {
     const [recentActivity, setRecentActivity] = useState([]);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isTransitioning, setIsTransitioning] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
 
 
 
@@ -68,7 +69,7 @@ function App() {
 
     // Sync simulated user with API headers and handle auto-tenant alignment
     useEffect(() => {
-        if (!currentUser) return;
+        if (!currentUser || tenants.length === 0) return;
 
         const handleSync = async () => {
             if (syncLockRef.current.isSyncing) return;
@@ -76,15 +77,18 @@ function App() {
             let targetTenant = activeTenant;
 
             // Auto-align if user has a tenant and we aren't there yet
-            if (currentUser.tenant_id && tenants.length > 0) {
+            if (currentUser.tenant_id) {
                 const matched = tenants.find(t => t.id === currentUser.tenant_id);
                 if (matched && activeTenant?.id !== matched.id) {
                     targetTenant = matched;
                 }
+            } else if (!activeTenant && tenants.length > 0) {
+                // Global Admin: default to first tenant if none active
+                targetTenant = tenants[0];
             }
 
             // If we are already synced to the target, just clear the transition state
-            if (targetTenant?.id === syncLockRef.current.tenantId) {
+            if (targetTenant?.id && targetTenant.id === syncLockRef.current.tenantId) {
                 setIsTransitioning(false);
                 return;
             }
@@ -162,6 +166,9 @@ function App() {
     };
 
     const handleLoginSuccess = (user, token, tenant) => {
+        // Immediately set the token in API service to prevent race conditions in subsequent requests
+        api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        
         setCurrentUser(user);
         setUserToken(token);
         localStorage.setItem('auth_token', token);
@@ -288,7 +295,7 @@ function App() {
     const isRestricted = (view) => {
         const rolePermissions = {
             'dashboard': ['ADMIN', 'DOCTOR', 'TECH', 'DIAGNOSTIC_APPROVER', 'FRONT_DESK'],
-            'worklist': ['ADMIN', 'TECH', 'DIAGNOSTIC_APPROVER'],
+            'worklist': ['ADMIN', 'DOCTOR', 'TECH', 'DIAGNOSTIC_APPROVER'],
             'messages': ['ADMIN', 'DOCTOR', 'TECH', 'DIAGNOSTIC_APPROVER'],
             'appointments': ['ADMIN', 'DOCTOR', 'FRONT_DESK'],
             'pharmacy': ['ADMIN', 'DOCTOR', 'TECH'],
@@ -298,7 +305,7 @@ function App() {
             'patients': ['ADMIN', 'DOCTOR', 'FRONT_DESK', 'DIAGNOSTIC_APPROVER'],
             'doctors': ['ADMIN'],
             'reports': ['ADMIN', 'FRONT_DESK', 'DOCTOR', 'DIAGNOSTIC_APPROVER'],
-            'audit': ['ADMIN'],
+            'audit': ['ADMIN', 'DOCTOR'],
             'tenant_management': ['ADMIN'],
             'branch_management': ['ADMIN'],
             'patient_profile': ['ADMIN', 'DOCTOR', 'FRONT_DESK', 'DIAGNOSTIC_APPROVER']
@@ -354,6 +361,8 @@ function App() {
                     currentUser={currentUser}
                     onSidebarToggle={() => setIsSidebarOpen(!isSidebarOpen)}
                     onLogout={handleLogout}
+                    searchTerm={searchTerm}
+                    onSearch={setSearchTerm}
                 />
 
                 <div className="p-10 space-y-10 max-w-[1600px] mx-auto">
@@ -572,7 +581,7 @@ function App() {
                                             </>
                                         );
                                     case 'worklist':
-                                        return <ClinicalWorklist currentUser={currentUser} activeTenant={activeTenant?.id} />;
+                                        return <ClinicalWorklist currentUser={currentUser} activeTenant={activeTenant?.id} searchTerm={searchTerm} />;
                                     case 'reports':
                                         return <Reports activeTenant={activeTenant?.id} activeBranch={activeBranch?.id} />;
                                     case 'audit':

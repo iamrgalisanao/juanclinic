@@ -57,6 +57,17 @@ class UserSeeder extends Seeder
         );
 
         User::updateOrCreate(
+            ['email' => 'watson@clinic.com'],
+            [
+                'name' => 'Dr. John Watson',
+                'password' => bcrypt('password'),
+                'role' => 'DOCTOR',
+                'tenant_id' => 1,
+                'branch_id' => 1,
+            ]
+        );
+
+        User::updateOrCreate(
             ['email' => 'admin@juanclinic.com'],
             [
                 'name' => 'System Admin',

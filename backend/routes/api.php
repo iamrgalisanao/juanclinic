@@ -31,6 +31,12 @@ Route::group(['middleware' => ['auth:sanctum', 'tenant_user', 'branch_user']], f
     Route::apiResource('clinical-notes', \App\Http\Controllers\Api\ClinicalNoteController::class)->middleware('role:DOCTOR,ADMIN');
     Route::get('clinical-templates', [\App\Http\Controllers\Api\ClinicalTemplateController::class, 'index'])->middleware('role:DOCTOR,ADMIN');
     Route::get('patients/{patient}/history', [\App\Http\Controllers\Api\PatientHistoryController::class, 'show'])->middleware('role:DOCTOR,ADMIN,DIAGNOSTIC_APPROVER');
+    Route::get('patients/{id}/pediatrics/growth', [\App\Http\Controllers\Api\PatientController::class, 'getGrowthHistory'])->middleware('role:DOCTOR,ADMIN');
+    Route::post('patients/{id}/pediatrics/growth', [\App\Http\Controllers\Api\PatientController::class, 'storeGrowthRecord'])->middleware('role:DOCTOR,ADMIN');
+    Route::get('patients/{id}/pediatrics/immunizations', [\App\Http\Controllers\Api\PatientController::class, 'getImmunizationHistory'])->middleware('role:DOCTOR,ADMIN');
+    Route::post('patients/{id}/pediatrics/immunizations', [\App\Http\Controllers\Api\PatientController::class, 'storeImmunizationRecord'])->middleware('role:DOCTOR,ADMIN');
+    Route::get('pediatrics/standards', [\App\Http\Controllers\Api\PatientController::class, 'getStandards'])->middleware('role:DOCTOR,ADMIN');
+
     Route::get('orders/worklist', [\App\Http\Controllers\Api\OrderController::class, 'worklist'])->middleware('role:ADMIN,TECH,DIAGNOSTIC_APPROVER');
     Route::apiResource('orders', \App\Http\Controllers\Api\OrderController::class)->middleware('role:DOCTOR,ADMIN,TECH,DIAGNOSTIC_APPROVER');
     Route::apiResource('prescriptions', \App\Http\Controllers\Api\PrescriptionController::class)->middleware('role:DOCTOR,ADMIN');

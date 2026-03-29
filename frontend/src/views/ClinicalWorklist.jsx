@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import ResultEntryForm from '../components/ResultEntryForm';
+import RadiologyResultForm from '../components/RadiologyResultForm';
 import ResultApprovalView from '../components/ResultApprovalView';
 
-const Worklist = ({ currentUser, activeTenant }) => {
+const Worklist = ({ currentUser, activeTenant, searchTerm }) => {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedOrder, setSelectedOrder] = useState(null);
@@ -36,6 +37,16 @@ const Worklist = ({ currentUser, activeTenant }) => {
             setLoading(false);
         }
     };
+
+    const filteredOrders = orders.filter(order => {
+        if (!searchTerm) return true;
+        const search = searchTerm.toLowerCase();
+        const patientName = `${order.patient?.first_name} ${order.patient?.last_name}`.toLowerCase();
+        const orderId = order.id.toString();
+        const externalId = order.patient?.patient_external_id?.toLowerCase() || '';
+        
+        return patientName.includes(search) || orderId.includes(search) || externalId.includes(search);
+    });
 
     const submitOrderUpdate = async (orderId, payload, reason = null) => {
         const finalPayload = { ...payload };
@@ -77,7 +88,7 @@ const Worklist = ({ currentUser, activeTenant }) => {
                 </div>
                 <div className="flex items-center gap-3">
                     <span className="px-4 py-2 bg-slate-100 text-slate-600 rounded-full text-xs font-bold uppercase tracking-wider">
-                        {orders.length} Tasks
+                        {filteredOrders.length} {searchTerm ? 'Matches' : 'Tasks'}
                     </span>
                 </div>
             </header>
@@ -95,7 +106,13 @@ const Worklist = ({ currentUser, activeTenant }) => {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50">
-                        {orders.map((order) => (
+                        {filteredOrders.length === 0 ? (
+                            <tr>
+                                <td colSpan="6" className="px-8 py-20 text-center">
+                                    <div className="text-slate-400 font-bold uppercase tracking-widest text-xs">No matching orders found</div>
+                                </td>
+                            </tr>
+                        ) : filteredOrders.map((order) => (
                             <tr key={order.id} className="hover:bg-slate-50/50 transition-colors">
                                 <td className="px-8 py-5 font-bold text-slate-900">#{order.id.toString().padStart(4, '0')}</td>
                                 <td className="px-8 py-5">
@@ -136,11 +153,19 @@ const Worklist = ({ currentUser, activeTenant }) => {
                 <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-6 overflow-y-auto">
                     <div className="bg-transparent w-full max-w-2xl my-8 animate-in fade-in zoom-in duration-300">
                         {currentUser.role === 'TECH' ? (
-                            <ResultEntryForm
-                                order={selectedOrder}
-                                onSubmit={(orderId, resultData, reason) => submitOrderUpdate(orderId, { status: 'PRELIMINARY', result_data: resultData }, reason)}
-                                onCancel={() => setSelectedOrder(null)}
-                            />
+                            selectedOrder.order_type === 'RAD' ? (
+                                <RadiologyResultForm
+                                    order={selectedOrder}
+                                    onSubmit={(orderId, resultData, reason) => submitOrderUpdate(orderId, { status: 'PRELIMINARY', result_data: resultData }, reason)}
+                                    onCancel={() => setSelectedOrder(null)}
+                                />
+                            ) : (
+                                <ResultEntryForm
+                                    order={selectedOrder}
+                                    onSubmit={(orderId, resultData, reason) => submitOrderUpdate(orderId, { status: 'PRELIMINARY', result_data: resultData }, reason)}
+                                    onCancel={() => setSelectedOrder(null)}
+                                />
+                            )
                         ) : (
                             <ResultApprovalView
                                 order={selectedOrder}

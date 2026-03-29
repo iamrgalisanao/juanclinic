@@ -46,27 +46,85 @@ const ResultApprovalView = ({ order, onDecision, onCancel }) => {
             </div>
 
             <div className="p-6">
-                <div className="bg-slate-50 rounded-xl border border-slate-200 overflow-hidden">
+                <div className="bg-slate-50 rounded-xl border border-slate-200 overflow-hidden flex flex-col">
+                    {/* Fixed Table Header */}
                     <div className="px-4 py-3 border-b border-slate-200 bg-white flex items-center gap-2">
                         <BeakerIcon className="w-4 h-4 text-slate-400" />
                         <span className="text-xs font-bold text-slate-600 uppercase tracking-widest">Submitted Findings</span>
                     </div>
+                    
+                    {/* Column Headers */}
+                    <div className="px-4 py-2 bg-slate-50 border-b border-slate-100 flex items-center text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                        <div className="w-[35%]">Parameter</div>
+                        <div className="w-[20%]">Result</div>
+                        <div className="w-[45%]">Reference Info</div>
+                    </div>
 
-                    {resultsList.length === 0 ? (
-                        <div className="p-8 text-center text-sm text-slate-500">
-                            No structured data found in this order payload.
-                        </div>
-                    ) : (
-                        <div className="divide-y divide-slate-100">
-                            {resultsList.map(([key, value], index) => (
-                                <div key={index} className="flex px-4 py-3 hover:bg-white transition-colors">
-                                    <div className="w-1/3 text-sm font-semibold text-slate-600">{key}</div>
-                                    <div className="w-2/3 text-sm text-slate-900 font-medium">{value}</div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
+                    <div className="max-h-[400px] overflow-y-auto custom-scrollbar bg-white">
+                        {resultsList.length === 0 ? (
+                            <div className="p-8 text-center text-sm text-slate-500">
+                                No structured data found in this order payload.
+                            </div>
+                        ) : (
+                            <div className="divide-y divide-slate-100">
+                                {resultsList.map(([key, value], index) => {
+                                    const isObject = typeof value === 'object' && value !== null;
+                                    const displayValue = isObject ? value.value : value;
+                                    const refRange = isObject ? value.ref_range : null;
+                                    const unit = isObject ? value.unit : null;
+
+                                    return (
+                                        <div key={index} className="flex px-4 py-3 hover:bg-slate-50/50 transition-colors items-center">
+                                            {/* Column 1: Parameter */}
+                                            <div className="w-[35%] text-sm font-semibold text-slate-600 truncate pr-4" title={key}>
+                                                {key}
+                                            </div>
+
+                                            {/* Column 2: Result & Unit */}
+                                            <div className="w-[20%] flex items-center gap-2">
+                                                <div className="text-sm text-his-green-600 font-black">
+                                                    {displayValue || '--'}
+                                                </div>
+                                                {isObject && unit && (
+                                                    <span className="text-[10px] bg-slate-100 text-slate-400 px-1 py-0.5 rounded font-bold">
+                                                        {unit}
+                                                    </span>
+                                                )}
+                                            </div>
+
+                                            {/* Column 3: Reference Info */}
+                                            <div className="w-[45%] text-[11px] text-slate-500 font-medium italic">
+                                                {isObject && refRange ? (
+                                                    <span className="bg-blue-50 text-blue-600 px-2 py-1 rounded-md border border-blue-100/50">
+                                                        Ref: {refRange}
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-slate-300">N/A</span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
                 </div>
+
+                <style dangerouslySetInnerHTML={{ __html: `
+                    .custom-scrollbar::-webkit-scrollbar {
+                        width: 6px;
+                    }
+                    .custom-scrollbar::-webkit-scrollbar-track {
+                        background: #f1f5f9;
+                    }
+                    .custom-scrollbar::-webkit-scrollbar-thumb {
+                        background: #cbd5e1;
+                        border-radius: 10px;
+                    }
+                    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+                        background: #94a3b8;
+                    }
+                `}} />
 
                 <div className="mt-8 flex items-center gap-4">
                     <button

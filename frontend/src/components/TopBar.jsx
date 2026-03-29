@@ -1,7 +1,7 @@
 import React from 'react';
 import { useSyncStatus } from '../services/syncService';
 
-const TopBar = ({ activeTenant, tenants, onTenantChange, activeBranch, branches, onBranchChange, currentUser, onSidebarToggle, onLogout }) => {
+const TopBar = ({ activeTenant, tenants, onTenantChange, activeBranch, branches, onBranchChange, currentUser, onSidebarToggle, onLogout, searchTerm, onSearch }) => {
     const { isOnline, lastSync } = useSyncStatus(activeTenant?.id);
 
     return (
@@ -20,7 +20,9 @@ const TopBar = ({ activeTenant, tenants, onTenantChange, activeBranch, branches,
                         </span>
                         <input
                             type="text"
-                            placeholder="Search patients..."
+                            placeholder="Search clinical data..."
+                            value={searchTerm || ''}
+                            onChange={(e) => onSearch(e.target.value)}
                             className="w-full bg-his-slate-100/50 border-none rounded-2xl py-3.5 pl-14 pr-6 text-sm focus:ring-2 focus:ring-his-green-500/10 transition-all outline-none text-slate-700 font-semibold placeholder:text-slate-400"
                         />
                     </div>

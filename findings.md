@@ -51,5 +51,17 @@ This document is managed by the **JuanClinic Code Scanner** subagent.
 - **Issue**: Missing DPA Compliance Portal in Registry. (Compliance: RA 10173)
 - **Status**: **RESOLVED**. Privacy & DPA link added to footer (2026-03-18).
 
+## 🔵 Phase 5 - Tier 2 Restoration Findings (March 2026)
+
+- **File**: `frontend/src/views/MedicineManagement.jsx`
+- **Issue**: Performance degradation with large inventory (missing pagination). (Scalability)
+- **Status**: **RESOLVED**. Server-side pagination implemented (2026-03-25).
+- **File**: `backend/routes/api.php`
+- **Issue**: Diagnostic Approver role missing 403 authorization for patients/history. (RBAC Hardening)
+- **Status**: **RESOLVED**. Routes updated with correct role-based middleware (2026-03-25).
+- **File**: `frontend/src/App.jsx`
+- **Issue**: Main layout prevents vertical scrolling on small viewports. (UX)
+- **Status**: **RESOLVED**. `overflow-y-auto` added to main content container (2026-03-25).
+
 ---
-*Last scanned: 2026-03-18*
+*Last scanned: 2026-03-25*

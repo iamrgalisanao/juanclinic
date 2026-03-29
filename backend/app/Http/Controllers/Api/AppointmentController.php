@@ -36,7 +36,6 @@ class AppointmentController extends Controller
         $validated = $request->validate([
             'patient_id' => 'required|exists:patients,id',
             'doctor_id' => 'required|exists:users,id',
-            'branch_id' => 'required|exists:branches,id',
             'appointment_date' => 'required|date',
             'start_time' => 'required',
             'end_time' => 'required',
@@ -64,7 +63,14 @@ class AppointmentController extends Controller
             ], 422);
         }
 
-        return Appointment::create($validated);
+        $appointment = Appointment::create($validated);
+
+        // Trigger Patient Notification (Reminder/Confirmation)
+        if ($appointment->patient) {
+            $appointment->patient->notify(new \App\Notifications\AppointmentReminder($appointment));
+        }
+
+        return $appointment;
     }
 
     /**
