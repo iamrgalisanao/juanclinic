@@ -93,13 +93,14 @@ class PediatricService
     }
 
     /**
-     * Calculate all pediatric growth metrics for a given record.
+     * Calculate all pediatric growth metrics for a given record (Vital or PediatricGrowthRecord).
      */
-    public function calculateGrowthAnalysis(\App\Models\PediatricGrowthRecord $record): array
+    public function calculateGrowthAnalysis($record): array
     {
         $patient = $record->patient;
-        $ageMonths = $this->getAgeMonths($patient, $record->measured_at);
-        $gender = $patient->gender === 'M' ? 'M' : 'F'; // Default to F if not M/F
+        $recordedAt = $record->recorded_at ?? $record->measured_at;
+        $ageMonths = $this->getAgeMonths($patient, $recordedAt);
+        $gender = $patient->gender === 'M' ? 'M' : 'F';
 
         $weightZ = $this->calculateZScore($gender, 'weight_for_age', $ageMonths, $record->weight_kg);
         $heightZ = $this->calculateZScore($gender, 'height_for_age', $ageMonths, $record->height_cm);
@@ -107,7 +108,8 @@ class PediatricService
         $bmi = $this->calculateBMI($record->weight_kg, $record->height_cm);
         $bmiZ = $this->calculateZScore($gender, 'bmi_for_age', $ageMonths, $bmi);
 
-        $headZ = $this->calculateZScore($gender, 'head_circumference_for_age', $ageMonths, $record->head_circumference_cm);
+        $hc = $record->head_circumference_cm ?? ($record->metadata['head_circumference_cm'] ?? null);
+        $headZ = $this->calculateZScore($gender, 'head_circumference_for_age', $ageMonths, $hc);
 
         return [
             'age_months' => $ageMonths,

@@ -390,6 +390,22 @@ export const getPediatricStandards = async (params) => {
     return response.data;
 };
 
+// Universal Vitals API
+export const getVitals = async (patientId) => {
+    const response = await api.get('/vitals', { params: { patient_id: patientId } });
+    return response.data;
+};
+
+export const storeVital = async (data) => {
+    const response = await api.post('/vitals', data);
+    return response.data;
+};
+
+export const deleteVital = async (id) => {
+    const response = await api.delete(`/vitals/${id}`);
+    return response.data;
+};
+
 // Offline Sync
 export const pullSync = async (lastSyncAt) => {
     const response = await api.get('/sync/pull', { params: { last_sync_at: lastSyncAt } });

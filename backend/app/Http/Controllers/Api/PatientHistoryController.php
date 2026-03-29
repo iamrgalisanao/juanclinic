@@ -28,6 +28,9 @@ class PatientHistoryController extends Controller
             },
             'clinicalNotes' => function ($query) {
                 $query->with('template', 'author')->orderBy('created_at', 'desc');
+            },
+            'vitals' => function ($query) {
+                $query->with('author')->orderBy('recorded_at', 'desc');
             }
         ]);
 
@@ -37,7 +40,8 @@ class PatientHistoryController extends Controller
                 'orders' => $patient->orders,
                 'appointments' => $patient->appointments,
                 'prescriptions' => $patient->prescriptions,
-                'clinical_notes' => $patient->clinicalNotes
+                'clinical_notes' => $patient->clinicalNotes,
+                'vitals' => $patient->vitals
             ]
         ]);
     }

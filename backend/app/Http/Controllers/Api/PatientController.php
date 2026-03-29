@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Services\PediatricService;
-use App\Models\PediatricGrowthRecord;
+use App\Models\Vital;
 use App\Models\ImmunizationRecord;
 use App\Models\Patient;
 
@@ -121,21 +121,21 @@ class PatientController extends Controller
         $patient = \App\Models\Patient::findOrFail($id);
         $this->authorize('view', $patient);
 
-        $records = \App\Models\PediatricGrowthRecord::where('patient_id', $id)
-            ->oldest('measured_at')
+        $records = Vital::where('patient_id', $id)
+            ->whereNotNull('weight_kg')
+            ->whereNotNull('height_cm')
+            ->oldest('recorded_at')
             ->get();
 
         $history = $records->map(function ($record) use ($patient) {
-            $ageMonths = $this->pediatricService->getAgeMonths($patient, $record->measured_at);
+            $ageMonths = $this->pediatricService->getAgeMonths($patient, $record->recorded_at);
             
-            $weightZ = $record->weight_kg ? $this->pediatricService->calculateZScore($patient->gender, 'weight_for_age', $ageMonths, (float)$record->weight_kg) : null;
-            $heightZ = $record->height_cm ? $this->pediatricService->calculateZScore($patient->gender, 'height_for_age', $ageMonths, (float)$record->height_cm) : null;
             return [
                 'id' => $record->id,
-                'weight_kg' => $record->weight_kg,
-                'height_cm' => $record->height_cm,
-                'head_circumference_cm' => $record->head_circumference_cm,
-                'measured_at' => $record->measured_at->toIso8601String(),
+                'weight_kg' => (float) $record->weight_kg,
+                'height_cm' => (float) $record->height_cm,
+                'head_circumference_cm' => (float) ($record->metadata['head_circumference_cm'] ?? 0),
+                'measured_at' => $record->recorded_at->toIso8601String(),
                 'age_months' => $ageMonths,
                 'analysis' => $this->pediatricService->calculateGrowthAnalysis($record)
             ];
@@ -159,17 +159,25 @@ class PatientController extends Controller
             'measured_at' => 'required|date',
         ]);
 
-        $record = \App\Models\PediatricGrowthRecord::create(array_merge($validated, [
+        $bmi = null;
+        if ($validated['weight_kg'] && $validated['height_cm'] && $validated['height_cm'] > 0) {
+            $heightM = $validated['height_cm'] / 100;
+            $bmi = $validated['weight_kg'] / ($heightM * $heightM);
+        }
+
+        $record = Vital::create([
             'patient_id' => $id,
             'tenant_id' => $patient->tenant_id,
             'branch_id' => $patient->branch_id,
-        ]));
-
-        // Calculate and save analysis
-        $record->metadata = array_merge($record->metadata ?? [], [
-            'analysis' => $this->pediatricService->calculateGrowthAnalysis($record)
+            'weight_kg' => $validated['weight_kg'],
+            'height_cm' => $validated['height_cm'],
+            'bmi' => $bmi,
+            'recorded_at' => $validated['measured_at'],
+            'metadata' => [
+                'head_circumference_cm' => $validated['head_circumference_cm'],
+                'source' => 'pediatrics_dashboard'
+            ]
         ]);
-        $record->save();
 
         return response()->json($record, 201);
     }

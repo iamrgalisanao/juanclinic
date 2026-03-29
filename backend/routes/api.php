@@ -60,6 +60,7 @@ Route::group(['middleware' => ['auth:sanctum', 'tenant_user', 'branch_user']], f
     Route::post('attachments', [\App\Http\Controllers\Api\AttachmentController::class, 'store'])->middleware('role:DOCTOR,ADMIN,TECH');
     Route::get('attachments/{id}/download', [\App\Http\Controllers\Api\AttachmentController::class, 'download'])->middleware('role:DOCTOR,ADMIN,TECH');
     Route::delete('attachments/{id}', [\App\Http\Controllers\Api\AttachmentController::class, 'destroy'])->middleware('role:DOCTOR,ADMIN,TECH');
+    Route::apiResource('vitals', \App\Http\Controllers\Api\VitalController::class)->middleware('role:DOCTOR,ADMIN,FRONT_DESK,TECH');
     Route::get('pharmacy/worklist', [\App\Http\Controllers\Api\PharmacyController::class, 'worklist'])->middleware('role:ADMIN,TECH,DOCTOR');
     Route::post('pharmacy/dispense/{id}', [\App\Http\Controllers\Api\PharmacyController::class, 'dispense'])->middleware('role:ADMIN,TECH,DOCTOR');
 

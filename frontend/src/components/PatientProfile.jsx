@@ -5,6 +5,7 @@ import AttachmentManager from './AttachmentManager';
 import ReferralForm from './ReferralForm';
 import ClinicalNotesManager from './ClinicalNotesManager';
 import PediatricsDashboard from './clinical/PediatricsDashboard';
+import VitalsManager from './clinical/VitalsManager';
 import OrderForm from './OrderForm';
 import LabResultPrintView from './LabResultPrintView';
 
@@ -18,7 +19,7 @@ const PatientProfile = ({ patientId, onBack }) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showPrescriptionForm, setShowPrescriptionForm] = useState(false);
     const [showReferralForm, setShowReferralForm] = useState(false);
-    const [activeTab, setActiveTab] = useState('TIMELINE'); // TIMELINE | ATTACHMENTS | NOTES | PEDIATRICS
+    const [activeTab, setActiveTab] = useState('TIMELINE'); // TIMELINE | ATTACHMENTS | NOTES | VITALS | PEDIATRICS
     const [showOrderForm, setShowOrderForm] = useState(false);
     const [orderType, setOrderType] = useState('LAB'); // LAB | RAD
     const [showPrintView, setShowPrintView] = useState(false);
@@ -93,6 +94,32 @@ const PatientProfile = ({ patientId, onBack }) => {
                         </div>
                     </div>
                 </div>
+
+                {/* Last Vitals Quick Summary */}
+                {history.vitals && history.vitals.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-6 p-4 rounded-3xl bg-slate-50/50 border border-slate-100/50">
+                        <div className="flex flex-col gap-0.5">
+                            <span className="text-[8px] font-black text-rose-500 uppercase tracking-[0.15em]">Last BP</span>
+                            <span className="text-xs font-black text-slate-900">{history.vitals[0].bp_systolic}/{history.vitals[0].bp_diastolic} <span className="text-[9px] text-slate-400 font-bold ml-0.5">mmHg</span></span>
+                        </div>
+                        <div className="w-px h-6 bg-slate-200 hidden sm:block" />
+                        <div className="flex flex-col gap-0.5">
+                            <span className="text-[8px] font-black text-amber-500 uppercase tracking-[0.15em]">Temp</span>
+                            <span className="text-xs font-black text-slate-900">{history.vitals[0].temp_c}°C</span>
+                        </div>
+                        <div className="w-px h-6 bg-slate-200 hidden sm:block" />
+                        <div className="flex flex-col gap-0.5">
+                            <span className="text-[8px] font-black text-blue-500 uppercase tracking-[0.15em]">O2 Sat</span>
+                            <span className="text-xs font-black text-slate-900">{history.vitals[0].spo2}%</span>
+                        </div>
+                        <div className="w-px h-6 bg-slate-200 hidden sm:block" />
+                        <div className="flex flex-col gap-0.5">
+                            <span className="text-[8px] font-black text-emerald-500 uppercase tracking-[0.15em]">BMI</span>
+                            <span className="text-xs font-black text-slate-900">{history.vitals[0].bmi}</span>
+                        </div>
+                    </div>
+                )}
+
                 <div className="flex flex-col sm:flex-row gap-3">
                     <button
                         onClick={() => setIsEditing(true)}
@@ -370,6 +397,12 @@ const PatientProfile = ({ patientId, onBack }) => {
                     className={`pb-4 px-4 text-[11px] font-black uppercase tracking-widest transition-all relative ${activeTab === 'NOTES' ? 'text-purple-500 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-purple-500' : 'text-slate-400 hover:text-slate-600'}`}
                 >
                     Clinical Notes & Encounters
+                </button>
+                <button
+                    onClick={() => setActiveTab('VITALS')}
+                    className={`pb-4 px-4 text-[11px] font-black uppercase tracking-widest transition-all relative ${activeTab === 'VITALS' ? 'text-rose-500 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-rose-500' : 'text-slate-400 hover:text-slate-600'}`}
+                >
+                    Vitals & Triage
                 </button>
                 <button
                     onClick={() => setActiveTab('PEDIATRICS')}
@@ -692,6 +725,12 @@ const PatientProfile = ({ patientId, onBack }) => {
                 {activeTab === 'NOTES' && (
                     <div className="lg:col-span-3">
                         <ClinicalNotesManager patientId={patient.id} patient={patient} />
+                    </div>
+                )}
+
+                {activeTab === 'VITALS' && (
+                    <div className="lg:col-span-3">
+                        <VitalsManager patient={patient} />
                     </div>
                 )}
 
