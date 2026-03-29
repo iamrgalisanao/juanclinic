@@ -1,27 +1,47 @@
 import React, { useState, useEffect } from 'react';
+import { 
+  TrendingUp, 
+  Shield, 
+  Plus, 
+  Activity, 
+  BarChart3, 
+  Baby,
+  Calendar,
+  AlertCircle
+} from 'lucide-react';
 import GrowthChart from './GrowthChart';
 import ImmunizationLedger from './ImmunizationLedger';
-import { getPediatricHistory, storeGrowthRecord, storeImmunizationRecord, getPatient } from '../../services/api';
-import { Activity, Plus, TrendingUp, Shield, BarChart3, Baby } from 'lucide-react';
+import { getPediatricHistory, storeGrowthRecord } from '../../services/api';
 
 const PediatricsDashboard = ({ patientId, patient }) => {
   const [data, setData] = useState({ growth: [], immunization: { roadmap: [], history: [] } });
+  const [overdue, setOverdue] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showGrowthForm, setShowGrowthForm] = useState(false);
   const [activeView, setActiveView] = useState('GROWTH'); // GROWTH | IMMUNIZATION
+  const [useCorrected, setUseCorrected] = useState(false);
+
+  // Auto-enable corrected age if patient is premature
+  useEffect(() => {
+    if (patient?.gestational_weeks && patient.gestational_weeks < 37) {
+        setUseCorrected(true);
+    }
+  }, [patient?.gestational_weeks]);
 
   useEffect(() => {
     fetchPediatricData();
-  }, [patientId, patient?.gender]);
+  }, [patientId, patient?.gender, useCorrected]);
 
   const fetchPediatricData = async () => {
     setLoading(true);
     try {
-      const [growth, immunization] = await Promise.all([
-        getPediatricHistory(patientId),
-        getPediatricHistory(patientId, 'immunizations')
+      const [growth, immunization, milestones] = await Promise.all([
+        getPediatricHistory(patientId, 'growth', { use_corrected: useCorrected }),
+        getPediatricHistory(patientId, 'immunizations'),
+        getPediatricHistory(patientId, 'overdue')
       ]);
       setData({ growth, immunization });
+      setOverdue(milestones.overdue || []);
     } catch (err) {
       console.error("Failed to fetch pediatric data", err);
     } finally {
@@ -53,6 +73,35 @@ const PediatricsDashboard = ({ patientId, patient }) => {
 
   return (
     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-6 duration-700">
+      {/* Milestone Alerts */}
+      {overdue.length > 0 && (
+          <div className="bg-rose-50 border border-rose-100 rounded-[2rem] p-6 flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm">
+              <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-rose-500 text-white flex items-center justify-center shadow-lg shadow-rose-500/20 animate-pulse">
+                      <Shield size={24} />
+                  </div>
+                  <div>
+                      <h4 className="text-sm font-black text-rose-900 uppercase tracking-widest">Clinical Milestone Alerts</h4>
+                      <p className="text-[10px] font-bold text-rose-600 uppercase tracking-widest mt-1">
+                          {overdue.length} Actionable Items Required for Clinical Parity
+                      </p>
+                  </div>
+              </div>
+              <div className="flex -space-x-2">
+                  {overdue.slice(0, 5).map((m, i) => (
+                      <div key={i} className="px-3 py-1.5 bg-white rounded-full border border-rose-100 text-[9px] font-black text-rose-500 uppercase tracking-tighter shadow-sm whitespace-nowrap">
+                          {m.vaccine_name || m.name}
+                      </div>
+                  ))}
+                  {overdue.length > 5 && (
+                      <div className="px-3 py-1.5 bg-rose-500 rounded-full border border-rose-600 text-[9px] font-black text-white uppercase tracking-tighter shadow-sm">
+                          +{overdue.length - 5}
+                      </div>
+                  )}
+              </div>
+          </div>
+      )}
+
       {/* Executive Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sleek relative overflow-hidden group hover:border-his-green-500/30 transition-all flex flex-col justify-between">
@@ -161,17 +210,38 @@ const PediatricsDashboard = ({ patientId, patient }) => {
       <div className="bg-white rounded-[2.5rem] p-8 md:p-10 border border-his-slate-100 shadow-sleek min-h-[500px]">
         {activeView === 'GROWTH' ? (
             <div className="animate-in fade-in duration-500 slide-in-from-right-2">
-                <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2">
-                        <TrendingUp className="w-4 h-4 text-his-green-500" />
-                        Longitudinal Development Lines
-                    </h3>
-                    <button 
-                        onClick={() => setShowGrowthForm(true)}
-                        className="p-3 bg-his-green-500 text-white rounded-2xl shadow-xl shadow-his-green-500/20 hover:scale-105 active:scale-95 transition-all"
-                    >
-                        <Plus size={20} />
-                    </button>
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                    <div>
+                        <h3 className="text-sm font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2">
+                            <TrendingUp className="w-4 h-4 text-his-green-500" />
+                            Longitudinal Development Lines
+                        </h3>
+                        {patient?.gestational_weeks && patient.gestational_weeks < 37 && (
+                            <p className="text-[10px] font-black text-his-green-500 uppercase tracking-widest mt-1">
+                                Preterm Adjustment: Corrected Age Enabled
+                            </p>
+                        )}
+                    </div>
+                    
+                    <div className="flex items-center gap-4">
+                        {patient?.gestational_weeks && patient.gestational_weeks < 37 && (
+                            <div className="flex items-center gap-3 bg-slate-50 px-4 py-2 rounded-2xl border border-slate-100">
+                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Corrected Age</span>
+                                <button 
+                                    onClick={() => setUseCorrected(!useCorrected)}
+                                    className={`w-10 h-5 rounded-full transition-all relative ${useCorrected ? 'bg-his-green-500' : 'bg-slate-300'}`}
+                                >
+                                    <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${useCorrected ? 'left-6' : 'left-1'}`} />
+                                </button>
+                            </div>
+                        )}
+                        <button 
+                            onClick={() => setShowGrowthForm(true)}
+                            className="p-3 bg-his-green-500 text-white rounded-2xl shadow-xl shadow-his-green-500/20 hover:scale-105 active:scale-95 transition-all"
+                        >
+                            <Plus size={20} />
+                        </button>
+                    </div>
                 </div>
                 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">

@@ -26,6 +26,9 @@ class Patient extends Model
         'last_name',
         'dob',
         'gender',
+        'gestational_weeks',
+        'birth_weight_g',
+        'apgar_score',
         'contact',
         'metadata',
         'branch_id',
@@ -75,5 +78,25 @@ class Patient extends Model
     public function vitals()
     {
         return $this->hasMany(Vital::class);
+    }
+
+    /**
+     * Calculate corrected age in days for premature infants (<37 weeks).
+     * Formula: Corrected Age = Chronological Age - (40 - Gestational Weeks)
+     */
+    public function getCorrectedAgeInDays(?\Carbon\Carbon $atDate = null)
+    {
+        $atDate = $atDate ?? now();
+        $chronologicalAgeDays = $this->dob->diffInDays($atDate);
+        
+        // If not premature or no gestational data, return chronological age
+        if (!$this->gestational_weeks || $this->gestational_weeks >= 37) {
+            return $chronologicalAgeDays;
+        }
+
+        $weeksEarly = 40 - $this->gestational_weeks;
+        $daysEarly = $weeksEarly * 7;
+        
+        return max(0, $chronologicalAgeDays - $daysEarly);
     }
 }

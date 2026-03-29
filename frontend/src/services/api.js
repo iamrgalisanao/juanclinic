@@ -370,8 +370,8 @@ export const getBranchBenchmarking = async (params = {}) => {
 };
 
 // Pediatrics API
-export const getPediatricHistory = async (patientId, type = 'growth') => {
-    const response = await api.get(`/patients/${patientId}/pediatrics/${type}`);
+export const getPediatricHistory = async (patientId, type = 'growth', params = {}) => {
+    const response = await api.get(`/patients/${patientId}/pediatrics/${type}`, { params });
     return response.data;
 };
 
@@ -387,6 +387,11 @@ export const storeImmunizationRecord = async (patientId, data) => {
 
 export const getPediatricStandards = async (params) => {
     const response = await api.get('/pediatrics/standards', { params });
+    return response.data;
+};
+
+export const getOverdueMilestones = async (patientId) => {
+    const response = await api.get(`/patients/${patientId}/pediatrics/overdue`);
     return response.data;
 };
 

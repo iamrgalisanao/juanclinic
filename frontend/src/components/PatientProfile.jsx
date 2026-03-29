@@ -187,6 +187,9 @@ const PatientProfile = ({ patientId, onBack }) => {
                                 last_name: formData.get('last_name') || undefined,
                                 dob: formData.get('dob') || undefined,
                                 gender: formData.get('gender') || undefined,
+                                gestational_weeks: formData.get('gestational_weeks') || undefined,
+                                birth_weight_g: formData.get('birth_weight_g') || undefined,
+                                apgar_score: formData.get('apgar_score') || undefined,
                                 contact: formData.get('contact') || undefined,
                                 amendment_reason: formData.get('amendment_reason') || undefined,
                             };
@@ -240,7 +243,36 @@ const PatientProfile = ({ patientId, onBack }) => {
                                 <option value="O">Other</option>
                             </select>
                         </div>
-                        <div className="space-y-2 md:col-span-2">
+                        <div className="space-y-2">
+                            <label className="text-[12px] font-black uppercase tracking-widest text-slate-500 ml-2">Gestational Age (Weeks)</label>
+                            <input
+                                type="number"
+                                name="gestational_weeks"
+                                defaultValue={patient.gestational_weeks}
+                                placeholder="40"
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold text-slate-900 focus:ring-4 focus:ring-his-green-500/10 focus:border-his-green-500 outline-none transition-all"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-[12px] font-black uppercase tracking-widest text-slate-500 ml-2">Birth Weight (g)</label>
+                            <input
+                                type="number"
+                                name="birth_weight_g"
+                                defaultValue={patient.birth_weight_g}
+                                placeholder="3200"
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold text-slate-900 focus:ring-4 focus:ring-his-green-500/10 focus:border-his-green-500 outline-none transition-all"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-[12px] font-black uppercase tracking-widest text-slate-500 ml-2">APGAR Score</label>
+                            <input
+                                name="apgar_score"
+                                defaultValue={patient.apgar_score}
+                                placeholder="9/10"
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold text-slate-900 focus:ring-4 focus:ring-his-green-500/10 focus:border-his-green-500 outline-none transition-all"
+                            />
+                        </div>
+                        <div className="space-y-2">
                             <label className="text-[12px] font-black uppercase tracking-widest text-slate-500 ml-2">Contact</label>
                             <input
                                 name="contact"

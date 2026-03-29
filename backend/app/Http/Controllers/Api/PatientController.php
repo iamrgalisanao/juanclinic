@@ -45,6 +45,9 @@ class PatientController extends Controller
             'last_name' => 'required|string',
             'dob' => 'required|date',
             'gender' => 'required|in:M,F,O',
+            'gestational_weeks' => 'nullable|integer|between:20,45',
+            'birth_weight_g' => 'nullable|integer|between:0,10000',
+            'apgar_score' => 'nullable|string',
             'contact' => 'nullable|string',
             'metadata' => 'nullable|array',
         ]);
@@ -89,6 +92,9 @@ class PatientController extends Controller
             'last_name' => 'sometimes|string',
             'dob' => 'sometimes|date',
             'gender' => 'sometimes|in:M,F,O',
+            'gestational_weeks' => 'sometimes|integer|between:20,45',
+            'birth_weight_g' => 'sometimes|integer|between:0,10000',
+            'apgar_score' => 'sometimes|string',
             'contact' => 'nullable|string',
             'metadata' => 'nullable|array',
             'amendment_reason' => 'required|string|min:4',
@@ -116,32 +122,51 @@ class PatientController extends Controller
     /**
      * Get pediatric growth history with Z-Scores.
      */
-    public function getGrowthHistory(string $id)
+    public function getGrowthHistory(string $id, Request $request)
     {
         $patient = \App\Models\Patient::findOrFail($id);
         $this->authorize('view', $patient);
+        $useCorrected = $request->boolean('use_corrected', false);
 
         $records = Vital::where('patient_id', $id)
-            ->whereNotNull('weight_kg')
-            ->whereNotNull('height_cm')
+            ->where(function($q) {
+                $q->whereNotNull('weight_kg')
+                  ->orWhereNotNull('height_cm');
+            })
             ->oldest('recorded_at')
             ->get();
 
-        $history = $records->map(function ($record) use ($patient) {
+        $history = $records->map(function ($record) use ($patient, $useCorrected) {
             $ageMonths = $this->pediatricService->getAgeMonths($patient, $record->recorded_at);
             
+            $analysis = $this->pediatricService->calculateGrowthAnalysis($record, $useCorrected);
+
             return [
                 'id' => $record->id,
                 'weight_kg' => (float) $record->weight_kg,
                 'height_cm' => (float) $record->height_cm,
                 'head_circumference_cm' => (float) ($record->metadata['head_circumference_cm'] ?? 0),
                 'measured_at' => $record->recorded_at->toIso8601String(),
-                'age_months' => $ageMonths,
-                'analysis' => $this->pediatricService->calculateGrowthAnalysis($record)
+                'age_months' => $analysis['age_months'], // Use the age from analysis (corrected or not)
+                'is_corrected' => $useCorrected,
+                'analysis' => $analysis
             ];
         });
 
         return response()->json($history);
+    }
+    
+    /**
+     * Get summary of overdue milestones and alerts.
+     */
+    public function getOverdueMilestones(string $id)
+    {
+        $patient = \App\Models\Patient::findOrFail($id);
+        $this->authorize('view', $patient);
+
+        return response()->json([
+            'overdue' => $this->pediatricService->getOverdueMilestones($patient)
+        ]);
     }
 
     /**

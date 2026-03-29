@@ -95,11 +95,18 @@ class PediatricService
     /**
      * Calculate all pediatric growth metrics for a given record (Vital or PediatricGrowthRecord).
      */
-    public function calculateGrowthAnalysis($record): array
+    public function calculateGrowthAnalysis($record, bool $useCorrected = false): array
     {
         $patient = $record->patient;
         $recordedAt = $record->recorded_at ?? $record->measured_at;
-        $ageMonths = $this->getAgeMonths($patient, $recordedAt);
+        
+        if ($useCorrected) {
+            $ageDays = $patient->getCorrectedAgeInDays($recordedAt);
+            $ageMonths = (int) ($ageDays / 30.4375); // Average month length
+        } else {
+            $ageMonths = $this->getAgeMonths($patient, $recordedAt);
+        }
+        
         $gender = $patient->gender === 'M' ? 'M' : 'F';
 
         $weightZ = $this->calculateZScore($gender, 'weight_for_age', $ageMonths, $record->weight_kg);
@@ -113,6 +120,7 @@ class PediatricService
 
         return [
             'age_months' => $ageMonths,
+            'is_corrected' => $useCorrected,
             'weight_for_age_z' => $weightZ,
             'weight_for_age_percentile' => $weightZ !== null ? $this->zScoreToPercentile($weightZ) / 100 : null,
             'height_for_age_z' => $heightZ,
@@ -170,5 +178,39 @@ class PediatricService
                 'description' => $milestone->description,
             ];
         })->toArray();
+    }
+
+    /**
+     * Get list of overdue vaccines and checkups.
+     */
+    public function getOverdueMilestones(Patient $patient): array
+    {
+        $roadmap = $this->getImmunizationRoadmap($patient);
+        $overdue = array_filter($roadmap, fn($m) => $m['status'] === 'OVERDUE');
+
+        // Well-Baby Checkup Schedule (Months)
+        $checkupSchedule = [1, 2, 4, 6, 9, 12, 15, 18, 24];
+        $notes = $patient->clinicalNotes()->get();
+        
+        foreach ($checkupSchedule as $month) {
+            $dueDate = $patient->dob->copy()->addMonths($month);
+            if ($dueDate->isPast()) {
+                // Check if a note exists around this age (+/- 2 weeks)
+                $hasNote = $notes->contains(function ($note) use ($patient, $dueDate) {
+                    $noteDate = Carbon::parse($note->created_at);
+                    return $noteDate->diffInDays($dueDate) <= 14;
+                });
+
+                if (!$hasNote) {
+                    $overdue[] = [
+                        'type' => 'CHECKUP',
+                        'name' => "{$month}-Month Well-Baby Visit",
+                        'due_date' => $dueDate->toDateString(),
+                    ];
+                }
+            }
+        }
+
+        return array_values($overdue);
     }
 }

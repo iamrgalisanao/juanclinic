@@ -35,6 +35,7 @@ Route::group(['middleware' => ['auth:sanctum', 'tenant_user', 'branch_user']], f
     Route::post('patients/{id}/pediatrics/growth', [\App\Http\Controllers\Api\PatientController::class, 'storeGrowthRecord'])->middleware('role:DOCTOR,ADMIN');
     Route::get('patients/{id}/pediatrics/immunizations', [\App\Http\Controllers\Api\PatientController::class, 'getImmunizationHistory'])->middleware('role:DOCTOR,ADMIN');
     Route::post('patients/{id}/pediatrics/immunizations', [\App\Http\Controllers\Api\PatientController::class, 'storeImmunizationRecord'])->middleware('role:DOCTOR,ADMIN');
+    Route::get('patients/{id}/pediatrics/overdue', [\App\Http\Controllers\Api\PatientController::class, 'getOverdueMilestones'])->middleware('role:DOCTOR,ADMIN');
     Route::get('pediatrics/standards', [\App\Http\Controllers\Api\PatientController::class, 'getStandards'])->middleware('role:DOCTOR,ADMIN');
 
     Route::get('orders/worklist', [\App\Http\Controllers\Api\OrderController::class, 'worklist'])->middleware('role:ADMIN,TECH,DIAGNOSTIC_APPROVER');
