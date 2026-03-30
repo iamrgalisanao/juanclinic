@@ -19,6 +19,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        \App\Models\Patient::observe(\App\Observers\PatientObserver::class);
+        \App\Models\Order::observe(\App\Observers\OrderObserver::class);
+
         \Illuminate\Support\Facades\RateLimiter::for('api', function (\Illuminate\Http\Request $request) {
             return \Illuminate\Cache\RateLimiting\Limit::perMinute(1000)->by($request->user()?->id ?: $request->ip());
         });

@@ -14,6 +14,7 @@ class Medicine extends Model
         'form',
         'strength',
         'price',
+        'stock',
         'is_system',
     ];
 

@@ -8,6 +8,8 @@ use App\Services\PediatricService;
 use App\Models\Vital;
 use App\Models\ImmunizationRecord;
 use App\Models\Patient;
+use App\Models\Medicine;
+use App\Models\VaccineSchedule;
 
 class PatientController extends Controller
 {
@@ -145,7 +147,7 @@ class PatientController extends Controller
                 'id' => $record->id,
                 'weight_kg' => (float) $record->weight_kg,
                 'height_cm' => (float) $record->height_cm,
-                'head_circumference_cm' => (float) ($record->metadata['head_circumference_cm'] ?? 0),
+                'head_circumference_cm' => (float) ($record->head_circumference_cm ?? 0),
                 'measured_at' => $record->recorded_at->toIso8601String(),
                 'age_months' => $analysis['age_months'], // Use the age from analysis (corrected or not)
                 'is_corrected' => $useCorrected,
@@ -196,10 +198,10 @@ class PatientController extends Controller
             'branch_id' => $patient->branch_id,
             'weight_kg' => $validated['weight_kg'],
             'height_cm' => $validated['height_cm'],
+            'head_circumference_cm' => $validated['head_circumference_cm'],
             'bmi' => $bmi,
             'recorded_at' => $validated['measured_at'],
             'metadata' => [
-                'head_circumference_cm' => $validated['head_circumference_cm'],
                 'source' => 'pediatrics_dashboard'
             ]
         ]);
@@ -236,13 +238,35 @@ class PatientController extends Controller
 
         $validated = $request->validate([
             'vaccine_name' => 'required|string',
+            'manufacturer' => 'nullable|string',
             'dose_number' => 'required|integer',
             'administered_at' => 'required|date',
             'administered_by' => 'nullable|string',
             'lot_number' => 'nullable|string',
+            'site' => 'nullable|string',
+            'route' => 'nullable|string',
             'next_due_date' => 'nullable|date',
+            'vis_edition_date' => 'nullable|date',
+            'vis_provided_date' => 'nullable|date',
+            'cvx_code' => 'nullable|string',
+            'ndc_code' => 'nullable|string',
             'remarks' => 'nullable|string',
         ]);
+
+        // Duplicate Check: Same vaccine, same dose, same date for same patient
+        $existing = \App\Models\ImmunizationRecord::where([
+            'patient_id' => $id,
+            'vaccine_name' => $validated['vaccine_name'],
+            'dose_number' => $validated['dose_number'],
+            'administered_at' => \Carbon\Carbon::parse($validated['administered_at'])->toDateString(),
+        ])->first();
+
+        if ($existing) {
+            return response()->json([
+                'message' => 'A record for this vaccine and dose already exists for this date.',
+                'existing_record' => $existing
+            ], 422);
+        }
 
         $record = \App\Models\ImmunizationRecord::create(array_merge($validated, [
             'patient_id' => $id,
@@ -268,5 +292,52 @@ class PatientController extends Controller
         );
 
         return response()->json($standards);
+    }
+
+    /**
+     * Lookup for vaccines and historical presets.
+     */
+    public function lookupVaccines(Request $request)
+    {
+        $standard = VaccineSchedule::distinct()->pluck('vaccine_name');
+        
+        $medicines = Medicine::where(function($q) {
+                $q->where('brand_name', 'like', '%vaccine%')
+                  ->orWhere('brand_name', 'like', '%vax%')
+                  ->orWhere('generic_name', 'like', '%vaccine%')
+                  ->orWhere('generic_name', 'like', '%vax%');
+            })
+            ->with('lots')
+            ->where('stock', '>', 0)
+            ->limit(50)
+            ->get();
+
+        $medicineList = $medicines->map(function($m) {
+            return [
+                'id' => $m->id,
+                'name' => $m->brand_name . ($m->generic_name ? " ({$m->generic_name})" : "")
+            ];
+        });
+
+        $historyPresets = ImmunizationRecord::whereIn('vaccine_name', $standard)
+            ->latest('administered_at')
+            ->get()
+            ->groupBy('vaccine_name')
+            ->map(function($items) {
+                $latest = $items->first();
+                return [
+                    'manufacturer' => $latest->manufacturer,
+                    'site' => $latest->site,
+                    'route' => $latest->route,
+                    'vis_edition_date' => $latest->vis_edition_date?->toDateString(),
+                    'cvx_code' => $latest->cvx_code
+                ];
+            });
+
+        return response()->json([
+            'standard' => $standard,
+            'medicines' => $medicineList,
+            'history_presets' => $historyPresets
+        ]);
     }
 }

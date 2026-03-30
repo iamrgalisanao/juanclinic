@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const Sidebar = ({ activeTenant, activeView, setActiveView, currentUser, isOpen, onClose }) => {
+const Sidebar = ({ activeTenant, activeView, setActiveView, currentUser, isOpen, isSlim, setIsSlim, systemVersion, onClose }) => {
     const [expandedMenus, setExpandedMenus] = useState([]);
 
     const allItems = [
@@ -27,25 +27,14 @@ const Sidebar = ({ activeTenant, activeView, setActiveView, currentUser, isOpen,
         { id: 'tenant_management', name: 'Organization Settings', icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4', roles: ['ADMIN'], globalOnly: true },
         { id: 'branch_management', name: 'Branch Settings', icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4', roles: ['ADMIN'] },
         { id: 'audit', name: 'Audit', icon: 'M9 17v-6a2 2 0 012-2h7m-7 0l-2-2m2 2l-2 2M5 19h14', roles: ['ADMIN'] },
+        { id: 'hl7_transport', name: 'HL7 Transport', icon: 'M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h12a2 2 0 012 2v8a2 2 0 01-2 2h-2m-4 0v8m0 0l-3-3m3 3l3-3', roles: ['ADMIN'] },
         { id: 'help', name: 'Help Center', icon: 'M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z', roles: ['ADMIN', 'DOCTOR', 'FRONT_DESK', 'TECH'] },
     ];
     const categories = [
-        {
-            name: 'Overview',
-            items: ['dashboard', 'messages', 'help']
-        },
-        {
-            name: 'Clinical Core',
-            items: ['patients', 'appointments', 'clinical_notes', 'referrals', 'doctors']
-        },
-        {
-            name: 'Operations',
-            items: ['worklist', 'pharmacy_parent', 'billing']
-        },
-        {
-            name: 'Administration',
-            items: ['reports', 'tenant_management', 'branch_management', 'audit']
-        }
+        { name: 'Overview', items: ['dashboard', 'messages', 'help'] },
+        { name: 'Clinical Core', items: ['patients', 'appointments', 'clinical_notes', 'referrals', 'doctors'] },
+        { name: 'Operations', items: ['worklist', 'pharmacy_parent', 'billing'] },
+        { name: 'Administration', items: ['reports', 'tenant_management', 'branch_management', 'audit', 'hl7_transport'] }
     ];
 
     const filteredItems = allItems.filter(item => {
@@ -60,33 +49,43 @@ const Sidebar = ({ activeTenant, activeView, setActiveView, currentUser, isOpen,
     })).filter(cat => cat.items.length > 0);
 
     useEffect(() => {
-        // Auto-expand menu if active link is a sub-item
-        filteredItems.forEach(item => {
-            if (item.subItems && item.subItems.some(sub => sub.id === activeView)) {
-                if (!expandedMenus.includes(item.id)) {
-                    setExpandedMenus(prev => [...prev, item.id]);
+        if (isSlim) {
+            setExpandedMenus([]);
+        } else {
+            filteredItems.forEach(item => {
+                if (item.subItems && item.subItems.some(sub => sub.id === activeView)) {
+                    if (!expandedMenus.includes(item.id)) {
+                        setExpandedMenus(prev => [...prev, item.id]);
+                    }
                 }
-            }
-        });
-    }, [activeView, filteredItems]);
+            });
+        }
+    }, [activeView, filteredItems, isSlim]);
 
     const toggleMenu = (id) => {
+        if (isSlim) {
+            setIsSlim(false);
+            setExpandedMenus([id]);
+            return;
+        }
         setExpandedMenus(prev =>
             prev.includes(id) ? prev.filter(mid => mid !== id) : [...prev, id]
         );
     };
 
     return (
-        <div className={`w-64 bg-his-slate-900 min-h-screen flex flex-col p-6 fixed z-50 transition-transform duration-300 lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <div className={`${isSlim ? 'w-20' : 'w-64'} bg-his-slate-900 h-screen flex flex-col p-4 fixed z-50 sidebar-transition lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
             <div className="flex items-center justify-between mb-10 px-2 group">
-                <div className="flex items-center gap-3 cursor-pointer" onClick={() => setActiveView('dashboard')}>
+                <div className="flex items-center gap-3 cursor-pointer overflow-hidden" onClick={() => setActiveView('dashboard')}>
                     <div className="w-10 h-10 bg-his-green-500 rounded-xl flex items-center justify-center text-white shadow-lg shadow-his-green-500/20 group-hover:scale-110 transition-transform duration-300 shrink-0">
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 21c-4.418 0-8-3.582-8-8 0-4.418 3.582-8 8-8s8 3.582 8 8c0 4.418-3.582 8-8 8z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 11c-1.105 0-2-.895-2-2s.895-2 2-2 2 .895 2 2-.895 2-2 2z" /></svg>
                     </div>
-                    <div>
-                        <h1 className="font-black text-xl tracking-tight text-white leading-none">JUAN</h1>
-                        <p className="text-[10px] font-bold text-his-green-500 tracking-[0.2em] uppercase">Clinical System</p>
-                    </div>
+                    {!isSlim && (
+                        <div className="animate-in fade-in slide-in-from-left-2 duration-300">
+                            <h1 className="font-black text-xl tracking-tight text-white leading-none">JUAN</h1>
+                            <p className="text-[10px] font-bold text-his-green-500 tracking-[0.2em] uppercase">Clinical System</p>
+                        </div>
+                    )}
                 </div>
                 <button
                     onClick={onClose}
@@ -96,22 +95,24 @@ const Sidebar = ({ activeTenant, activeView, setActiveView, currentUser, isOpen,
                 </button>
             </div>
 
-            <nav className="flex-1 space-y-8 overflow-y-auto pr-2 custom-scrollbar">
+            <nav className="flex-1 space-y-8 overflow-y-auto overflow-x-hidden pr-1 custom-scrollbar">
                 {groupedItems.map((category) => (
                     <div key={category.name} className="space-y-3">
-                        <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-4">
-                            {category.name}
-                        </h3>
+                        {!isSlim && (
+                            <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-4 animate-in fade-in duration-500">
+                                {category.name}
+                            </h3>
+                        )}
                         <div className="space-y-1">
                             {category.items.map((item) => {
                                 const isExpanded = expandedMenus.includes(item.id);
                                 const isActive = activeView === item.id || (item.subItems && item.subItems.some(sub => sub.id === activeView));
 
                                 return (
-                                    <div key={item.id} className="space-y-1">
+                                    <div key={item.id} className="space-y-1 relative group/item">
                                         <button
                                             onClick={() => item.subItems ? toggleMenu(item.id) : setActiveView(item.id)}
-                                            className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-300 group ${isActive && !item.subItems
+                                            className={`w-full flex items-center justify-between px-3 py-3 rounded-xl text-sm font-semibold transition-all duration-300 ${isActive && !item.subItems
                                                 ? 'bg-his-green-500 text-white shadow-lg shadow-his-green-500/10'
                                                 : isActive
                                                     ? 'text-white bg-white/5'
@@ -119,19 +120,25 @@ const Sidebar = ({ activeTenant, activeView, setActiveView, currentUser, isOpen,
                                                 }`}
                                         >
                                             <div className="flex items-center gap-3">
-                                                <svg className={`w-5 h-5 transition-colors ${isActive ? 'text-his-green-400' : 'text-slate-500 group-hover:text-his-green-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <svg className={`w-6 h-6 transition-colors shrink-0 ${isActive ? 'text-his-green-400' : 'text-slate-500 group-hover/item:text-his-green-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={item.icon} />
                                                 </svg>
-                                                <span className={isActive ? 'text-white' : ''}>{item.name}</span>
+                                                {!isSlim && <span className="animate-in fade-in duration-300 whitespace-nowrap">{item.name}</span>}
                                             </div>
-                                            {item.subItems && (
+                                            {!isSlim && item.subItems && (
                                                 <svg className={`w-4 h-4 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''} text-slate-500`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
                                                 </svg>
                                             )}
                                         </button>
 
-                                        {item.subItems && (
+                                        {isSlim && (
+                                            <div className="absolute left-full ml-4 px-3 py-2 bg-slate-800 text-white text-[10px] font-black uppercase tracking-widest rounded-lg opacity-0 invisible group-hover/item:opacity-100 group-hover/item:visible transition-all whitespace-nowrap z-50 pointer-events-none shadow-xl border border-white/5">
+                                                {item.name}
+                                            </div>
+                                        )}
+
+                                        {!isSlim && item.subItems && (
                                             <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isExpanded ? 'max-h-40 opacity-100 mt-1' : 'max-h-0 opacity-0'}`}>
                                                 <div className="pl-12 space-y-1 py-1">
                                                     {item.subItems.map(sub => (
@@ -157,10 +164,27 @@ const Sidebar = ({ activeTenant, activeView, setActiveView, currentUser, isOpen,
                 ))}
             </nav>
 
-            <div className="pt-6 mt-6 border-t border-white/5">
-                <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-500 hover:text-rose-500 hover:bg-rose-500/5 transition-all duration-200">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
-                    Logout System
+            <div className="pt-6 mt-auto border-t border-white/5 space-y-2">
+                {systemVersion && (
+                    <div 
+                        className={`px-3 py-2 text-[10px] font-black tracking-[0.2em] uppercase transition-all duration-300 ${isSlim ? 'text-center text-his-green-500/40 hover:text-his-green-500' : 'text-slate-600 hover:text-slate-400'} cursor-help`}
+                        title={systemVersion.full}
+                    >
+                        {isSlim ? systemVersion.platform.split('.')[0].slice(-2) : `v${systemVersion.platform}`}
+                    </div>
+                )}
+                <button 
+                    onClick={() => setIsSlim(!isSlim)}
+                    className="w-full hidden lg:flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-slate-500 hover:text-white hover:bg-white/5 transition-all duration-200"
+                >
+                    <svg className={`w-6 h-6 transition-transform duration-500 ${isSlim ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+                    </svg>
+                    {!isSlim && <span className="animate-in fade-in duration-300">Minimize Menu</span>}
+                </button>
+                <button className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-slate-500 hover:text-rose-500 hover:bg-rose-500/5 transition-all duration-200">
+                    <svg className="w-6 h-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                    {!isSlim && <span className="animate-in fade-in duration-300">Logout System</span>}
                 </button>
             </div>
         </div>

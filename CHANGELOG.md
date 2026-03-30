@@ -1,21 +1,27 @@
 # JuanClinic HIS - Developer Changelog
 
-## [2026-03-29] - Pediatrics Dashboard Stabilization & Roadmap Update
+## [v1.15.0] - 2026-03-30
+### Hybrid Versioning & Sidebar UX Hardening
 
 ### Added
 - **Universal Triage & Vitals Module**: Added to **Phase 7** of the roadmap to satisfy clinical encounter requirements for BP, PR, RR, Temp, and BMI.
+- **HL7 v2 Integration Gateway**: Implemented outbound HL7 v2 generator (`PID`, `OBR`, `OBX`) and Mirth Connect bridge for outbound clinical data synchronization.
+- **Medicine Inventory Expansion**: Added **Medicine Lots** support and automated stock tracking for precise clinical inventory management.
+- **Immunization Compliance**: Integrated **NCVIA** and **CVX** standards for childhood and adult vaccination records.
+- **Hybrid Versioning**: Implemented CalVer (Platform) and SemVer (API) hybrid versioning system.
 - **Growth Chart Stability**: Added explicit numerical casting for all growth metrics (Weight, Height, HC) to prevent formatting crashes from string-type API responses.
 
 ### Changed
 - **Pediatrics Dashboard**: Refactored prop-drilling to use a stable `patient` object throughout the component hierarchy.
 - **Patient Profile Updates**: Enforced mandatory `amendment_reason` for demographic changes (e.g., gender correction) to maintain CDIM compliance and audit trail integrity.
-- **Roadmap Realignment**: Marked **Advanced Pediatrics Suite** and **Immunization Management** as [x] COMPLETED following successful feature verification.
+- **Roadmap Realignment**: Marked **Advanced Pediatrics Suite**, **Immunization Management**, and **HL7 Transport Gateway** as [x] COMPLETED following successful feature verification.
 
 ### Fixed
 - **ReferenceError**: Resolved `patient is not defined` in `PediatricsDashboard.jsx`.
 - **TypeError**: Resolved `dataPoint.value?.toFixed is not a function` in `GrowthChart.jsx` via robust type-checking and null safety.
 
-## [2026-03-26] - Hardened SDE & Appointment Recovery
+## [v1.14.0] - 2026-03-26
+### Hardened SDE & Appointment Recovery
 
 ### Added
 - **Hardened SDE (Structured Data Entry)**: Hierarchical symptom selection with **SNOMED CT Concept ID** mapping (e.g., Cough: `49727002`).
@@ -44,7 +50,8 @@
     - Corrected migration data types and foreign key references for `physical_branches`.
 - **Appointment Reminder**: Triggered automated patient alerts (Email/Database) immediately upon appointment booking in `AppointmentController`.
 
-## [2026-03-24] - Documentation Hardening & Roadmap Alignment
+## [v1.13.0] - 2026-03-24
+### Documentation Hardening & Roadmap Alignment
 
 ### Added
 - **Entity Authority Map**: Defined server-authoritative state transitions for clinical and financial entities.
@@ -64,7 +71,8 @@
 - **Dashboard UX**: Restored vertical scrolling for the main content area in `App.jsx`.
 - **Sync Integrity**: Hardened prescription fetching to wait for valid `activeBranch` context.
 
-## [2026-03-21] - Workflow Hardening & Financial Integration (Phase 4 Finalization)
+## [v1.12.0] - 2026-03-21
+### Workflow Hardening & Financial Integration
 
 ### Added
 - **Pharmacy Worklist**: Integrated React component for tracking pending prescriptions and clinical dispensing.
@@ -83,7 +91,8 @@
 - **Financial Loop Null-Ref**: Fixed "Undefined array key" 500 error in `processPayment` when handling optional transaction IDs.
 - **UI Consistency**: Fixed missing Quantity field in standard prescription entry forms.
 
-## [2026-03-18] - Clinical Core & Integrity Hardening
+## [v1.11.0] - 2026-03-18
+### Clinical Core & Integrity Hardening
 
 ### Added
 - **Pharmacy Module**: Complete backend for prescriptions and medication management in `backend/app/Models/Prescription.php`.

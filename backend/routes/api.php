@@ -14,6 +14,10 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+Route::get('/version', function () {
+    return response()->json(\App\Services\VersionService::getInfo());
+});
+
 Route::post('/auth/login', [\App\Http\Controllers\Api\AuthController::class, 'login']);
 Route::middleware('auth:sanctum')->post('/auth/logout', [\App\Http\Controllers\Api\AuthController::class, 'logout']);
 
@@ -35,6 +39,7 @@ Route::group(['middleware' => ['auth:sanctum', 'tenant_user', 'branch_user']], f
     Route::post('patients/{id}/pediatrics/growth', [\App\Http\Controllers\Api\PatientController::class, 'storeGrowthRecord'])->middleware('role:DOCTOR,ADMIN');
     Route::get('patients/{id}/pediatrics/immunizations', [\App\Http\Controllers\Api\PatientController::class, 'getImmunizationHistory'])->middleware('role:DOCTOR,ADMIN');
     Route::post('patients/{id}/pediatrics/immunizations', [\App\Http\Controllers\Api\PatientController::class, 'storeImmunizationRecord'])->middleware('role:DOCTOR,ADMIN');
+    Route::get('pediatrics/vaccines/lookup', [\App\Http\Controllers\Api\PatientController::class, 'lookupVaccines'])->middleware('role:DOCTOR,ADMIN');
     Route::get('patients/{id}/pediatrics/overdue', [\App\Http\Controllers\Api\PatientController::class, 'getOverdueMilestones'])->middleware('role:DOCTOR,ADMIN');
     Route::get('pediatrics/standards', [\App\Http\Controllers\Api\PatientController::class, 'getStandards'])->middleware('role:DOCTOR,ADMIN');
 
@@ -62,6 +67,16 @@ Route::group(['middleware' => ['auth:sanctum', 'tenant_user', 'branch_user']], f
     Route::get('attachments/{id}/download', [\App\Http\Controllers\Api\AttachmentController::class, 'download'])->middleware('role:DOCTOR,ADMIN,TECH');
     Route::delete('attachments/{id}', [\App\Http\Controllers\Api\AttachmentController::class, 'destroy'])->middleware('role:DOCTOR,ADMIN,TECH');
     Route::apiResource('vitals', \App\Http\Controllers\Api\VitalController::class)->middleware('role:DOCTOR,ADMIN,FRONT_DESK,TECH');
+    Route::get('patients/{patient}/vitals', [\App\Http\Controllers\Api\VitalController::class, 'index'])->middleware('role:DOCTOR,ADMIN,FRONT_DESK,TECH');
+    Route::post('patients/{patient}/vitals', [\App\Http\Controllers\Api\VitalController::class, 'store'])->middleware('role:DOCTOR,ADMIN,FRONT_DESK,TECH');
+    Route::get('patients/{patient}/vitals/latest', [\App\Http\Controllers\Api\VitalController::class, 'latest'])->middleware('role:DOCTOR,ADMIN,FRONT_DESK,TECH');
+
+    // HL7 Outbox Monitoring
+    Route::group(['prefix' => 'admin/hl7', 'middleware' => 'role:ADMIN'], function () {
+        Route::get('outbox', [\App\Http\Controllers\Api\HL7OutboxController::class, 'index']);
+        Route::post('outbox/{message}/retry', [\App\Http\Controllers\Api\HL7OutboxController::class, 'retry']);
+        Route::post('outbox/process', [\App\Http\Controllers\Api\HL7OutboxController::class, 'process']);
+    });
     Route::get('pharmacy/worklist', [\App\Http\Controllers\Api\PharmacyController::class, 'worklist'])->middleware('role:ADMIN,TECH,DOCTOR');
     Route::post('pharmacy/dispense/{id}', [\App\Http\Controllers\Api\PharmacyController::class, 'dispense'])->middleware('role:ADMIN,TECH,DOCTOR');
 

@@ -11,3 +11,32 @@
 .glass {
     @apply bg-white/10 backdrop-blur-md border border-white/20 shadow-xl;
 }
+
+/* Premium Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 5px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #334155; /* slate-700 */
+    border-radius: 10px;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.custom-scrollbar:hover::-webkit-scrollbar-thumb {
+    background: #475569; /* slate-600 */
+}
+
+/* Sidebar Transitions */
+.sidebar-transition {
+    transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1), transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.main-content-transition {
+    transition: margin-left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}

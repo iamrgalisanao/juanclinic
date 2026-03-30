@@ -13,29 +13,35 @@ class VaccineScheduleSeeder extends Seeder
     public function run(): void
     {
         $schedule = [
-            ['vaccine_name' => 'BCG', 'dose_number' => 1, 'recommended_age_weeks' => 0, 'description' => 'Tuberculosis protection'],
-            ['vaccine_name' => 'Hepatitis B', 'dose_number' => 1, 'recommended_age_weeks' => 0, 'description' => 'Within 12 hours of birth'],
+            // Birth
+            ['vaccine_name' => 'BCG', 'cvx_code' => '19', 'dose_number' => 1, 'recommended_age_weeks' => 0, 'description' => 'Tuberculosis protection'],
+            ['vaccine_name' => 'Hepatitis B', 'cvx_code' => '08', 'dose_number' => 1, 'recommended_age_weeks' => 0, 'description' => 'Within 12 hours of birth'],
             
-            ['vaccine_name' => 'Pentavalent (DTP-Hib-HepB)', 'dose_number' => 1, 'recommended_age_weeks' => 6],
-            ['vaccine_name' => 'Oral Polio Vaccine (OPV)', 'dose_number' => 1, 'recommended_age_weeks' => 6],
-            ['vaccine_name' => 'Pneumococcal Conjugate Vaccine (PCV)', 'dose_number' => 1, 'recommended_age_weeks' => 6],
-            ['vaccine_name' => 'Rotavirus Vaccine', 'dose_number' => 1, 'recommended_age_weeks' => 6],
+            // 6 Weeks
+            ['vaccine_name' => 'Pentavalent (DTP-Hib-HepB)', 'cvx_code' => '102', 'dose_number' => 1, 'recommended_age_weeks' => 6],
+            ['vaccine_name' => 'Oral Polio Vaccine (OPV)', 'cvx_code' => '02', 'dose_number' => 1, 'recommended_age_weeks' => 6],
+            ['vaccine_name' => 'Pneumococcal Conjugate Vaccine (PCV)', 'cvx_code' => '152', 'dose_number' => 1, 'recommended_age_weeks' => 6],
+            ['vaccine_name' => 'Rotavirus Vaccine', 'cvx_code' => '119', 'dose_number' => 1, 'recommended_age_weeks' => 6],
             
-            ['vaccine_name' => 'Pentavalent (DTP-Hib-HepB)', 'dose_number' => 2, 'recommended_age_weeks' => 10],
-            ['vaccine_name' => 'Oral Polio Vaccine (OPV)', 'dose_number' => 2, 'recommended_age_weeks' => 10],
-            ['vaccine_name' => 'Pneumococcal Conjugate Vaccine (PCV)', 'dose_number' => 2, 'recommended_age_weeks' => 10],
-            ['vaccine_name' => 'Rotavirus Vaccine', 'dose_number' => 2, 'recommended_age_weeks' => 10],
+            // 10 Weeks
+            ['vaccine_name' => 'Pentavalent (DTP-Hib-HepB)', 'cvx_code' => '102', 'dose_number' => 2, 'recommended_age_weeks' => 10],
+            ['vaccine_name' => 'Oral Polio Vaccine (OPV)', 'cvx_code' => '02', 'dose_number' => 2, 'recommended_age_weeks' => 10],
+            ['vaccine_name' => 'Pneumococcal Conjugate Vaccine (PCV)', 'cvx_code' => '152', 'dose_number' => 2, 'recommended_age_weeks' => 10],
+            ['vaccine_name' => 'Rotavirus Vaccine', 'cvx_code' => '119', 'dose_number' => 2, 'recommended_age_weeks' => 10],
             
-            ['vaccine_name' => 'Pentavalent (DTP-Hib-HepB)', 'dose_number' => 3, 'recommended_age_weeks' => 14],
-            ['vaccine_name' => 'Oral Polio Vaccine (OPV)', 'dose_number' => 3, 'recommended_age_weeks' => 14],
-            ['vaccine_name' => 'Pneumococcal Conjugate Vaccine (PCV)', 'dose_number' => 3, 'recommended_age_weeks' => 14],
-            ['vaccine_name' => 'Inactivated Polio Vaccine (IPV)', 'dose_number' => 1, 'recommended_age_weeks' => 14],
+            // 14 Weeks
+            ['vaccine_name' => 'Pentavalent (DTP-Hib-HepB)', 'cvx_code' => '102', 'dose_number' => 3, 'recommended_age_weeks' => 14],
+            ['vaccine_name' => 'Oral Polio Vaccine (OPV)', 'cvx_code' => '02', 'dose_number' => 3, 'recommended_age_weeks' => 14],
+            ['vaccine_name' => 'Pneumococcal Conjugate Vaccine (PCV)', 'cvx_code' => '152', 'dose_number' => 3, 'recommended_age_weeks' => 14],
+            ['vaccine_name' => 'Inactivated Polio Vaccine (IPV)', 'cvx_code' => '10', 'dose_number' => 1, 'recommended_age_weeks' => 14],
             
-            ['vaccine_name' => 'Measles-Rubella (MR)', 'dose_number' => 1, 'recommended_age_months' => 9],
-            ['vaccine_name' => 'Inactivated Polio Vaccine (IPV)', 'dose_number' => 2, 'recommended_age_months' => 9],
+            // 9 Months
+            ['vaccine_name' => 'Measles-Rubella (MR)', 'cvx_code' => '04', 'dose_number' => 1, 'recommended_age_months' => 9],
+            ['vaccine_name' => 'Inactivated Polio Vaccine (IPV)', 'cvx_code' => '10', 'dose_number' => 2, 'recommended_age_months' => 9],
             
-            ['vaccine_name' => 'Measles, Mumps, Rubella (MMR)', 'dose_number' => 1, 'recommended_age_months' => 12],
-            ['vaccine_name' => 'Pneumococcal Conjugate Vaccine (PCV)', 'dose_number' => 4, 'recommended_age_months' => 12, 'description' => 'Booster dose'],
+            // 12 Months
+            ['vaccine_name' => 'Measles, Mumps, Rubella (MMR)', 'cvx_code' => '03', 'dose_number' => 1, 'recommended_age_months' => 12],
+            ['vaccine_name' => 'Pneumococcal Conjugate Vaccine (PCV)', 'cvx_code' => '152', 'dose_number' => 4, 'recommended_age_months' => 12, 'description' => 'Booster dose'],
         ];
 
         foreach ($schedule as $item) {

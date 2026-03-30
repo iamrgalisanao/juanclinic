@@ -385,6 +385,11 @@ export const storeImmunizationRecord = async (patientId, data) => {
     return response.data;
 };
 
+export const lookupVaccines = async (tenantId) => {
+    const response = await api.get(`/pediatrics/vaccines/lookup`, { params: { tenant_id: tenantId } });
+    return response.data;
+};
+
 export const getPediatricStandards = async (params) => {
     const response = await api.get('/pediatrics/standards', { params });
     return response.data;
@@ -421,5 +426,23 @@ export const pushSync = async (queue) => {
     const response = await api.post('/sync/push', { queue });
     return response.data;
 };
+
+// HL7 Outbox Management
+export const getHL7Outbox = async (params = {}) => {
+    const response = await api.get('/admin/hl7/outbox', { params });
+    return response.data;
+};
+
+export const retryHL7Message = async (id) => {
+    const response = await api.post(`/admin/hl7/outbox/${id}/retry`);
+    return response.data;
+};
+
+export const processHL7Outbox = async () => {
+    const response = await api.post('/admin/hl7/outbox/process');
+    return response.data;
+};
+
+export const getSystemVersion = () => api.get('/version').then(res => res.data);
 
 export default api;

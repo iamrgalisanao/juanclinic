@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { getPatients, getTenants, setTenantToken, getOrders, ingestHL7, updateOrder, getAuditLogs, getPrescriptions, getBranches, setBranchToken, getDashboardReports, getDoctors } from './services/api';
+import { getPatients, getTenants, setTenantToken, getOrders, ingestHL7, updateOrder, getAuditLogs, getPrescriptions, getBranches, setBranchToken, getDashboardReports, getDoctors, getSystemVersion } from './services/api';
 import { setEchoAuthHeader } from './services/echo';
 import { startAutoSync } from './services/syncService';
 import Sidebar from './components/Sidebar';
@@ -23,6 +23,7 @@ import Referrals from './components/Referrals';
 import BranchManagement from './views/BranchManagement';
 import TenantManagement from './views/TenantManagement';
 import HelpCenter from './views/HelpCenter';
+import HL7OutboxViewer from './components/admin/HL7OutboxViewer';
 import Login from './views/Login';
 import api from './services/api';
 
@@ -49,8 +50,13 @@ function App() {
     const [doctorsCount, setDoctorsCount] = useState(0);
     const [recentActivity, setRecentActivity] = useState([]);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [isSidebarSlim, setIsSidebarSlim] = useState(() => {
+        const saved = localStorage.getItem('sidebar_slim');
+        return saved === 'true';
+    });
     const [isTransitioning, setIsTransitioning] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const [systemVersion, setSystemVersion] = useState(null);
 
 
 
@@ -63,6 +69,11 @@ function App() {
             localStorage.removeItem('auth_user');
         }
     }, [currentUser]);
+
+    // Persist Slim Sidebar State
+    useEffect(() => {
+        localStorage.setItem('sidebar_slim', isSidebarSlim);
+    }, [isSidebarSlim]);
 
     // Track sync state and prevent concurrent loops
     const syncLockRef = useRef({ userEmail: '', tenantId: null, isSyncing: false });
@@ -127,7 +138,7 @@ function App() {
 
     const [activeView, setActiveView] = useState(() => {
         const hash = window.location.hash.replace('#', '');
-        return ['dashboard', 'worklist', 'messages', 'message', 'appointments', 'appointment', 'patients', 'doctors', 'reports', 'audit', 'patient_profile', 'pharmacy', 'billing', 'clinical_notes', 'medicine_management', 'referrals', 'branch_management'].includes(hash) ? hash : 'dashboard';
+        return ['dashboard', 'worklist', 'messages', 'message', 'appointments', 'appointment', 'patients', 'doctors', 'reports', 'audit', 'patient_profile', 'pharmacy', 'billing', 'clinical_notes', 'medicine_management', 'referrals', 'branch_management', 'hl7_transport'].includes(hash) ? hash : 'dashboard';
     });
 
     // Hash sync: State -> URL + Context-aware data fetching
@@ -158,6 +169,10 @@ function App() {
         try {
             const tenantData = await getTenants();
             setTenants(tenantData);
+            
+            // Fetch System Version
+            const version = await getSystemVersion();
+            setSystemVersion(version);
         } catch (err) {
             console.error("Initialization failed", err);
         } finally {
@@ -308,7 +323,8 @@ function App() {
             'audit': ['ADMIN', 'DOCTOR'],
             'tenant_management': ['ADMIN'],
             'branch_management': ['ADMIN'],
-            'patient_profile': ['ADMIN', 'DOCTOR', 'FRONT_DESK', 'DIAGNOSTIC_APPROVER']
+            'patient_profile': ['ADMIN', 'DOCTOR', 'FRONT_DESK', 'DIAGNOSTIC_APPROVER'],
+            'hl7_transport': ['ADMIN']
         };
 
         const allowedRoles = rolePermissions[view];
@@ -347,10 +363,13 @@ function App() {
                 }}
                 currentUser={currentUser}
                 isOpen={isSidebarOpen}
+                isSlim={isSidebarSlim}
+                setIsSlim={setIsSidebarSlim}
+                systemVersion={systemVersion}
                 onClose={() => setIsSidebarOpen(false)}
             />
 
-            <main className={`flex-1 min-w-0 h-screen overflow-y-auto transition-all duration-300 ${isSidebarOpen ? 'lg:ml-64' : 'ml-0 lg:ml-64'}`}>
+            <main className={`flex-1 min-w-0 h-screen overflow-y-auto main-content-transition ${isSidebarOpen ? (isSidebarSlim ? 'lg:ml-20' : 'lg:ml-64') : (isSidebarSlim ? 'ml-0 lg:ml-20' : 'ml-0 lg:ml-64')}`}>
                 <TopBar
                     activeTenant={activeTenant}
                     tenants={tenants}
@@ -360,6 +379,8 @@ function App() {
                     onBranchChange={handleBranchChange}
                     currentUser={currentUser}
                     onSidebarToggle={() => setIsSidebarOpen(!isSidebarOpen)}
+                    isSidebarSlim={isSidebarSlim}
+                    onSlimToggle={() => setIsSidebarSlim(!isSidebarSlim)}
                     onLogout={handleLogout}
                     searchTerm={searchTerm}
                     onSearch={setSearchTerm}
@@ -631,6 +652,8 @@ function App() {
                                         return <BranchManagement activeTenant={activeTenant} tenants={tenants} />;
                                     case 'tenant_management':
                                         return <TenantManagement onTenantUpdate={fetchInitialData} />;
+                                    case 'hl7_transport':
+                                        return <HL7OutboxViewer />;
                                     case 'help':
                                         return <HelpCenter />;
                                     default:

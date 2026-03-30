@@ -33,6 +33,17 @@ class MedicineSeeder extends Seeder
             ['generic_name' => 'Levofloxacin', 'brand_name' => null, 'form' => 'Tablet', 'strength' => '500mg', 'price' => 55.00],
             ['generic_name' => 'Ranitidine', 'brand_name' => 'Zantac', 'form' => 'Tablet', 'strength' => '150mg', 'price' => 10.00],
             ['generic_name' => 'Domperidone', 'brand_name' => 'Motilium', 'form' => 'Tablet', 'strength' => '10mg', 'price' => 9.50],
+            
+            // Vaccines
+            ['generic_name' => 'BCG Vaccine', 'brand_name' => 'BCG', 'form' => 'Vial (Injection)', 'strength' => '0.5mg/mL', 'price' => 150.00],
+            ['generic_name' => 'Hepatitis B Vaccine (Pediatric)', 'brand_name' => 'Hepatitis B', 'form' => 'Vial (Injection)', 'strength' => '10mcg/0.5mL', 'price' => 250.00],
+            ['generic_name' => 'Pentavalent Vaccine (DTP-Hib-HepB)', 'brand_name' => 'Pentavalent', 'form' => 'Vial (Injection)', 'strength' => '0.5mL', 'price' => 450.00],
+            ['generic_name' => 'Oral Polio Vaccine', 'brand_name' => 'OPV', 'form' => 'Drops', 'strength' => '2-dose', 'price' => 120.00],
+            ['generic_name' => 'Inactivated Polio Vaccine', 'brand_name' => 'IPV', 'form' => 'Vial (Injection)', 'strength' => '0.5mL', 'price' => 550.00],
+            ['generic_name' => 'Pneumococcal Conjugate Vaccine', 'brand_name' => 'PCV', 'form' => 'Prefilled Syringe', 'strength' => '0.5mL', 'price' => 1800.00],
+            ['generic_name' => 'Measles-Rubella Vaccine', 'brand_name' => 'MR', 'form' => 'Vial (Injection)', 'strength' => '0.5mL', 'price' => 200.00],
+            ['generic_name' => 'Measles, Mumps, Rubella Vaccine', 'brand_name' => 'MMR', 'form' => 'Vial (Injection)', 'strength' => '0.5mL', 'price' => 350.00],
+            ['generic_name' => 'Rotavirus Vaccine', 'brand_name' => 'Rotavirus', 'form' => 'Oral Suspension', 'strength' => '1.5mL', 'price' => 1200.00],
         ];
 
         foreach ($medicines as $medicine) {

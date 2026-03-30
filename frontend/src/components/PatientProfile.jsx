@@ -5,7 +5,7 @@ import AttachmentManager from './AttachmentManager';
 import ReferralForm from './ReferralForm';
 import ClinicalNotesManager from './ClinicalNotesManager';
 import PediatricsDashboard from './clinical/PediatricsDashboard';
-import VitalsManager from './clinical/VitalsManager';
+import TriageDashboard from './clinical/TriageDashboard';
 import OrderForm from './OrderForm';
 import LabResultPrintView from './LabResultPrintView';
 
@@ -115,8 +115,26 @@ const PatientProfile = ({ patientId, onBack }) => {
                         <div className="w-px h-6 bg-slate-200 hidden sm:block" />
                         <div className="flex flex-col gap-0.5">
                             <span className="text-[8px] font-black text-emerald-500 uppercase tracking-[0.15em]">BMI</span>
-                            <span className="text-xs font-black text-slate-900">{history.vitals[0].bmi}</span>
+                            <span className="text-xs font-black text-slate-900">{history.vitals[0].bmi || '--'}</span>
                         </div>
+                        {history.vitals[0].pain_score !== null && (
+                            <>
+                                <div className="w-px h-6 bg-slate-200 hidden sm:block" />
+                                <div className="flex flex-col gap-0.5">
+                                    <span className="text-[8px] font-black text-rose-600 uppercase tracking-[0.15em]">Pain</span>
+                                    <span className="text-xs font-black text-slate-900">{history.vitals[0].pain_score}/10</span>
+                                </div>
+                            </>
+                        )}
+                        {history.vitals[0].blood_glucose_mgdl && (
+                            <>
+                                <div className="w-px h-6 bg-slate-200 hidden sm:block" />
+                                <div className="flex flex-col gap-0.5">
+                                    <span className="text-[8px] font-black text-blue-600 uppercase tracking-[0.15em]">Glucose</span>
+                                    <span className="text-xs font-black text-slate-900">{history.vitals[0].blood_glucose_mgdl} <span className="text-[9px] text-slate-400 font-bold ml-0.5">mg/dL</span></span>
+                                </div>
+                            </>
+                        )}
                     </div>
                 )}
 
@@ -762,7 +780,10 @@ const PatientProfile = ({ patientId, onBack }) => {
 
                 {activeTab === 'VITALS' && (
                     <div className="lg:col-span-3">
-                        <VitalsManager patient={patient} />
+                        <TriageDashboard 
+                            patientId={patient.id} 
+                            onVitalSaved={() => fetchHistory()} 
+                        />
                     </div>
                 )}
 

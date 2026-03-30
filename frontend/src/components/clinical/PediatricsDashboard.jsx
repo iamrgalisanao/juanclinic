@@ -253,7 +253,11 @@ const PediatricsDashboard = ({ patientId, patient }) => {
             </div>
         ) : (
             <div className="animate-in fade-in duration-500 slide-in-from-left-2">
-                <ImmunizationLedger roadmap={data.immunization.roadmap} />
+                <ImmunizationLedger 
+                    roadmap={data.immunization.roadmap} 
+                    patientId={patientId} 
+                    onRecordAdded={fetchPediatricData}
+                />
             </div>
         )}
       </div>
