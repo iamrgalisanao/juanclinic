@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('immunization_records', function (Blueprint $table) {
-            $table->date('vis_edition_date')->nullable()->after('route');
+            $table->date('vis_edition_date')->nullable()->after('administered_by');
             $table->date('vis_provided_date')->nullable()->after('vis_edition_date');
             $table->string('cvx_code')->nullable()->after('vis_provided_date');
             $table->string('ndc_code')->nullable()->after('cvx_code');

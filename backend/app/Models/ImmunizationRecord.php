@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class ImmunizationRecord extends Model
 {
-    use \App\Traits\BelongsToTenant;
+    use \App\Traits\BelongsToTenant, \App\Traits\BelongsToBranch, \App\Traits\AuditLogTrait;
 
     protected $fillable = [
         'tenant_id',

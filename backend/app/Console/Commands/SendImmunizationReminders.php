@@ -29,42 +29,47 @@ class SendImmunizationReminders extends Command
      */
     public function handle(PediatricService $pediatricService)
     {
-        $this->info('Starting immunization reminder scan...');
+        $this->info('Starting multi-tenant immunization reminder scan...');
 
-        // We only care about patients who are within the target age range for the WHO/DOH schedule (0-6 years)
-        $patients = Patient::where('dob', '>=', now()->subYears(6))->get();
-
+        $tenants = \App\Models\Tenant::all();
         $remindersSent = 0;
 
-        /** @var \App\Models\Patient $patient */
-        foreach ($patients as $patient) {
-            $roadmap = $pediatricService->getImmunizationRoadmap($patient);
+        foreach ($tenants as $tenant) {
+            // Bind current tenant to the application container for scoping
+            app()->instance('tenant', $tenant);
             
-            foreach ($roadmap as $milestone) {
-                // We notify for OVERDUE milestones or milestones due TODAY
-                if ($milestone['status'] === 'OVERDUE' || (isset($milestone['due_date']) && $milestone['due_date'] === now()->toDateString())) {
-                    
-                    // Check if we already sent a notification for this specific milestone recently
-                    // to prevent duplicate spamming.
-                    $alreadyNotified = $patient->notifications()
-                        ->where('type', ImmunizationReminder::class)
-                        ->where('data->vaccine_name', $milestone['vaccine_name'])
-                        ->where('data->dose_number', $milestone['dose_number'])
-                        ->where('created_at', '>=', now()->subDays(7)) // Don't re-notify within 7 days
-                        ->exists();
+            $this->line("Scanning Tenant: {$tenant->name}...");
 
-                    if (!$alreadyNotified) {
-                        $patient->notify(new ImmunizationReminder($patient, [
-                            'vaccine_name' => $milestone['vaccine_name'],
-                            'dose_number' => $milestone['dose_number'],
-                            'due_date' => $milestone['due_date']
-                        ]));
-                        $remindersSent++;
+            // Scoped patient query (via BelongsToTenant trait)
+            $patients = Patient::where('dob', '>=', now()->subYears(6))->get();
+
+            foreach ($patients as $patient) {
+                $roadmap = $pediatricService->getImmunizationRoadmap($patient);
+                
+                foreach ($roadmap as $milestone) {
+                    if ($milestone['status'] === 'OVERDUE' || (isset($milestone['due_date']) && $milestone['due_date'] === now()->toDateString())) {
+                        
+                        // Check if already notified within tenant context
+                        $alreadyNotified = $patient->notifications()
+                            ->where('type', ImmunizationReminder::class)
+                            ->where('data->vaccine_name', $milestone['vaccine_name'])
+                            ->where('data->dose_number', $milestone['dose_number'])
+                            ->where('created_at', '>=', now()->subDays(7))
+                            ->exists();
+
+                        if (!$alreadyNotified) {
+                            $patient->notify(new ImmunizationReminder($patient, [
+                                'vaccine_name' => $milestone['vaccine_name'],
+                                'dose_number' => $milestone['dose_number'],
+                                'due_date' => $milestone['due_date']
+                            ]));
+                            $remindersSent++;
+                        }
                     }
                 }
             }
         }
 
-        $this->info("Scan complete. Reminders sent: {$remindersSent}");
+        $this->info("Global scan complete. Total reminders sent: {$remindersSent}");
     }
 }

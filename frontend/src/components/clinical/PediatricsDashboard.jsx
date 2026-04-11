@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import GrowthChart from './GrowthChart';
 import ImmunizationLedger from './ImmunizationLedger';
+import NeonatalDashboard from './NeonatalDashboard';
 import { getPediatricHistory, storeGrowthRecord } from '../../services/api';
 
 const PediatricsDashboard = ({ patientId, patient }) => {
@@ -18,7 +19,10 @@ const PediatricsDashboard = ({ patientId, patient }) => {
   const [overdue, setOverdue] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showGrowthForm, setShowGrowthForm] = useState(false);
-  const [activeView, setActiveView] = useState('GROWTH'); // GROWTH | IMMUNIZATION
+  
+  // Default to NEONATAL view if patient is under 28 days
+  const isNeonatal = patient?.dob ? Math.abs(new Date() - new Date(patient.dob)) / (1000 * 60 * 60 * 24) <= 28 : false;
+  const [activeView, setActiveView] = useState(isNeonatal ? 'NEONATAL' : 'GROWTH'); 
   const [useCorrected, setUseCorrected] = useState(false);
 
   // Auto-enable corrected age if patient is premature
@@ -187,6 +191,17 @@ const PediatricsDashboard = ({ patientId, patient }) => {
 
       {/* Main Interface */}
       <div className="flex gap-4 border-b border-slate-100 px-4">
+        {isNeonatal && (
+            <button
+                onClick={() => setActiveView('NEONATAL')}
+                className={`pb-4 px-6 text-[11px] font-black uppercase tracking-widest transition-all relative ${activeView === 'NEONATAL' ? 'text-slate-900 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-slate-900' : 'text-slate-400 hover:text-slate-600'}`}
+            >
+                <div className="flex items-center gap-2">
+                    <Baby size={14} />
+                    Neonatal Unit
+                </div>
+            </button>
+        )}
         <button
             onClick={() => setActiveView('GROWTH')}
             className={`pb-4 px-6 text-[11px] font-black uppercase tracking-widest transition-all relative ${activeView === 'GROWTH' ? 'text-his-green-500 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-his-green-500' : 'text-slate-400 hover:text-slate-600'}`}
@@ -208,7 +223,9 @@ const PediatricsDashboard = ({ patientId, patient }) => {
       </div>
 
       <div className="bg-white rounded-[2.5rem] p-8 md:p-10 border border-his-slate-100 shadow-sleek min-h-[500px]">
-        {activeView === 'GROWTH' ? (
+        {activeView === 'NEONATAL' ? (
+            <NeonatalDashboard patientId={patientId} patient={patient} />
+        ) : activeView === 'GROWTH' ? (
             <div className="animate-in fade-in duration-500 slide-in-from-right-2">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                     <div>

@@ -6,7 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class Vital extends Model
 {
-    use \App\Traits\BelongsToTenant, \App\Traits\AuditLogTrait;
+    use \App\Traits\BelongsToTenant, \App\Traits\AuditLogTrait, \App\Traits\BelongsToBranch;
+
+    protected $appends = ['analysis'];
 
     protected $fillable = [
         'tenant_id',
@@ -42,6 +44,11 @@ class Vital extends Model
         'bmi' => 'decimal:2',
         'temp_c' => 'decimal:2',
     ];
+
+    public function getAnalysisAttribute()
+    {
+        return app(\App\Services\PediatricService::class)->calculateGrowthAnalysis($this);
+    }
 
     public function patient()
     {

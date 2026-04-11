@@ -121,6 +121,27 @@ const VitalsManager = ({ patient }) => {
         return { label: 'Normal', color: 'text-green-600 bg-green-50' };
     };
 
+    const getPediatricStatus = (vital) => {
+        if (!patient?.dob) return {};
+        const ageInMonths = Math.floor((new Date() - new Date(patient.dob)) / (1000 * 60 * 60 * 24 * 30.44));
+        
+        const pr = vital.pulse_rate;
+        const rr = vital.resp_rate;
+        const status = {};
+
+        if (ageInMonths <= 12) { // Infant
+            status.pulse = (pr >= 90 && pr <= 160) ? { label: 'Normal', color: 'text-green-600' } : { label: 'Critical', color: 'text-rose-600 animate-pulse' };
+            status.resp = (rr >= 30 && rr <= 60) ? { label: 'Normal', color: 'text-green-600' } : { label: 'Critical', color: 'text-rose-600 animate-pulse' };
+        } else if (ageInMonths <= 60) { // Preschool
+            status.pulse = (pr >= 80 && pr <= 140) ? { label: 'Normal', color: 'text-green-600' } : { label: 'Critical', color: 'text-rose-600 animate-pulse' };
+            status.resp = (rr >= 24 && rr <= 40) ? { label: 'Normal', color: 'text-green-600' } : { label: 'Critical', color: 'text-rose-600 animate-pulse' };
+        } else { // Standard Child/Adult
+            status.pulse = (pr >= 60 && pr <= 100) ? { label: 'Normal', color: 'text-green-600' } : { label: 'Abnormal', color: 'text-amber-600' };
+            status.resp = (rr >= 12 && rr <= 20) ? { label: 'Normal', color: 'text-green-600' } : { label: 'Abnormal', color: 'text-amber-600' };
+        }
+        return status;
+    };
+
     const bmi = calculateBMI(formData.weight_kg, formData.height_cm);
 
     return (
@@ -357,8 +378,15 @@ const VitalsManager = ({ patient }) => {
                                             <div className="text-[10px] text-gray-400 italic">Position: {vital.bp_position}</div>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <div className="text-sm text-gray-900">{vital.pulse_rate ? `${vital.pulse_rate} bpm` : '--'}</div>
-                                            <div className="text-xs text-gray-500">{vital.resp_rate ? `${vital.resp_rate} rpm` : '--'}</div>
+                                            <div className="flex flex-col">
+                                                <div className="flex items-center gap-2">
+                                                    <span className={`text-sm font-black ${getPediatricStatus(vital).pulse?.color || 'text-gray-900'}`}>{vital.pulse_rate ? `${vital.pulse_rate} bpm` : '--'}</span>
+                                                    {getPediatricStatus(vital).pulse?.label === 'Critical' && <AlertCircle size={10} className="text-rose-600" />}
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <span className={`text-xs ${getPediatricStatus(vital).resp?.color || 'text-gray-500'}`}>{vital.resp_rate ? `${vital.resp_rate} rpm` : '--'}</span>
+                                                </div>
+                                            </div>
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className={`text-sm ${vital.temp_c > 37.5 ? 'text-orange-600 font-bold' : 'text-gray-900'}`}>

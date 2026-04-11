@@ -27,9 +27,9 @@ return new class extends Migration
                 'weight_kg' => $record->weight_kg,
                 'height_cm' => $record->height_cm,
                 'bmi' => $bmi,
+                'head_circumference_cm' => $record->head_circumference_cm,
                 'recorded_at' => $record->measured_at,
                 'metadata' => json_encode([
-                    'head_circumference_cm' => $record->head_circumference_cm,
                     'migrated_from' => 'pediatric_growth_records'
                 ]),
                 'created_at' => now(),
