@@ -7,6 +7,7 @@ import TopBar from './components/TopBar';
 import StatCard from './components/StatCard';
 import Worklist from './components/Worklist';
 import ClinicalWorklist from './views/ClinicalWorklist';
+import RadiologyWorklist from './views/RadiologyWorklist';
 import RegisterPatientForm from './components/RegisterPatientForm';
 import Reports from './components/Reports';
 import Messages from './components/Messages';
@@ -22,9 +23,11 @@ import CashierDashboard from './components/CashierDashboard';
 import Referrals from './components/Referrals';
 import BranchManagement from './views/BranchManagement';
 import TenantManagement from './views/TenantManagement';
+import SuperAdminDashboard from './views/admin/SuperAdminDashboard';
 import HelpCenter from './views/HelpCenter';
 import HL7OutboxViewer from './components/admin/HL7OutboxViewer';
 import Login from './views/Login';
+import PatientPortal from './views/PatientPortal';
 import api from './services/api';
 
 // Authentication persistence helpers
@@ -38,6 +41,16 @@ function App() {
     const [orders, setOrders] = useState([]);
     const [tenants, setTenants] = useState([]);
     const [activeTenant, setActiveTenant] = useState(null);
+    const [impersonatedTenant, setImpersonatedTenant] = useState(() => {
+        const stored = localStorage.getItem('impersonated_tenant');
+        try {
+            return stored ? JSON.parse(stored) : null;
+        } catch (e) {
+            console.error("Failed to parse impersonated_tenant", e);
+            return null;
+        }
+    });
+
     const [branches, setBranches] = useState([]);
     const [activeBranch, setActiveBranch] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -56,6 +69,8 @@ function App() {
     });
     const [isTransitioning, setIsTransitioning] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const contentRef = useRef(null);
+    const audioRef = useRef(new Audio('/hitech-scan.mp3'));
     const [systemVersion, setSystemVersion] = useState(null);
 
 
@@ -69,6 +84,26 @@ function App() {
             localStorage.removeItem('auth_user');
         }
     }, [currentUser]);
+
+    // Single-Domain Impersonation: inject tenant context if active
+    // We do this immediately in the render body or during init to prevent race conditions 
+    // where fetchInitialData() (useEffect []) fires before this context is set.
+    if (impersonatedTenant) {
+        setTenantToken(impersonatedTenant.id);
+    }
+
+    const exitImpersonation = () => {
+        const originToken = localStorage.getItem('impersonation_origin_token');
+        const originUser = localStorage.getItem('impersonation_origin_user');
+        if (originToken) localStorage.setItem('auth_token', originToken);
+        if (originUser) localStorage.setItem('auth_user', originUser);
+        localStorage.removeItem('impersonation_token');
+        localStorage.removeItem('impersonation_origin_token');
+        localStorage.removeItem('impersonation_origin_user');
+        localStorage.removeItem('impersonated_tenant');
+        window.location.hash = '#superadmin';
+        window.location.reload();
+    };
 
     // Persist Slim Sidebar State
     useEffect(() => {
@@ -85,11 +120,22 @@ function App() {
         const handleSync = async () => {
             if (syncLockRef.current.isSyncing) return;
 
+            // CIRCUIT BREAKER: Global Admin in Command Center has no clinical tenant to sync.
+            // Bypassing handleTenantChange prevents the loading state cascade that unmounts modals.
+            if (currentUser.role === 'GLOBAL_ADMIN' && !impersonatedTenant) {
+                setIsTransitioning(false);
+                return;
+            }
+
             let targetTenant = activeTenant;
 
-            // Auto-align if user has a tenant and we aren't there yet
-            if (currentUser.tenant_id) {
-                const matched = tenants.find(t => t.id === currentUser.tenant_id);
+            // Priority for Sync alignment:
+            // 1. Explicit Impersonated context (highest priority to keep us in the clinic)
+            // 2. Auth User's assigned home tenant (888 for Global Admin)
+            const targetId = impersonatedTenant?.id || currentUser.tenant_id;
+            
+            if (targetId) {
+                const matched = tenants.find(t => t.id === targetId);
                 if (matched && activeTenant?.id !== matched.id) {
                     targetTenant = matched;
                 }
@@ -125,7 +171,10 @@ function App() {
         };
 
         handleSync();
-    }, [currentUser, tenants, activeTenant, doctorsCount]);
+    // Note: doctorsCount removed intentionally — it was causing spurious re-syncs
+    // that called handleTenantChange, cascading into loading state changes that
+    // would reset the SuperAdminDashboard's modal state.
+    }, [currentUser, tenants, impersonatedTenant]);
 
     // Handle Offline Sync Lifecycle
     useEffect(() => {
@@ -137,13 +186,16 @@ function App() {
     }, [activeTenant, currentUser]);
 
     const [activeView, setActiveView] = useState(() => {
-        const hash = window.location.hash.replace('#', '');
-        return ['dashboard', 'worklist', 'messages', 'message', 'appointments', 'appointment', 'patients', 'doctors', 'reports', 'audit', 'patient_profile', 'pharmacy', 'billing', 'clinical_notes', 'medicine_management', 'referrals', 'branch_management', 'hl7_transport'].includes(hash) ? hash : 'dashboard';
+        const hash = window.location.hash.replace('#', '').split('?')[0];
+        return ['dashboard', 'worklist', 'messages', 'message', 'appointments', 'appointment', 'patients', 'doctors', 'reports', 'audit', 'patient_profile', 'pharmacy', 'billing', 'clinical_notes', 'medicine_management', 'referrals', 'branch_management', 'hl7_transport', 'portal', 'superadmin'].includes(hash) ? hash : 'dashboard';
     });
 
     // Hash sync: State -> URL + Context-aware data fetching
     useEffect(() => {
         window.location.hash = activeView;
+        if (contentRef.current) {
+            contentRef.current.scrollTo({ top: 0, behavior: 'instant' });
+        }
         
         // Wait for both tenant and branch to be aligned if we are on a contextual view
         if (activeView === 'pharmacy' && activeTenant && activeBranch) {
@@ -192,15 +244,20 @@ function App() {
     };
 
     useEffect(() => {
-        if (tenants.length > 0 && !activeTenant) {
-            // Default to user's assigned tenant if available, otherwise first in list
-            const userTenant = currentUser?.tenant_id 
-                ? tenants.find(t => t.id === currentUser.tenant_id) 
-                : null;
+        if (tenants.length > 0) {
+            // Sync the activeTenant state based on priorities
+            const targetId = impersonatedTenant?.id || currentUser?.tenant_id || activeTenant?.id;
+            const targetTenant = tenants.find(t => t.id === targetId);
             
-            setActiveTenant(userTenant || tenants[0] || null);
+            if (targetTenant && targetTenant.id !== activeTenant?.id) {
+                console.log(`[Tenant Sync] Aligning context to: ${targetTenant.name} (Source: ${impersonatedTenant ? 'Impersonation' : 'Home'})`);
+                setActiveTenant(targetTenant);
+            } else if (!activeTenant && tenants.length > 0) {
+                // Global Admin fallback
+                setActiveTenant(tenants[0]);
+            }
         }
-    }, [tenants, activeTenant, currentUser]);
+    }, [tenants, currentUser, impersonatedTenant]);
 
     useEffect(() => {
         if (activeTenant) {
@@ -302,12 +359,32 @@ function App() {
         setShowRegister(false);
     };
 
-    if (!currentUser) {
-        return <Login onLoginSuccess={handleLoginSuccess} />;
-    }
-
-    // RBAC Component Guard Logic
+    // RBAC Guard — must be defined before early return (Rules of Hooks)
     const isRestricted = (view) => {
+        if (!currentUser) return false;
+
+        // HIS Multi-Tenant Context: Use the explicit impersonation flag for RBAC
+        // Direct localStorage check prevents race conditions during initial mount hydration
+        const effectiveImpersonation = impersonatedTenant || JSON.parse(localStorage.getItem('impersonated_tenant') || 'null');
+        
+        // Whitelist views that are dedicated to platform orchestration/governance
+        const governanceViews = ['superadmin', 'audit', 'reports', 'hl7_transport', 'tenant_management', 'branch_management'];
+
+        console.log(`[RBAC Check] View: ${view}, Role: ${currentUser.role}, Impersonated: ${effectiveImpersonation?.name || 'NULL'}`);
+
+        // GLOBAL_ADMIN without impersonation: governance only
+        if (currentUser.role === 'GLOBAL_ADMIN' && !effectiveImpersonation) {
+            const restricted = !governanceViews.includes(view);
+            if (restricted) console.warn(`[RBAC] GLOBAL_ADMIN restricted from clinical view [${view}] (No Active Impersonation)`);
+            return restricted;
+        }
+
+        // GLOBAL_ADMIN while impersonating a tenant: full clinical access
+        if (currentUser.role === 'GLOBAL_ADMIN' && effectiveImpersonation) {
+            console.log(`[RBAC] Access GRANTED for Global Admin to ${view} (Managing: ${effectiveImpersonation.name})`);
+            return false;
+        }
+
         const rolePermissions = {
             'dashboard': ['ADMIN', 'DOCTOR', 'TECH', 'DIAGNOSTIC_APPROVER', 'FRONT_DESK'],
             'worklist': ['ADMIN', 'DOCTOR', 'TECH', 'DIAGNOSTIC_APPROVER'],
@@ -324,28 +401,57 @@ function App() {
             'tenant_management': ['ADMIN'],
             'branch_management': ['ADMIN'],
             'patient_profile': ['ADMIN', 'DOCTOR', 'FRONT_DESK', 'DIAGNOSTIC_APPROVER'],
-            'hl7_transport': ['ADMIN']
+            'hl7_transport': ['ADMIN'],
+            'superadmin': ['GLOBAL_ADMIN']
         };
-
         const allowedRoles = rolePermissions[view];
-        if (!allowedRoles) return false; // Non-protected views (help, guide)
-
-        const isAllowed = allowedRoles.includes(currentUser.role);
-        
-        // Global Only items (Organization Settings)
-        if (view === 'tenant_management' && currentUser.tenant_id !== null) return true; // Restricted to global admins
-        
-        return !isAllowed;
+        if (!allowedRoles) return false;
+        return !allowedRoles.includes(currentUser.role);
     };
 
-    // Auto-redirect if unauthorized view is requested via Hash
-    if (isRestricted(activeView)) {
-        console.warn(`RBAC: Unauthorized access attempt to [${activeView}] by ${currentUser.role}. Redirecting to safety.`);
-        setActiveView('dashboard');
+    // Auto-redirect if unauthorized view (useEffect must be before early return)
+    useEffect(() => {
+        if (!currentUser) return;
+        if (isRestricted(activeView)) {
+            console.warn(`RBAC: Unauthorized access attempt to [${activeView}] by ${currentUser.role}. Redirecting.`);
+            
+            // Sync effective impersonation status for redirection target
+            const effectiveImpersonation = impersonatedTenant || JSON.parse(localStorage.getItem('impersonated_tenant') || 'null');
+            const governanceViews = ['superadmin', 'audit', 'reports', 'hl7_transport', 'tenant_management', 'branch_management'];
+            
+            // Determine best 'home' for this role/context
+            const homeView = (currentUser.role === 'GLOBAL_ADMIN' && !effectiveImpersonation) 
+                ? (governanceViews.includes(activeView) ? activeView : 'superadmin') 
+                : 'dashboard';
+                
+            setActiveView(homeView);
+        }
+    }, [activeView, currentUser, impersonatedTenant]);
+
+    if (!currentUser) {
+        if (activeView === 'portal') return <PatientPortal />;
+        return <Login onLoginSuccess={handleLoginSuccess} />;
     }
 
     return (
         <div className="flex h-screen bg-slate-50 text-slate-900 font-sans overflow-hidden">
+            {/* Impersonation Warning Banner */}
+            {impersonatedTenant && (
+                <div className="fixed top-0 left-0 right-0 z-[100] flex items-center justify-between px-6 py-2.5 bg-amber-500 text-white text-xs font-black uppercase tracking-widest shadow-lg">
+                    <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
+                        <span>⚠ IMPERSONATING — {impersonatedTenant.name} (ID: {impersonatedTenant.id}) — All actions are logged to the Global Audit Ledger</span>
+                    </div>
+                    <button
+                        onClick={exitImpersonation}
+                        className="px-4 py-1.5 bg-white text-amber-600 rounded-lg hover:bg-amber-50 transition-all font-black text-[10px] uppercase tracking-widest"
+                    >
+                        Exit Impersonation
+                    </button>
+                </div>
+            )}
+            {/* Push content below banner when impersonating */}
+            {impersonatedTenant && <div className="fixed top-0 left-0 right-0 h-10 z-[99]" />}
             {/* Mobile Sidebar Backdrop */}
             {isSidebarOpen && (
                 <div
@@ -356,6 +462,7 @@ function App() {
 
             <Sidebar
                 activeTenant={activeTenant}
+                impersonatedTenant={impersonatedTenant}
                 activeView={activeView}
                 setActiveView={(view) => {
                     setActiveView(view);
@@ -369,9 +476,10 @@ function App() {
                 onClose={() => setIsSidebarOpen(false)}
             />
 
-            <main className={`flex-1 min-w-0 h-screen overflow-y-auto main-content-transition ${isSidebarOpen ? (isSidebarSlim ? 'lg:ml-20' : 'lg:ml-64') : (isSidebarSlim ? 'ml-0 lg:ml-20' : 'ml-0 lg:ml-64')}`}>
+            <main className={`flex-1 flex flex-col min-w-0 h-screen overflow-hidden transition-all duration-300 ${isSidebarSlim ? 'lg:ml-20' : 'lg:ml-64'}`}>
                 <TopBar
                     activeTenant={activeTenant}
+                    impersonatedTenant={impersonatedTenant}
                     tenants={tenants}
                     onTenantChange={handleTenantChange}
                     activeBranch={activeBranch}
@@ -386,15 +494,31 @@ function App() {
                     onSearch={setSearchTerm}
                 />
 
-                <div className="p-10 space-y-10 max-w-[1600px] mx-auto">
-                    {(loading || isTransitioning) ? (
-                        <div className="flex flex-col items-center justify-center p-20 bg-white rounded-[2.5rem] shadow-sleek">
-                            <div className="w-16 h-16 border-4 border-his-green-500 border-t-transparent rounded-full animate-spin mb-6" />
-                            <h3 className="text-xl font-black text-slate-900 tracking-tight italic">
-                                {isTransitioning ? "Securing Tenant Environment..." : "Initializing juanclinic Secure Environment..."}
-                            </h3>
-                        </div>
-                    ) : (
+                <div 
+                    ref={contentRef}
+                    className="flex-1 overflow-y-auto overflow-x-hidden w-full custom-scrollbar scroll-smooth"
+                >
+                    <div className="p-10 space-y-10 max-w-[1600px] mx-auto min-h-full">
+                    {(() => {
+                        // Shield Governance views from unmounting during background syncs
+                        const isGovernanceView = ['superadmin', 'audit', 'reports', 'hl7_transport'].includes(activeView);
+                        const showBlockingOverlay = (loading || isTransitioning) && !isGovernanceView;
+                        
+                        if (showBlockingOverlay) {
+                            return (
+                                <div className="flex flex-col items-center justify-center p-20 bg-white rounded-[2.5rem] shadow-sleek">
+                                    <div className="w-16 h-16 border-4 border-his-green-500 border-t-transparent rounded-full animate-spin mb-6" />
+                                    <h3 className="text-xl font-black text-slate-900 tracking-tight italic">
+                                        {isTransitioning ? "Securing Tenant Environment..." : "Initializing juanclinic Secure Environment..."}
+                                    </h3>
+                                </div>
+                            );
+                        }
+                        return null;
+                    })()}
+
+                    {/* Content View is rendered conditionally but Governance views have stability */}
+                    {!((loading || isTransitioning) && !['superadmin', 'audit', 'reports', 'hl7_transport'].includes(activeView)) && (
                         <div className="space-y-10">
                             {/* Modern View Router */}
                             {(() => {
@@ -409,10 +533,12 @@ function App() {
                                                         <p className="text-sm font-bold text-slate-400 mt-2">Welcome back, <span className="text-his-green-500">{currentUser.name.split(' ')[currentUser.name.split(' ').length - 1]}</span>. Here's what's happening today.</p>
                                                     </div>
                                                     <div className="flex gap-3">
-                                                        <button onClick={() => setShowRegister(true)} className="px-6 py-3 bg-his-green-500 text-white text-xs font-black rounded-2xl hover:bg-his-green-600 transition-all uppercase tracking-widest shadow-xl shadow-his-green-500/20 flex items-center gap-2">
-                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 4v16m8-8H4" /></svg>
-                                                            New Patient
-                                                        </button>
+                                                        {!(currentUser.role === 'GLOBAL_ADMIN' && !impersonatedTenant) && (
+                                                            <button onClick={() => setShowRegister(true)} className="px-6 py-3 bg-his-green-500 text-white text-xs font-black rounded-2xl hover:bg-his-green-600 transition-all uppercase tracking-widest shadow-xl shadow-his-green-500/20 flex items-center gap-2">
+                                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 4v16m8-8H4" /></svg>
+                                                                New Patient
+                                                            </button>
+                                                        )}
                                                     </div>
                                                 </div>
 
@@ -602,6 +728,9 @@ function App() {
                                             </>
                                         );
                                     case 'worklist':
+                                        if (['TECH', 'DIAGNOSTIC_APPROVER'].includes(currentUser.role)) {
+                                            return <RadiologyWorklist currentUser={currentUser} activeTenant={activeTenant?.id} searchTerm={searchTerm} />;
+                                        }
                                         return <ClinicalWorklist currentUser={currentUser} activeTenant={activeTenant?.id} searchTerm={searchTerm} />;
                                     case 'reports':
                                         return <Reports activeTenant={activeTenant?.id} activeBranch={activeBranch?.id} />;
@@ -654,6 +783,8 @@ function App() {
                                         return <TenantManagement onTenantUpdate={fetchInitialData} />;
                                     case 'hl7_transport':
                                         return <HL7OutboxViewer />;
+                                    case 'superadmin':
+                                        return <SuperAdminDashboard />;
                                     case 'help':
                                         return <HelpCenter />;
                                     default:
@@ -673,7 +804,8 @@ function App() {
                         </div>
                     )}
                 </div>
-            </main>
+            </div>
+        </main>
 
             {showRegister && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md transition-opacity duration-300">

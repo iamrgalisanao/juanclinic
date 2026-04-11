@@ -17,8 +17,8 @@ class EnsureUserBelongsToTenant
     {
         $user = $request->user();
 
-        // Allow Global Admins with null tenant_id to access any tenant as global admins
-        if ($user && $user->role === 'ADMIN' && is_null($user->tenant_id)) {
+        // Allow Global Admins with SYSTEM_ID to access any tenant as global admins
+        if ($user && in_array($user->role, ['ADMIN', 'GLOBAL_ADMIN']) && (int) $user->tenant_id === \App\Models\Tenant::SYSTEM_ID) {
             return $next($request);
         }
 

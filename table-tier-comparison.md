@@ -25,7 +25,8 @@
 | **Inventory / pharmacy** | No / optional | Optional | Yes |
 | **LIS integration** | No / optional | Optional | Yes |
 | **RIS / PACS integration** | No | No / optional | Yes |
-| **PhilHealth / eClaims** | Optional | Optional / custom | Yes / expected |
+| **Specialty Care (Pediatrics, etc.)** | No / optional | **Premium / Optional** | Yes |
+| **PhilHealth / eClaims** | Roadmap Refined | Roadmap Refined | Yes / expected |
 | **Queue management** | No / optional | Optional | Yes |
 | **HR / payroll** | No | No | Optional / available in enterprise suites |
 | **Telemedicine** | Optional | Optional | Optional / integrated |
@@ -48,3 +49,4 @@ The system now fully complies with Tier 2 (Group / Multi-Doctor Clinic) standard
 3.  **INTERCONNECTIVITY**: Consent-based referrals are secured with cross-tenant cryptographic isolation.
 4.  **SCALABILITY**: Implemented server-side pagination for **Medicine Management**, ensuring inventory performance for large multi-branch stocks.
 5.  **COORDINATION**: Harmonized `DIAGNOSTIC_APPROVER` RBAC to allow direct clinical messaging between Radiologists/Pathologists and ordering physicians.
+6.  **ENTITLEMENT**: Integrated commercial feature gating to allow module-specific subscription granting for specialty care (Pediatrics, Neonatal).

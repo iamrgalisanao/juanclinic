@@ -33,8 +33,8 @@ Before suggesting any refactor, you must adhere to the **Operational Protocol**:
 To maintain the "Source of Truth" without manual entry, the subagent performs the following sequence:
 
 1.  **Internal Log Generation**: Identify DRY violations and categorize by impact (High, Moderate, Optional).
-2.  **`findings.md` Update**: Append any High Impact refactors affecting tenant isolation or clinical integrity as "Verified Discoveries".
-3.  **`progress.md` Synchronization**: Inject a "Refactor Validation" block into the "Active Feature Focus" or "Validation Readiness" section.
+2.  **`docs/ai-governance/findings.md` Update**: Append any High Impact refactors affecting tenant isolation or clinical integrity as "Verified Discoveries".
+3.  **`docs/ai-governance/task-ledger.md` Synchronization**: Inject a "Refactor Validation" block into the "Active Feature Focus" or "Validation Readiness" section.
     *   *Example*:
         ```markdown
         ### Refactor Validation (Automated Scan)

@@ -18,6 +18,21 @@ Route::get('/version', function () {
     return response()->json(\App\Services\VersionService::getInfo());
 });
 
+// Public Patient Portal Routes (Link + PIN based)
+Route::prefix('portal')->group(function () {
+    Route::post('authorize', [\App\Http\Controllers\Api\PatientPortalController::class, 'authorizeAccess']);
+    Route::get('summary', [\App\Http\Controllers\Api\PatientPortalController::class, 'getSummary']);
+});
+
+// Appointment Confirmation (Signed URL)
+Route::get('appointments/{appointment}/confirm', [\App\Http\Controllers\Api\AppointmentConfirmationController::class, 'confirm'])
+    ->name('appointments.confirm')
+    ->middleware('signed');
+
+// Pharmacy QR Verification (Public-Facing authenticity check)
+Route::middleware('entitled:pharmacy_enabled')->get('verify/rx/{uuid}', [\App\Http\Controllers\Api\PharmacyVerificationController::class, 'verify'])
+    ->name('prescriptions.verify');
+
 Route::post('/auth/login', [\App\Http\Controllers\Api\AuthController::class, 'login']);
 Route::middleware('auth:sanctum')->post('/auth/logout', [\App\Http\Controllers\Api\AuthController::class, 'logout']);
 
@@ -35,13 +50,16 @@ Route::group(['middleware' => ['auth:sanctum', 'tenant_user', 'branch_user']], f
     Route::apiResource('clinical-notes', \App\Http\Controllers\Api\ClinicalNoteController::class)->middleware('role:DOCTOR,ADMIN');
     Route::get('clinical-templates', [\App\Http\Controllers\Api\ClinicalTemplateController::class, 'index'])->middleware('role:DOCTOR,ADMIN');
     Route::get('patients/{patient}/history', [\App\Http\Controllers\Api\PatientHistoryController::class, 'show'])->middleware('role:DOCTOR,ADMIN,DIAGNOSTIC_APPROVER');
-    Route::get('patients/{id}/pediatrics/growth', [\App\Http\Controllers\Api\PatientController::class, 'getGrowthHistory'])->middleware('role:DOCTOR,ADMIN');
-    Route::post('patients/{id}/pediatrics/growth', [\App\Http\Controllers\Api\PatientController::class, 'storeGrowthRecord'])->middleware('role:DOCTOR,ADMIN');
-    Route::get('patients/{id}/pediatrics/immunizations', [\App\Http\Controllers\Api\PatientController::class, 'getImmunizationHistory'])->middleware('role:DOCTOR,ADMIN');
-    Route::post('patients/{id}/pediatrics/immunizations', [\App\Http\Controllers\Api\PatientController::class, 'storeImmunizationRecord'])->middleware('role:DOCTOR,ADMIN');
-    Route::get('pediatrics/vaccines/lookup', [\App\Http\Controllers\Api\PatientController::class, 'lookupVaccines'])->middleware('role:DOCTOR,ADMIN');
-    Route::get('patients/{id}/pediatrics/overdue', [\App\Http\Controllers\Api\PatientController::class, 'getOverdueMilestones'])->middleware('role:DOCTOR,ADMIN');
-    Route::get('pediatrics/standards', [\App\Http\Controllers\Api\PatientController::class, 'getStandards'])->middleware('role:DOCTOR,ADMIN');
+    Route::middleware('entitled:pediatrics_enabled')->group(function () {
+        Route::get('patients/{id}/pediatrics/growth', [\App\Http\Controllers\Api\PatientController::class, 'getGrowthHistory']);
+        Route::post('patients/{id}/pediatrics/growth', [\App\Http\Controllers\Api\PatientController::class, 'storeGrowthRecord']);
+        Route::get('patients/{id}/pediatrics/immunizations', [\App\Http\Controllers\Api\PatientController::class, 'getImmunizationHistory']);
+        Route::post('patients/{id}/pediatrics/immunizations', [\App\Http\Controllers\Api\PatientController::class, 'storeImmunizationRecord']);
+        Route::get('pediatrics/vaccines/lookup', [\App\Http\Controllers\Api\PatientController::class, 'lookupVaccines']);
+        Route::get('patients/{id}/pediatrics/overdue', [\App\Http\Controllers\Api\PatientController::class, 'getOverdueMilestones']);
+        Route::get('pediatrics/standards', [\App\Http\Controllers\Api\PatientController::class, 'getStandards']);
+        Route::get('patients/{id}/neonatal/summary', [\App\Http\Controllers\Api\PatientController::class, 'getNeonatalSummary']);
+    });
 
     Route::get('orders/worklist', [\App\Http\Controllers\Api\OrderController::class, 'worklist'])->middleware('role:ADMIN,TECH,DIAGNOSTIC_APPROVER');
     Route::apiResource('orders', \App\Http\Controllers\Api\OrderController::class)->middleware('role:DOCTOR,ADMIN,TECH,DIAGNOSTIC_APPROVER');
@@ -58,6 +76,8 @@ Route::group(['middleware' => ['auth:sanctum', 'tenant_user', 'branch_user']], f
     Route::get('audit-logs', [\App\Http\Controllers\Api\AuditLogController::class, 'index'])->middleware('role:ADMIN,DOCTOR');
     Route::get('reports/dashboard', [\App\Http\Controllers\Api\ReportController::class, 'dashboard'])->middleware('role:ADMIN,FRONT_DESK,DOCTOR,DIAGNOSTIC_APPROVER');
     Route::get('reports/benchmarking', [\App\Http\Controllers\Api\ReportController::class, 'benchmarking'])->middleware('role:ADMIN,FRONT_DESK,DOCTOR,DIAGNOSTIC_APPROVER');
+    Route::get('reports/clinical-outcomes', [\App\Http\Controllers\Api\ReportController::class, 'getClinicalOutcomes'])->middleware('role:ADMIN,DOCTOR,DIAGNOSTIC_APPROVER');
+    Route::get('reports/finance/sales-journal', [\App\Http\Controllers\Api\FinanceReportController::class, 'getSalesJournal'])->middleware('role:ADMIN,FRONT_DESK');
     Route::get('messages', [\App\Http\Controllers\Api\MessageController::class, 'index']);
     Route::post('messages/groups', [\App\Http\Controllers\Api\MessageController::class, 'createGroup']);
     Route::get('messages/{conversation}', [\App\Http\Controllers\Api\MessageController::class, 'show']);
@@ -77,8 +97,23 @@ Route::group(['middleware' => ['auth:sanctum', 'tenant_user', 'branch_user']], f
         Route::post('outbox/{message}/retry', [\App\Http\Controllers\Api\HL7OutboxController::class, 'retry']);
         Route::post('outbox/process', [\App\Http\Controllers\Api\HL7OutboxController::class, 'process']);
     });
-    Route::get('pharmacy/worklist', [\App\Http\Controllers\Api\PharmacyController::class, 'worklist'])->middleware('role:ADMIN,TECH,DOCTOR');
-    Route::post('pharmacy/dispense/{id}', [\App\Http\Controllers\Api\PharmacyController::class, 'dispense'])->middleware('role:ADMIN,TECH,DOCTOR');
+    // Pharmacy & Dispensing
+    Route::middleware('entitled:pharmacy_enabled')->group(function () {
+        Route::get('pharmacy/worklist', [\App\Http\Controllers\Api\PharmacyController::class, 'worklist'])->middleware('role:ADMIN,TECH,DOCTOR');
+        Route::post('pharmacy/dispense/{id}', [\App\Http\Controllers\Api\PharmacyController::class, 'dispense'])->middleware('role:ADMIN,TECH,DOCTOR');
+        Route::post('prescriptions/{uuid}/dispense', [\App\Http\Controllers\Api\PharmacyVerificationController::class, 'dispense'])->middleware('role:ADMIN,TECH');
+    });
+
+    // Workforce Management
+    Route::middleware('entitled:workforce_enabled')->group(function () {
+        Route::apiResource('staff-schedules', \App\Http\Controllers\Api\StaffScheduleController::class)->middleware('role:ADMIN');
+    });
+
+    // Inventory Management
+    Route::middleware('entitled:inventory_enabled')->group(function () {
+        Route::apiResource('inventory-items', \App\Http\Controllers\Api\InventoryController::class);
+        // Note: Stocks are sub-resources or separate endpoints managed by controller
+    });
 
     // Offline Sync Endpoints
     Route::get('sync/pull', [\App\Http\Controllers\Api\SyncController::class, 'pull']);
@@ -87,3 +122,37 @@ Route::group(['middleware' => ['auth:sanctum', 'tenant_user', 'branch_user']], f
 
 Route::post('hl7/ingest', [\App\Http\Controllers\Api\HL7Controller::class, 'store']);
 
+// ---------------------------------------------------------------------------
+// EMPI Hardware Sync
+// Public endpoint: hardware devices submit transactions without user sessions.
+// Admin endpoints: manage terminal registration.
+// ---------------------------------------------------------------------------
+Route::prefix('empi')->group(function () {
+    Route::post('sync/submit', [\App\Http\Controllers\Api\EMPISyncController::class, 'submit']);
+
+    Route::middleware(['auth:sanctum', 'tenant_user'])->group(function () {
+        Route::get('hardware', [\App\Http\Controllers\Api\EMPISyncController::class, 'listHardware'])
+            ->middleware('role:ADMIN');
+        Route::post('hardware/register', [\App\Http\Controllers\Api\EMPISyncController::class, 'registerHardware'])
+            ->middleware('role:ADMIN');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// RIS/PACS (Imaging) & Super Admin
+// ---------------------------------------------------------------------------
+Route::middleware(['auth:sanctum', 'tenant_user'])->group(function () {
+    Route::middleware('entitled:pacs_enabled')->prefix('imaging')->group(function () {
+        Route::get('patients/{patientId}', [\App\Http\Controllers\Api\ImagingController::class, 'patientStudies']);
+        Route::get('instances/{instanceId}', [\App\Http\Controllers\Api\ImagingController::class, 'showInstance']);
+        Route::post('upload', [\App\Http\Controllers\Api\ImagingController::class, 'store']);
+        Route::post('studies/{studyId}/report', [\App\Http\Controllers\Api\ImagingController::class, 'submitReport'])->middleware('role:DOCTOR,DIAGNOSTIC_APPROVER');
+        Route::post('studies/{studyId}/finalize', [\App\Http\Controllers\Api\ImagingController::class, 'finalizeStudy'])->middleware('role:DOCTOR,DIAGNOSTIC_APPROVER');
+    });
+
+    Route::prefix('sa')->middleware('global_admin')->group(function () {
+        Route::get('tenants', [\App\Http\Controllers\Api\SuperAdminController::class, 'listTenants']);
+        Route::patch('tenants/{tenantId}/plan', [\App\Http\Controllers\Api\SuperAdminController::class, 'updateCommercialPlan']);
+        Route::post('tenants/{tenantId}/impersonate', [\App\Http\Controllers\Api\SuperAdminController::class, 'impersonate']);
+    });
+});

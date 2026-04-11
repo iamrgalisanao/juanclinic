@@ -35,7 +35,7 @@ Before execution, verify the session state per **Operational Protocol Section 3*
 
 *   **Branch Check**: Run `git branch --show-current`. Do not audit on `main`.
 *   **Risk Classification**: This subagent always operates at **High/Critical Risk**.
-*   **Audit Log**: Record findings in `findings.md` and the final report in `docs/audit-results/AUTH_SECURITY_REVIEW.md`.
+*   **Audit Log**: Record findings in `docs/ai-governance/findings.md` and the final report in `docs/audit-results/AUTH_SECURITY_REVIEW.md`.
 
 ## 5. Output Format
 For each finding, provide:

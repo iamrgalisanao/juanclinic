@@ -54,6 +54,7 @@
 - **Self-Annealing**: Analyze error -> Patch tool -> Test -> Update SOP.
 
 ## Governance & Hierarchy
+0. **master_prompt.md** (Meta-OS): The disciplined operating manual for AI behavior and SDLC rigor.
 1. **gemini.md** (Strategy): The source of truth for the system's existence and architectural soul.
 2. **spec.md** (Domain): The specialized rules for the HIS domain and compliance (Non-Negotiables).
 3. **Subagents** (`docs/architecture/subagents/*.md`): Operations-level architectural logic for specific domain tasks.

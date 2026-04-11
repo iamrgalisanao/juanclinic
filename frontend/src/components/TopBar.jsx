@@ -1,7 +1,7 @@
 import React from 'react';
 import { useSyncStatus } from '../services/syncService';
 
-const TopBar = ({ activeTenant, tenants, onTenantChange, activeBranch, branches, onBranchChange, currentUser, onSidebarToggle, isSidebarSlim, onSlimToggle, onLogout, searchTerm, onSearch }) => {
+const TopBar = ({ activeTenant, impersonatedTenant, tenants, onTenantChange, activeBranch, branches, onBranchChange, currentUser, onSidebarToggle, isSidebarSlim, onSlimToggle, onLogout, searchTerm, onSearch }) => {
     const { isOnline, lastSync } = useSyncStatus(activeTenant?.id);
 
     return (
@@ -14,6 +14,8 @@ const TopBar = ({ activeTenant, tenants, onTenantChange, activeBranch, branches,
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 6h16M4 12h16M4 18h16" /></svg>
                 </button>
                 
+                {/* Redundant impersonation banner removed here - handled by App.js premium banner */}
+
                 {/* Desktop Slim Toggle */}
                 <button
                     onClick={onSlimToggle}
@@ -59,11 +61,11 @@ const TopBar = ({ activeTenant, tenants, onTenantChange, activeBranch, branches,
                 <div className="flex items-center gap-3 py-2 px-4 bg-his-green-50 rounded-2xl border border-his-green-100/50">
                     <div className="w-2 h-2 rounded-full bg-his-green-500 animate-pulse" />
                     <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest leading-none">
-                        {currentUser.tenant_id ? 'System Managed' : 'Tenant'}
+                        {currentUser.role === 'GLOBAL_ADMIN' ? 'System Control' : 'Context'}
                     </span>
                     <select
                         value={activeTenant?.id || ''}
-                        disabled={!!currentUser.tenant_id}
+                        disabled={currentUser.role === 'GLOBAL_ADMIN' && !impersonatedTenant}
                         onChange={(e) => {
                             const tenant = tenants.find(t => t.id === parseInt(e.target.value));
                             if (tenant) onTenantChange(tenant);
@@ -80,11 +82,11 @@ const TopBar = ({ activeTenant, tenants, onTenantChange, activeBranch, branches,
                 <div className="flex items-center gap-3 py-2 px-4 bg-blue-50 rounded-2xl border border-blue-100/50">
                     <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
                     <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest leading-none">
-                        {currentUser.branch_id ? 'Fixed Facility' : 'Facility'}
+                        {currentUser.role === 'GLOBAL_ADMIN' ? 'Site Node' : 'Facility'}
                     </span>
                     <select
                         value={activeBranch?.id || ''}
-                        disabled={!!currentUser.branch_id || branches.length === 0}
+                        disabled={(currentUser.role === 'GLOBAL_ADMIN' && !impersonatedTenant) || branches.length === 0}
                         onChange={(e) => {
                             const branch = branches.find(b => b.id === parseInt(e.target.value));
                             if (branch) onBranchChange(branch);

@@ -71,5 +71,7 @@ class Kernel extends HttpKernel
         'tenant_user' => \App\Http\Middleware\EnsureUserBelongsToTenant::class,
         'branch_user' => \App\Http\Middleware\EnsureUserBelongsToBranch::class,
         'dev_auth' => \App\Http\Middleware\DevAuthentication::class,
+        'global_admin' => \App\Http\Middleware\EnsureGlobalAdmin::class,
+        'entitled' => \App\Http\Middleware\EnsureEntitled::class,
     ];
 }

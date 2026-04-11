@@ -17,6 +17,13 @@ class TenantScope implements Scope
      */
     public function apply(Builder $builder, Model $model)
     {
+        // HIS Multi-Tenant Context: The User model lookup must bypass the TenantScope
+        // to support Global Admin authentication during impersonation sessions.
+        // Isolation is subsequently enforced by the 'tenant_user' (EnsureUserBelongsToTenant) middleware.
+        if ($model instanceof \App\Models\User) {
+            return;
+        }
+
         $tenantId = null;
 
         if (app()->bound('tenant')) {
@@ -28,7 +35,9 @@ class TenantScope implements Scope
         if ($tenantId) {
             $builder->where(function ($query) use ($tenantId) {
                 $query->where('tenant_id', $tenantId)
-                      ->orWhereNull('tenant_id');
+                      ->orWhereNull('tenant_id')
+                      // Allow System Root (888) entities to be visible across all contexts.
+                      ->orWhere('tenant_id', \App\Models\Tenant::SYSTEM_ID);
             });
         }
     }

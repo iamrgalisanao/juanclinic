@@ -20,8 +20,8 @@ class EnsureUserBelongsToBranch
         $branch = app('branch');
         $user = $request->user();
 
-        // Allow Tenant Admins to access all branches
-        if ($user->role === 'ADMIN') {
+        // Allow Tenant Admins and Global Admins to access all branches
+        if (in_array($user->role, ['ADMIN', 'GLOBAL_ADMIN'])) {
             return $next($request);
         }
 

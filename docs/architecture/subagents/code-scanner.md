@@ -31,7 +31,7 @@ Before execution, the subagent must verify the session state per the `Operationa
 
 *   **Branch Check**: Run `git branch --show-current`. Do not scan or process on `main`.
 *   **Risk Classification**: Identify if the task affects "Protected Areas" like Auth, HIS Core, or Clinical Intelligence.
-*   **Audit Log**: Immediately record all Critical findings in `findings.md`.
+*   **Audit Log**: Immediately record all Critical findings in `docs/ai-governance/findings.md`.
 
 ## 4. Output Format
 Group findings by severity:

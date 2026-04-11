@@ -43,9 +43,32 @@ This protocol is mandatory for:
 
 ---
 
-## 3. Session Startup Rules
+## 2.1 Anti-Failure Controls (Continuous)
+The AI must continuously apply these controls to maintain system integrity:
+1.  **Context Degradation**: Maintain durable facts in `docs/ai-governance/` and current state in `task.md`. Summarize sessions explicitly.
+2.  **Specification Drift**: Restate objectives before implementation. Validate against `normalized-requirements.md`.
+3.  **Sycophantic Confirmation**: Separate Fact from Assumption. Challenge premises and log unresolved questions.
+4.  **Tool Selection Errors**: Verify stack (Layer 2) before selecting tools (Layer 3).
+5.  **Cascading Failures**: Use stage gates. Prevent downstream work if upstream evidence is weak.
+6.  **Silent Failures**: Require evidence-backed validation and compare against clinical acceptance criteria.
 
-At the start of each session, the AI must:
+---
+
+## 3. SDLC Gated Stages & Session Startup
+
+Every task must progress through these stages, documented in `docs/ai-governance/`:
+
+1.  **Stage 1: Intake**: Read requirements and normalize into `normalized-requirements.md`.
+2.  **Stage 2: Discovery**: Confirm tech stack and tool availability.
+3.  **Stage 3: Planning**: Break work into bounded stages in `delivery-plan.md`.
+4.  **Stage 4: Architecture**: Review `docs/architecture/` and use specialized subagents.
+5.  **Stage 5: Implementation**: Create `implementation_plan.md` (Aesthetic & Clinical hardening).
+6.  **Stage 6: Validation**: Proof of correctness via `validation-report.md`.
+7.  **Stage 7: Code Review**: Use `code-scanner.md` subagent and manual spot checks.
+8.  **Stage 8: Security**: Check for tenant leakage and security hygiene.
+9.  **Stage 9: Release**: Update `CHANGELOG.md` and `ROADMAP.md`.
+
+### Session Pre-flight Checklist:
 1. **Verify the active branch** (`git branch --show-current`).
 2. **Inspect the repo state** (`git status --short`, `git diff --name-only`).
 3. **Classify the task** and risk level.
@@ -185,9 +208,10 @@ The AI must load and update only the documentation that is relevant to the task.
 
 As applicable, review:
 
-* `progress.md`
-* the active feature/fix/refactor/compliance note
-* relevant guardrails
+* `progress.md` (or `docs/ai-governance/task-ledger.md`)
+* `docs/ai-governance/normalized-requirements.md`
+* `docs/ai-governance/assumptions-register.md`
+* relevant guardrails in `docs/architecture/`
 * prior lessons in `findings.md`
 * design, architecture, compliance, or security notes relevant to the change
 

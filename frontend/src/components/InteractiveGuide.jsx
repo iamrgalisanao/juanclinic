@@ -110,6 +110,18 @@ const guideContent = {
             { id: 'wl2', text: "Filter by 'Priority' to address STAT orders immediately." },
             { id: 'wl3', text: "Click an order to update its status from PENDING to COMPLETED." }
         ]
+    },
+    superadmin: {
+        title: "Platform Command Center",
+        description: "Global governance console for managing all tenant environments, commercial subscriptions, and platform-level operations.",
+        steps: [
+            { id: 'sa1', text: "Review all registered tenant environments in the 'Live Environments' grid — each card reflects a live clinic instance." },
+            { id: 'sa2', text: "Click 'Manage Orchestration' on any tenant card to enter the commercial control panel for that environment." },
+            { id: 'sa3', text: "Assign subscription tiers (TRIAL → BRONZE → SILVER → GOLD) to control billing entitlements per tenant." },
+            { id: 'sa4', text: "Use the Feature Cherry-Picking Matrix to individually toggle clinical modules (Pediatrics, PACS, Pharmacy, Inventory, Workforce)." },
+            { id: 'sa5', text: "Click the impersonate icon (↗) on a tenant card to perform an authorized context switch into that clinic's live environment. All actions are logged to the Global Audit Ledger." }
+        ],
+        tip: "All commercial orchestration changes take effect immediately. Impersonation sessions are cryptographically logged and time-bound per the RA 10173 Data Privacy Act."
     }
 };
 
@@ -212,7 +224,7 @@ const InteractiveGuide = ({ activeView }) => {
                                 Pro Tip
                             </h4>
                             <p className="text-[11px] font-bold text-slate-100 leading-relaxed italic shadow-sm">
-                                "Keep your clinical sessions efficient by following the HL7 standards for automated diagnostic data exchange."
+                                {content.tip ?? "Keep your clinical sessions efficient by following the HL7 standards for automated diagnostic data exchange."}
                             </p>
                         </div>
                     </div>
