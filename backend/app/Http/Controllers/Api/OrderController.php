@@ -24,9 +24,9 @@ class OrderController extends Controller
         if ($user->role === 'TECH') {
             $query->whereIn('status', ['PENDING', 'IN_PROGRESS']);
         } elseif ($user->role === 'DIAGNOSTIC_APPROVER') {
-            $query->where('status', 'PRELIMINARY');
-        } elseif ($user->role === 'ADMIN') {
-            // Admin sees everything
+            $query->where('order_type', 'RAD')->where('status', 'PRELIMINARY');
+        } elseif (in_array($user->role, ['ADMIN', 'GLOBAL_ADMIN'])) {
+            // Admins see everything
         } else {
             return response()->json([], 200);
         }

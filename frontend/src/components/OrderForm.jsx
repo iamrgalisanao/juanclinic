@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { createOrder } from '../services/api';
+import { createOrder, checkSafetyStatus } from '../services/api';
 
 const OrderForm = ({ patientId, type = 'LAB', onSuccess, onCancel }) => {
     const [loading, setLoading] = useState(false);
@@ -14,6 +14,18 @@ const OrderForm = ({ patientId, type = 'LAB', onSuccess, onCancel }) => {
         e.preventDefault();
         setLoading(true);
         setError(null);
+
+        try {
+            // Safety Critical Check
+            const { data: safety } = await checkSafetyStatus(patientId);
+            if (safety.has_unacknowledged_criticals) {
+                setError(`SAFETY ALERT: This patient has ${safety.vitals_count + safety.labs_count} unacknowledged critical finding(s). You must review and acknowledge these findings in the Clinical Chronicle before placing new orders.`);
+                setLoading(false);
+                return;
+            }
+        } catch (err) {
+            console.error("Safety check failed", err);
+        }
 
         const payload = {
             patient_id: patientId,

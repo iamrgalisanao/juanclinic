@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { PlusIcon, TrashIcon, CheckCircleIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, TrashIcon, CheckCircleIcon, InformationCircleIcon, ExclamationTriangleIcon as AlertCircleIcon } from '@heroicons/react/24/outline';
 
 const LAB_LOOKUPS = {
     'CBC': [
@@ -51,7 +51,7 @@ const ResultEntryForm = ({ order, onSubmit, onCancel }) => {
             }));
         }
 
-        return [{ id: Date.now(), key: '', value: '', ref_range: '', unit: '', info: '' }];
+        return [{ id: Date.now(), key: '', value: '', ref_range: '', unit: '', info: '', is_critical: false }];
     };
 
     const [rows, setRows] = useState(getInitialRows());
@@ -59,7 +59,7 @@ const ResultEntryForm = ({ order, onSubmit, onCancel }) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleAddRow = () => {
-        setRows([...rows, { id: Date.now(), key: '', value: '', ref_range: '', unit: '' }]);
+        setRows([...rows, { id: Date.now(), key: '', value: '', ref_range: '', unit: '', is_critical: false }]);
     };
 
     const handleRemoveRow = (id) => {
@@ -81,7 +81,8 @@ const ResultEntryForm = ({ order, onSubmit, onCancel }) => {
                 acc[row.key.trim()] = {
                     value: row.value.trim(),
                     ref_range: row.ref_range.trim() || 'N/A',
-                    unit: row.unit.trim() || '-'
+                    unit: row.unit.trim() || '-',
+                    is_critical: row.is_critical || false
                 };
             }
             return acc;
@@ -129,6 +130,14 @@ const ResultEntryForm = ({ order, onSubmit, onCancel }) => {
                             {rows.map((row, index) => (
                                 <div key={row.id} className="flex gap-4 items-center group bg-slate-50/50 p-2 rounded-xl border border-transparent hover:border-blue-100 hover:bg-blue-50/20 transition-all">
                                     <div className="w-[30%] relative flex items-center gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => handleRowChange(row.id, 'is_critical', !row.is_critical)}
+                                            className={`w-6 h-6 rounded-md flex items-center justify-center transition-all ${row.is_critical ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/20' : 'bg-slate-200 text-slate-400 opacity-30 hover:opacity-100'}`}
+                                            title="Mark as Life-Safety Critical (Triggers Physician Alert)"
+                                        >
+                                            <AlertCircleIcon className="w-4 h-4" />
+                                        </button>
                                         <input
                                             type="text"
                                             placeholder="e.g., Hemoglobin"

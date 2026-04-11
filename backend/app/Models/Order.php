@@ -64,4 +64,9 @@ class Order extends Model
     {
         return $this->belongsTo(Patient::class);
     }
+
+    public function imagingStudies()
+    {
+        return $this->hasMany(ImagingStudy::class);
+    }
 }
