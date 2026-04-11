@@ -443,6 +443,78 @@ export const processHL7Outbox = async () => {
     return response.data;
 };
 
+export const getNeonatalSummary = async (patientId) => {
+    const response = await api.get(`/patients/${patientId}/neonatal/summary`);
+    return response.data;
+};
+
 export const getSystemVersion = () => api.get('/version').then(res => res.data);
+
+
+// RIS/PACS (Imaging) API
+export const getPatientImaging = async (patientId) => {
+    const response = await api.get(`/imaging/patients/${patientId}`);
+    return response.data;
+};
+
+export const uploadDicom = async (formData) => {
+    const response = await api.post('/imaging/upload', formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data',
+        },
+    });
+    return response.data;
+};
+
+export const submitImagingReport = async (studyId, data) => {
+    const response = await api.post(`/imaging/studies/${studyId}/report`, data);
+    return response.data;
+};
+
+export const finalizeImagingStudy = async (studyId) => {
+    const response = await api.post(`/imaging/studies/${studyId}/finalize`);
+    return response.data;
+};
+
+// Super Admin / Platform Management API
+export const getSATenants = async () => {
+    const response = await api.get('/sa/tenants');
+    return response.data;
+};
+
+export const toggleSAFeature = async (tenantId, feature, enabled) => {
+    const response = await api.patch(`/sa/tenants/${tenantId}/features`, { feature, enabled });
+    return response.data;
+};
+
+export const updateSAPlan = async (tenantId, payload) => {
+    const response = await api.patch(`/sa/tenants/${tenantId}/plan`, payload);
+    return response.data;
+};
+
+export const impersonateTenant = async (tenantId) => {
+    const response = await api.post(`/sa/tenants/${tenantId}/impersonate`);
+    return response.data;
+};
+
+// Patient Portal (Public Gateway) API
+export const authorizePortal = async (patientId, pin) => {
+    const response = await api.post('/portal/authorize', { patient_id: patientId, pin });
+    return response.data;
+};
+
+export const getPortalSummary = async (accessKey) => {
+    const response = await api.get('/portal/summary', {
+        headers: {
+            'X-Portal-Access-Key': accessKey
+        }
+    });
+    return response.data;
+};
+
+// Safety Governance
+export const checkSafetyStatus = (patientId) => api.get(`/safety/status/${patientId}`);
+export const acknowledgeVital = (id) => api.post(`/safety/vitals/${id}/acknowledge`);
+export const acknowledgeResult = (id) => api.post(`/safety/results/${id}/acknowledge`);
 
 export default api;
