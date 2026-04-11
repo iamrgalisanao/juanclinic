@@ -20,6 +20,8 @@ class Branch extends Model
         'address',
         'phone',
         'email',
+        'tin',
+        'official_address',
         'is_active',
     ];
 

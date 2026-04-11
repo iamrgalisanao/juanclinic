@@ -63,6 +63,16 @@ class AppointmentController extends Controller
             ], 422);
         }
 
+        // JuanClinic Gating: Verify Telehealth Entitlement
+        if (($validated['visit_type'] ?? null) === 'TELEHEALTH') {
+            $isEntitled = auth()->user()->tenant->admin_settings['telehealth_enabled'] ?? false;
+            if (!$isEntitled) {
+                return response()->json([
+                    'message' => 'Your clinic is not currently subscribed to the Telehealth Bridge module.',
+                ], 403);
+            }
+        }
+
         $appointment = Appointment::create($validated);
 
         // Trigger Patient Notification (Reminder/Confirmation)

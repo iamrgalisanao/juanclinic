@@ -8,6 +8,10 @@ import PediatricsDashboard from './clinical/PediatricsDashboard';
 import TriageDashboard from './clinical/TriageDashboard';
 import OrderForm from './OrderForm';
 import LabResultPrintView from './LabResultPrintView';
+import ImagingDashboard from './clinical/ImagingDashboard';
+import PatientChronicle from './clinical/PatientChronicle';
+import PatientSafetyBanner from './clinical/PatientSafetyBanner';
+import { checkSafetyStatus, acknowledgeResult, acknowledgeVital } from '../services/api';
 
 const PatientProfile = ({ patientId, onBack }) => {
     const [data, setData] = useState(null);
@@ -19,14 +23,16 @@ const PatientProfile = ({ patientId, onBack }) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showPrescriptionForm, setShowPrescriptionForm] = useState(false);
     const [showReferralForm, setShowReferralForm] = useState(false);
-    const [activeTab, setActiveTab] = useState('TIMELINE'); // TIMELINE | ATTACHMENTS | NOTES | VITALS | PEDIATRICS
+    const [activeTab, setActiveTab] = useState('CHRONICLE'); // CHRONICLE | TIMELINE | ATTACHMENTS | NOTES | VITALS | PEDIATRICS | IMAGING
     const [showOrderForm, setShowOrderForm] = useState(false);
     const [orderType, setOrderType] = useState('LAB'); // LAB | RAD
     const [showPrintView, setShowPrintView] = useState(false);
+    const [safetyStatus, setSafetyStatus] = useState(null);
 
     useEffect(() => {
         if (patientId) {
             fetchHistory();
+            fetchSafety();
         }
     }, [patientId]);
 
@@ -39,6 +45,38 @@ const PatientProfile = ({ patientId, onBack }) => {
             console.error("Failed to fetch history", err);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchSafety = async () => {
+        try {
+            const { data: status } = await checkSafetyStatus(patientId);
+            setSafetyStatus(status);
+        } catch (err) {
+            console.error("Failed to fetch safety status", err);
+        }
+    };
+
+    const handleAcknowledgeAll = async () => {
+        if (!window.confirm("Confirm: You have reviewed all critical clinical findings for this patient and wish to formally acknowledge them?")) return;
+        
+        try {
+            // Acknowledge all unacknowledged vitals
+            const unackedVitals = data.history.vitals.filter(v => v.acknowledged_at === null);
+            for (const v of unackedVitals) {
+                await acknowledgeVital(v.id);
+            }
+
+            // Acknowledge all unacknowledged critical labs
+            const unackedLabs = data.history.orders.filter(o => o.is_critical && o.acknowledged_at === null);
+            for (const o of unackedLabs) {
+                await acknowledgeResult(o.id);
+            }
+
+            await fetchSafety();
+            await fetchHistory();
+        } catch (err) {
+            console.error("Acknowledgment failed", err);
         }
     };
 
@@ -61,6 +99,9 @@ const PatientProfile = ({ patientId, onBack }) => {
 
     return (
         <div className="space-y-6 md:space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            {/* Safety Governance Banner */}
+            <PatientSafetyBanner status={safetyStatus} onAcknowledge={handleAcknowledgeAll} />
+
             {/* Header / Demographics */}
             <header className="bg-white rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-10 shadow-sleek border border-his-slate-100 flex flex-col lg:flex-row justify-between lg:items-center gap-6 md:gap-8">
                 <div className="flex flex-col md:flex-row md:items-center gap-6 md:gap-8">
@@ -429,10 +470,16 @@ const PatientProfile = ({ patientId, onBack }) => {
                 />
             )}
 
-            <div className="flex gap-4 border-b border-slate-100 px-4">
+            <div className="flex gap-4 border-b border-slate-100 px-4 overflow-x-auto scrollbar-hide">
+                <button
+                    onClick={() => setActiveTab('CHRONICLE')}
+                    className={`pb-4 px-4 text-[11px] font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === 'CHRONICLE' ? 'text-his-slate-900 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-his-slate-900' : 'text-slate-400 hover:text-slate-600'}`}
+                >
+                    Clinical Chronicle (v1)
+                </button>
                 <button
                     onClick={() => setActiveTab('TIMELINE')}
-                    className={`pb-4 px-4 text-[11px] font-black uppercase tracking-widest transition-all relative ${activeTab === 'TIMELINE' ? 'text-his-green-500 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-his-green-500' : 'text-slate-400 hover:text-slate-600'}`}
+                    className={`pb-4 px-4 text-[11px] font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === 'TIMELINE' ? 'text-his-green-500 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-his-green-500' : 'text-slate-400 hover:text-slate-600'}`}
                 >
                     Longitudinal History
                 </button>
@@ -460,9 +507,22 @@ const PatientProfile = ({ patientId, onBack }) => {
                 >
                     Pediatrics / Growth
                 </button>
+                <button
+                    onClick={() => setActiveTab('IMAGING')}
+                    className={`pb-4 px-4 text-[11px] font-black uppercase tracking-widest transition-all relative ${activeTab === 'IMAGING' ? 'text-purple-500 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-purple-500' : 'text-slate-400 hover:text-slate-600'}`}
+                >
+                    Imaging (PACS)
+                </button>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 md:gap-10">
+                {/* Unified Chronicle */}
+                {activeTab === 'CHRONICLE' && (
+                    <div className="lg:col-span-3">
+                        <PatientChronicle historyData={history} trends={data.trends} />
+                    </div>
+                )}
+
                 {/* Timeline */}
                 {activeTab === 'TIMELINE' && (
                     <>
@@ -790,6 +850,12 @@ const PatientProfile = ({ patientId, onBack }) => {
                 {activeTab === 'PEDIATRICS' && (
                     <div className="lg:col-span-3">
                         <PediatricsDashboard patientId={patient.id} patient={patient} />
+                    </div>
+                )}
+
+                {activeTab === 'IMAGING' && (
+                    <div className="lg:col-span-3">
+                        <ImagingDashboard patientId={patient.id} patient={patient} />
                     </div>
                 )}
             </div>

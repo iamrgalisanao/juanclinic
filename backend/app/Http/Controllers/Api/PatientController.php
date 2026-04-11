@@ -340,4 +340,45 @@ class PatientController extends Controller
             'history_presets' => $historyPresets
         ]);
     }
+
+    /**
+     * Get summary of neonatal care data.
+     */
+    public function getNeonatalSummary(string $id)
+    {
+        $patient = \App\Models\Patient::findOrFail($id);
+        $this->authorize('view', $patient);
+
+        // Neonatal period is up to 28 days chronologically or corrected
+        $isNeonatal = $patient->dob->diffInDays(now()) <= 28;
+        
+        // Birth details
+        $summary = [
+            'gestational_weeks' => $patient->gestational_weeks,
+            'birth_weight_g' => $patient->birth_weight_g,
+            'apgar_score' => $patient->apgar_score,
+            'dob' => $patient->dob->toIso8601String(),
+            'current_age_days' => $patient->dob->diffInDays(now()),
+            'corrected_age_days' => $patient->getCorrectedAgeInDays(),
+            'is_premature' => ($patient->gestational_weeks && $patient->gestational_weeks < 37),
+        ];
+
+        // Weight Velocity: Birth weight vs Latest Weight
+        $latestVital = Vital::where('patient_id', $id)
+            ->whereNotNull('weight_kg')
+            ->latest('recorded_at')
+            ->first();
+
+        if ($latestVital && $patient->birth_weight_g) {
+            $birthWeightKg = $patient->birth_weight_g / 1000;
+            $currentWeightKg = (float) $latestVital->weight_kg;
+            $summary['weight_gain_g'] = ($currentWeightKg - $birthWeightKg) * 1000;
+            $summary['weight_gain_percent'] = (($currentWeightKg - $birthWeightKg) / $birthWeightKg) * 100;
+        }
+
+        // Recent APGAR scores (if stored in metadata chronologically)
+        $summary['apgar_history'] = $patient->metadata['apgar_history'] ?? [];
+
+        return response()->json($summary);
+    }
 }

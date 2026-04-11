@@ -30,6 +30,11 @@ class Patient extends Model
         'birth_weight_g',
         'apgar_score',
         'contact',
+        'email',
+        'preferred_language',
+        'receive_email_reminders',
+        'receive_sms_reminders',
+        'tin',
         'metadata',
         'branch_id',
     ];

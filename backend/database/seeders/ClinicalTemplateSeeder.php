@@ -223,5 +223,23 @@ class ClinicalTemplateSeeder extends Seeder
                 'is_active' => true,
             ]
         );
+
+        ClinicalTemplate::updateOrCreate(
+            ['tenant_id' => $tenant->id, 'name' => 'Social Determinants of Health (SDOH)'],
+            [
+                'tenant_id' => $tenant->id,
+                'name' => 'Social Determinants of Health (SDOH)',
+                'description' => 'Standardized assessment of social factors including housing, food security, and transportation (RA 10173 compliant).',
+                'schema' => [
+                    ['name' => 'housing_security', 'label' => 'Housing Security', 'type' => 'select', 'options' => ['Stable', 'Unstable', 'Homeless', 'Risk of Eviction'], 'required' => true],
+                    ['name' => 'food_security', 'label' => 'Food Security', 'type' => 'select', 'options' => ['Secure', 'Worry about Food', 'Skipping Meals'], 'required' => true],
+                    ['name' => 'transportation_access', 'label' => 'Transportation Access', 'type' => 'select', 'options' => ['Reliable', 'Occasional Issues', 'No Reliable Access'], 'required' => true],
+                    ['name' => 'financial_strain', 'label' => 'Financial Strain', 'type' => 'select', 'options' => ['No Difficulty', 'Some Difficulty', 'Unable to Pay for Basics'], 'required' => true],
+                    ['name' => 'social_support', 'label' => 'Social Support / Safety', 'type' => 'select', 'options' => ['Strong Support', 'Limited Support', 'Isolated / At Risk'], 'required' => true],
+                    ['name' => 'additional_social_notes', 'label' => 'Socio-Economic Remarks', 'type' => 'textarea', 'required' => false],
+                ],
+                'is_active' => true,
+            ]
+        );
     }
 }

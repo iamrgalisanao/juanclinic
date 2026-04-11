@@ -44,7 +44,7 @@ class PatientSeeder extends Seeder
                 'patient_id' => $patient->id,
                 'order_id' => $order->id,
                 'invoice_number' => "INV-M-$i",
-                'total_amount' => 500.00,
+                'net_amount' => 500.00,
                 'status' => 'PAID'
             ]);
 
@@ -86,7 +86,7 @@ class PatientSeeder extends Seeder
                 'patient_id' => $patient->id,
                 'order_id' => $order->id,
                 'invoice_number' => "INV-D-$i",
-                'total_amount' => 1200.00,
+                'net_amount' => 1200.00,
                 'status' => 'PAID'
             ]);
 

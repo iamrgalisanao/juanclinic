@@ -1,0 +1,56 @@
+{
+  "_comment": "JuanClinic EMPI Hardware Sync - Sample Payload (BIR EIS Compatible)",
+  "_version": "2.1",
+  "transaction_id": "SALE_EMPI_SAMPLE_20260330_192700",
+  "hardware_id": "JC-HW-TERM-001",
+  "terminal_id": "91",
+  "transaction_type": "SALE",
+  "transaction_date": "2026-03-30",
+  "transaction_time": "19:27:00",
+  "customer": {
+    "customer_code": "JC-PAT-00001",
+    "first_name": "Maria",
+    "last_name": "Santos",
+    "dob": "1990-06-15",
+    "gender": "F",
+    "contact": "09171234567"
+  },
+  "items": [
+    {
+      "item_code": "OPD-CONSULT-001",
+      "description": "OPD Consultation",
+      "quantity": 1,
+      "unit_price": 500.00,
+      "total_price": 500.00,
+      "vat_type": "VATABLE"
+    },
+    {
+      "item_code": "LAB-CBC-001",
+      "description": "Complete Blood Count (CBC)",
+      "quantity": 1,
+      "unit_price": 350.00,
+      "total_price": 350.00,
+      "vat_type": "VAT_EXEMPT"
+    }
+  ],
+  "totals": {
+    "gross_amount": 850.00,
+    "vatable_sales": 500.00,
+    "vat_amount": 60.00,
+    "vat_exempt_sales": 350.00,
+    "discount_amount": 0.00,
+    "net_amount": 910.00
+  },
+  "payment": {
+    "method": "CASH",
+    "amount_tendered": 1000.00,
+    "change": 90.00
+  },
+  "receipt": {
+    "min_number": "MIN-2026-009",
+    "ptu_number": "PTU-2026-ABC",
+    "receipt_number": "OR-20260330-0001",
+    "cashier_id": "CASHIER-001"
+  },
+  "payload_checksum": "PLACEHOLDER_WILL_BE_COMPUTED_IN_TEST"
+}

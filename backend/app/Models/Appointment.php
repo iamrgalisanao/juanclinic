@@ -26,7 +26,24 @@ class Appointment extends Model
         'visit_type',
         'reason',
         'notes',
+        'last_reminder_sent_at',
+        'meeting_id',
+        'meeting_token',
+        'meeting_expires_at',
     ];
+
+    protected static function booted()
+    {
+        static::creating(function ($appointment) {
+            if ($appointment->visit_type === 'TELEHEALTH') {
+                $appointment->meeting_id = 'JC-' . strtoupper(bin2hex(random_bytes(6)));
+                $appointment->meeting_token = bin2hex(random_bytes(16));
+                // Room expires 1 hour after the scheduled end time
+                // (Using simple logic here, assuming and ensuring end_time exists)
+                $appointment->meeting_expires_at = now()->addHours(2); 
+            }
+        });
+    }
 
     protected $casts = [
         'appointment_date' => 'date',

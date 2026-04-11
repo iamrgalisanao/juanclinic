@@ -12,6 +12,33 @@ use App\Traits\BelongsToBranch;
 class ClinicalNote extends Model
 {
     use HasFactory, BelongsToTenant, AuditLogTrait, HasAmendments, BelongsToBranch;
+    
+    protected static function booted()
+    {
+        static::saved(function ($note) {
+            if ($note->status === 'SIGNED' && is_array($note->content)) {
+                $vitalsData = array_intersect_key($note->content, array_flip([
+                    'weight_kg', 'height_cm', 'head_circumference_cm', 
+                    'temp_c', 'pulse_rate', 'resp_rate', 'bp_systolic', 'bp_diastolic', 'spo2'
+                ]));
+
+                if (!empty($vitalsData)) {
+                    \App\Models\Vital::updateOrCreate(
+                        [
+                            'patient_id' => $note->patient_id,
+                            'recorded_at' => $note->created_at, // Use note timestamp
+                            'tenant_id' => $note->tenant_id
+                        ],
+                        array_merge($vitalsData, [
+                            'branch_id' => $note->branch_id,
+                            'author_id' => $note->author_id,
+                            'remarks' => "Extracted from clinical note: {$note->id}",
+                        ])
+                    );
+                }
+            }
+        });
+    }
 
     protected $fillable = [
         'tenant_id',

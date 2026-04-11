@@ -13,6 +13,10 @@ const RegisterPatientForm = ({ onPatientAdded, onClose, activeTenant }) => {
         birth_weight_g: '',
         apgar_score: '',
         contact: '',
+        email: '',
+        preferred_language: 'en',
+        receive_email_reminders: true,
+        receive_sms_reminders: true,
         patient_external_id: 'PAT-' + Date.now().toString(36).toUpperCase(),
     });
     const [isPediatric, setIsPediatric] = useState(false);
@@ -22,7 +26,7 @@ const RegisterPatientForm = ({ onPatientAdded, onClose, activeTenant }) => {
 
     const steps = [
         { id: 1, name: 'Demographics', icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z' },
-        { id: 2, name: 'Contact Info', icon: 'M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z' },
+        { id: 2, name: 'Contact & Preferences', icon: 'M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z' },
         { id: 3, name: 'Insurance', icon: 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z' },
     ];
 
@@ -54,7 +58,7 @@ const RegisterPatientForm = ({ onPatientAdded, onClose, activeTenant }) => {
                 setErrors(err.response.data.errors);
                 // Auto-jump to clinical demographics if error is there
                 if (err.response.data.errors.first_name || err.response.data.errors.last_name || err.response.data.errors.dob) setStep(1);
-                else if (err.response.data.errors.contact) setStep(2);
+                else if (err.response.data.errors.contact || err.response.data.errors.email) setStep(2);
             } else if (err.response && err.response.status === 409) {
                 alert("Critical: Potential duplicate patient detected in the secure clinical registry.");
             } else {
@@ -208,8 +212,8 @@ const RegisterPatientForm = ({ onPatientAdded, onClose, activeTenant }) => {
                 )}
 
                 {step === 2 && (
-                    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        <div>
+                    <div className="grid grid-cols-2 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <div className="col-span-1">
                             <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 pl-1">Mobile Contact</label>
                             <input
                                 required
@@ -220,13 +224,55 @@ const RegisterPatientForm = ({ onPatientAdded, onClose, activeTenant }) => {
                             />
                             {errors.contact && <p className="text-[10px] font-bold text-rose-500 mt-2 italic px-1">{errors.contact[0]}</p>}
                         </div>
-                        <div>
-                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 pl-1">External System ID</label>
+                        <div className="col-span-1">
+                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 pl-1">Email (Reminders)</label>
+                            <input
+                                type="email"
+                                value={formData.email}
+                                onChange={e => setFormData({ ...formData, email: e.target.value })}
+                                className="w-full bg-his-slate-50 border-2 border-transparent focus:border-his-green-500/10 focus:bg-white rounded-2xl p-4 text-sm font-bold text-slate-700 outline-none transition-all placeholder:text-slate-300"
+                                placeholder="patient@example.com"
+                            />
+                            {errors.email && <p className="text-[10px] font-bold text-rose-500 mt-2 italic px-1">{errors.email[0]}</p>}
+                        </div>
+                        <div className="col-span-1">
+                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 pl-1">Preferred Language</label>
+                            <select
+                                value={formData.preferred_language}
+                                onChange={e => setFormData({ ...formData, preferred_language: e.target.value })}
+                                className="w-full bg-his-slate-50 border-2 border-transparent focus:border-his-green-500/10 focus:bg-white rounded-2xl p-4 text-sm font-bold text-slate-700 outline-none transition-all"
+                            >
+                                <option value="en">English</option>
+                                <option value="tl">Tagalog (Filipino)</option>
+                            </select>
+                        </div>
+                        <div className="col-span-1">
+                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 pl-1">System ID</label>
                             <input
                                 disabled
                                 value={formData.patient_external_id}
                                 className="w-full bg-his-slate-100 border-2 border-his-slate-200 rounded-2xl p-4 text-sm font-black text-slate-500 outline-none italic cursor-not-allowed"
                             />
+                        </div>
+
+                        <div className="col-span-2 p-6 bg-slate-50 rounded-[2rem] border border-slate-100 space-y-4">
+                            <h4 className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Notification Preferences</h4>
+                            <div className="flex gap-6">
+                                <label className="flex items-center gap-3 cursor-pointer group">
+                                    <div className={`w-10 h-6 rounded-full p-1 transition-all ${formData.receive_email_reminders ? 'bg-his-green-500' : 'bg-slate-200'}`}
+                                         onClick={() => setFormData({...formData, receive_email_reminders: !formData.receive_email_reminders})}>
+                                        <div className={`w-4 h-4 bg-white rounded-full transition-all ${formData.receive_email_reminders ? 'translate-x-4' : 'translate-x-0'}`} />
+                                    </div>
+                                    <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">Email</span>
+                                </label>
+                                <label className="flex items-center gap-3 cursor-pointer group">
+                                    <div className={`w-10 h-6 rounded-full p-1 transition-all ${formData.receive_sms_reminders ? 'bg-his-green-500' : 'bg-slate-200'}`}
+                                         onClick={() => setFormData({...formData, receive_sms_reminders: !formData.receive_sms_reminders})}>
+                                        <div className={`w-4 h-4 bg-white rounded-full transition-all ${formData.receive_sms_reminders ? 'translate-x-4' : 'translate-x-0'}`} />
+                                    </div>
+                                    <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">SMS</span>
+                                </label>
+                            </div>
                         </div>
                     </div>
                 )}
@@ -240,7 +286,7 @@ const RegisterPatientForm = ({ onPatientAdded, onClose, activeTenant }) => {
                                 </svg>
                             </div>
                             <p className="text-xs font-bold text-his-green-700 leading-relaxed">
-                                Ready to finalize registration. All demographic and contact data has been validated against HL7 standards.
+                                Ready to finalize registration. All demographic and engagement preferences have been validated.
                             </p>
                         </div>
                         <p className="text-center text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] pt-4">Final clinical review required</p>
