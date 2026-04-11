@@ -97,8 +97,40 @@ class BillingController extends Controller
 
         // Update invoice status based on net_amount
         $totalPaid = $invoice->payments()->sum('amount');
-        if ($totalPaid >= $invoice->net_amount) {
+        if ($totalPaid >= $invoice->net_amount && $invoice->status !== 'PAID') {
             $invoice->update(['status' => 'PAID']);
+            
+            // JuanClinic Logic: Deduct inventory only upon confirmed purchase
+            foreach ($invoice->items as $lineItem) {
+                if ($lineItem->inventory_item_id) {
+                    // Find oldest stock batch for this branch (FIFO)
+                    $stock = \App\Models\InventoryStock::where('inventory_item_id', $lineItem->inventory_item_id)
+                        ->where('branch_id', $invoice->branch_id)
+                        ->where('quantity', '>', 0)
+                        ->orderBy('expiry_date', 'asc')
+                        ->orderBy('created_at', 'asc')
+                        ->first();
+
+                    if ($stock) {
+                        $deduct = min($stock->quantity, $lineItem->quantity);
+                        $stock->decrement('quantity', $deduct);
+                        
+                        \App\Models\AuditLog::create([
+                            'tenant_id' => $invoice->tenant_id,
+                            'actor_id' => auth()->id(),
+                            'action' => 'INVENTORY_DEDUCTED',
+                            'resource_type' => 'InventoryStock',
+                            'resource_id' => $stock->id,
+                            'payload' => [
+                                'reason' => 'PURCHASE_CONFIRMED',
+                                'invoice_id' => $invoice->id,
+                                'deducted' => $deduct,
+                                'remaining' => $stock->fresh()->quantity
+                            ]
+                        ]);
+                    }
+                }
+            }
         } elseif ($totalPaid > 0) {
             $invoice->update(['status' => 'PARTIAL']);
         }

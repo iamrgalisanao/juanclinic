@@ -14,21 +14,20 @@ class Prescription extends Model
     use HasFactory, BelongsToTenant, AuditLogTrait, HasAmendments, BelongsToBranch;
 
     protected $fillable = [
-        'tenant_id',
-        'patient_id',
-        'invoice_id',
-        'physician_id',
-        'medicine_id',
-        'medication_name',
-        'quantity',
-        'dosage',
-        'frequency',
-        'duration',
-        'instructions',
-        'status', // ACTIVE, COMPLETED, CANCELLED
         'dispensed_at',
         'dispensed_by',
+        'qr_uuid',
+        'dispensed_quantity',
+        'remaining_quantity',
     ];
+
+    protected static function booted()
+    {
+        static::creating(function ($prescription) {
+            $prescription->qr_uuid = (string) \Illuminate\Support\Str::uuid();
+            $prescription->remaining_quantity = $prescription->quantity;
+        });
+    }
 
     public function patient()
     {

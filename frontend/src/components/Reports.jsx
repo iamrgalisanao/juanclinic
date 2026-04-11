@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { getDashboardReports, getBranchBenchmarking } from '../services/api';
+import FinancialCompliance from './reports/FinancialCompliance';
+import ClinicalOutcomes from '../views/reports/ClinicalOutcomes';
 
 const Reports = ({ activeTenant, activeBranch }) => {
     const [reportData, setReportData] = useState(null);
     const [benchmarkingData, setBenchmarkingData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' or 'benchmarking'
+    const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard', 'benchmarking', 'finance', or 'clinical'
 
     // Date Range State (Default to last 30 days)
     const [startDate, setStartDate] = useState(() => {
@@ -17,8 +19,10 @@ const Reports = ({ activeTenant, activeBranch }) => {
     const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
 
     useEffect(() => {
-        fetchData();
-    }, [activeTenant, activeBranch, startDate, endDate]);
+        if (activeTab !== 'finance' && activeTab !== 'clinical') {
+            fetchData();
+        }
+    }, [activeTenant, activeBranch, startDate, endDate, activeTab]);
 
     const fetchData = async () => {
         setLoading(true);
@@ -60,7 +64,7 @@ const Reports = ({ activeTenant, activeBranch }) => {
         },
     ];
 
-    if (loading) {
+    if (loading && activeTab !== 'finance' && activeTab !== 'clinical') {
         return (
             <div className="p-10 flex items-center justify-center min-h-[400px]">
                 <div className="flex flex-col items-center gap-4">
@@ -73,31 +77,33 @@ const Reports = ({ activeTenant, activeBranch }) => {
 
     return (
         <div className="p-10 space-y-10 animate-in fade-in duration-700">
-            {/* Header with Date Range */}
+            {/* Header with Date Range and Tab Navigation */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
                 <div>
-                    <h2 className="text-3xl font-black text-slate-900 tracking-tight">Advanced Analytics</h2>
-                    <div className="flex items-center gap-4 mt-4 bg-his-slate-100/50 p-2 rounded-2xl border border-slate-100 shadow-inner">
-                        <div className="flex items-center gap-3 px-3">
-                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">From</span>
-                            <input
-                                type="date"
-                                value={startDate}
-                                onChange={(e) => setStartDate(e.target.value)}
-                                className="bg-transparent border-none text-[11px] font-black uppercase text-slate-700 outline-none"
-                            />
+                    <h2 className="text-3xl font-black text-slate-900 tracking-tight">Enterprise Reporting</h2>
+                    {activeTab !== 'finance' && activeTab !== 'clinical' && (
+                        <div className="flex items-center gap-4 mt-4 bg-his-slate-100/50 p-2 rounded-2xl border border-slate-100 shadow-inner">
+                            <div className="flex items-center gap-3 px-3">
+                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">From</span>
+                                <input
+                                    type="date"
+                                    value={startDate}
+                                    onChange={(e) => setStartDate(e.target.value)}
+                                    className="bg-transparent border-none text-[11px] font-black uppercase text-slate-700 outline-none"
+                                />
+                            </div>
+                            <div className="w-px h-4 bg-slate-200" />
+                            <div className="flex items-center gap-3 px-3">
+                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">To</span>
+                                <input
+                                    type="date"
+                                    value={endDate}
+                                    onChange={(e) => setEndDate(e.target.value)}
+                                    className="bg-transparent border-none text-[11px] font-black uppercase text-slate-700 outline-none"
+                                />
+                            </div>
                         </div>
-                        <div className="w-px h-4 bg-slate-200" />
-                        <div className="flex items-center gap-3 px-3">
-                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">To</span>
-                            <input
-                                type="date"
-                                value={endDate}
-                                onChange={(e) => setEndDate(e.target.value)}
-                                className="bg-transparent border-none text-[11px] font-black uppercase text-slate-700 outline-none"
-                            />
-                        </div>
-                    </div>
+                    )}
                 </div>
 
                 <div className="flex bg-white rounded-2xl p-1.5 border border-slate-100 shadow-sm self-start">
@@ -108,15 +114,27 @@ const Reports = ({ activeTenant, activeBranch }) => {
                         Overview
                     </button>
                     <button
+                        onClick={() => setActiveTab('clinical')}
+                        className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'clinical' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-slate-400 hover:text-slate-600'}`}
+                    >
+                        Clinical Outcomes
+                    </button>
+                    <button
                         onClick={() => setActiveTab('benchmarking')}
                         className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'benchmarking' ? 'bg-his-green-500 text-white shadow-lg shadow-his-green-500/20' : 'text-slate-400 hover:text-slate-600'}`}
                     >
                         Benchmarking
                     </button>
+                    <button
+                        onClick={() => setActiveTab('finance')}
+                        className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'finance' ? 'bg-his-slate-900 text-white shadow-lg shadow-slate-900/20' : 'text-slate-400 hover:text-slate-600'}`}
+                    >
+                        Finance Journal
+                    </button>
                 </div>
             </div>
 
-            {activeTab === 'dashboard' ? (
+            {activeTab === 'dashboard' && (
                 <>
                     {/* Quick Metrics */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -193,7 +211,11 @@ const Reports = ({ activeTenant, activeBranch }) => {
                         </div>
                     </div>
                 </>
-            ) : (
+            )}
+
+            {activeTab === 'clinical' && <ClinicalOutcomes activeBranchId={activeBranch} />}
+
+            {activeTab === 'benchmarking' && (
                 <div className="space-y-10 animate-in slide-in-from-right-10 duration-500">
                     <div className="bg-white rounded-[2.5rem] p-10 shadow-sleek border border-his-slate-100">
                         <div className="flex justify-between items-start mb-10">
@@ -244,19 +266,15 @@ const Reports = ({ activeTenant, activeBranch }) => {
                                     <div className="w-full h-px bg-slate-50" />
                                 </div>
                             ))}
-
-                            {(!benchmarkingData?.benchmarking || benchmarkingData.benchmarking.length === 0) && (
-                                <div className="text-center py-20 border-2 border-dashed border-slate-50 rounded-[2.5rem]">
-                                    <p className="text-sm font-black text-slate-200 uppercase tracking-[0.2em]">No facility data available for selection</p>
-                                </div>
-                            )}
                         </div>
                     </div>
                 </div>
             )}
 
+            {activeTab === 'finance' && <FinancialCompliance activeBranchId={activeBranch} />}
+
             {/* Footer / Disclaimer */}
-            <div className="flex justify-center">
+            <div className="flex justify-center pt-10">
                 <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">
                     Enterprise analytics synced from all physical facilities • Last updated: {new Date().toLocaleTimeString()}
                 </p>

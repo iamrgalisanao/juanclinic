@@ -98,35 +98,91 @@ class ReportController extends Controller
         ]);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
+    public function getClinicalOutcomes(Request $request)
     {
-        //
-    }
+        $start = $request->query('start_date', now()->subDays(30)->toDateString());
+        $end = $request->query('end_date', now()->toDateString());
+        $branchId = $request->query('branch_id');
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
+        $queryBase = function ($model) use ($start, $end, $branchId) {
+            $q = $model::whereBetween('created_at', [$start . ' 00:00:00', $end . ' 23:59:59']);
+            if ($branchId) $q->where('branch_id', $branchId);
+            return $q;
+        };
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
+        // 1. Demographics (Gender)
+        $genderDistribution = $queryBase(new \App\Models\Patient())
+            ->select('gender', \Illuminate\Support\Facades\DB::raw('count(*) as count'))
+            ->groupBy('gender')
+            ->get();
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        // 2. Demographics (Age Groups - Simplified calculation)
+        $patients = $queryBase(new \App\Models\Patient())->get();
+        $ageGroups = [
+            'Neonatal (<1m)' => 0,
+            'Pediatric (1m-17y)' => 0,
+            'Adult (18y-59y)' => 0,
+            'Senior (60y+)' => 0,
+        ];
+
+        foreach ($patients as $p) {
+            $age = $p->dob->age;
+            $months = $p->dob->diffInMonths(now());
+            
+            if ($months < 1) $ageGroups['Neonatal (<1m)']++;
+            elseif ($age < 18) $ageGroups['Pediatric (1m-17y)']++;
+            elseif ($age < 60) $ageGroups['Adult (18y-59y)']++;
+            else $ageGroups['Senior (60y+)']++;
+        }
+
+        // 3. Diagnostic TAT (Turnaround Time in Hours)
+        $tatStats = \App\Models\Order::whereBetween('created_at', [$start . ' 00:00:00', $end . ' 23:59:59'])
+            ->where('status', 'COMPLETED')
+            ->select('order_type', \Illuminate\Support\Facades\DB::raw('AVG(TIMESTAMPDIFF(HOUR, created_at, updated_at)) as avg_tat'))
+            ->groupBy('order_type')
+            ->get();
+
+        // 4. Appointment Show/No-Show Rates
+        $appointments = $queryBase(new \App\Models\Appointment())
+            ->select('status', \Illuminate\Support\Facades\DB::raw('count(*) as count'))
+            ->groupBy('status')
+            ->get();
+
+        // 5. Common Diagnoses (Keywords from Clinical Notes)
+        // Note: In high-vol prod, this would be indexed or handled by an Elastic/AI layer.
+        $recentNotes = $queryBase(new \App\Models\ClinicalNote())
+            ->where('status', 'SIGNED')
+            ->get();
+        
+        $diagnoses = [];
+        foreach ($recentNotes as $note) {
+            $content = $note->content;
+            $diag = $content['diagnosis'] ?? $content['assessment'] ?? null;
+            if ($diag) {
+                // Simplified prevalence extractor
+                $key = strtoupper(trim(strtok($diag, " ,.;\n"))); 
+                if ($key && strlen($key) > 3) {
+                    $diagnoses[$key] = ($diagnoses[$key] ?? 0) + 1;
+                }
+            }
+        }
+        arsort($diagnoses);
+        $topDiagnoses = array_slice($diagnoses, 0, 5, true);
+
+        return response()->json([
+            'demographics' => [
+                'gender' => $genderDistribution,
+                'age_groups' => $ageGroups,
+            ],
+            'efficiency' => [
+                'avg_tat' => $tatStats,
+            ],
+            'reliability' => [
+                'appointments' => $appointments,
+            ],
+            'prevalence' => [
+                'top_diagnoses' => $topDiagnoses,
+            ]
+        ]);
     }
 }

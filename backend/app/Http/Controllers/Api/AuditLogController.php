@@ -40,6 +40,6 @@ class AuditLogController extends Controller
             $query->whereDate('created_at', '<=', $request->input('to'));
         }
 
-        return $query->limit(200)->get();
+        return $query->paginate($request->input('per_page', 15));
     }
 }
