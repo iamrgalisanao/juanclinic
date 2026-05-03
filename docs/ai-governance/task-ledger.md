@@ -48,4 +48,9 @@
 - [x] **2026-04-10**: Patient Portal v2 (v1.33.0). Launched responsive, mobile-first parental dashboard with interactive growth charts and vaccination timelines.
 - [x] **2026-04-10**: Unified Clinical History (v1.31.0). Deployed longitudinal trends and delta intelligence.
 - [x] **2026-04-10**: Clinical Quality & Safety (v1.35.0). Implemented global smart triage, hard-stop enforcement, and safety acknowledgment protocols.
-- **Status**: ⏸️ **Strategic Pause initiated**. Clinical hardening cycle (v1.30-v1.35) concluded. Awaiting pediatrician and laboratory feedback for Phase 12.
+- [x] **2026-05-01**: MD Referral Integration (Phase 14). Implemented high-fidelity, compact autocomplete search and referral persistence. Hardened the Interactive Guide with comprehensive help documentation for HL7 Transport, Referrals, Drug Discovery, and Terminology Governance.
+- [x] **2026-05-01**: Governance Hardening. Synchronized `ROADMAP.md`, `task-ledger.md`, and performed a full Guardrail Audit.
+- [x] **2026-05-03**: Phase 17 Guardrail Audit. Verified security fixes for `DiagnosticResult`, identified `DiseaseTerm` architecture drift, and validated Phase 17 implementation readiness.
+- [x] **2026-05-03**: Clinical Catalog Ingestion (Phase 17). Implemented `ClinicalCatalogService` with Regex-based Packaging Parser. Ingested 4,111 brands, 3,384 forms, and 208 disease mappings. Hardened `Medicine`/`MedicineForm` with `AuditLogTrait`.
+
+- **Status**: 🟢 **Phase 14 Complete (v1.36.0)**. System stable and ready for Phase 15.

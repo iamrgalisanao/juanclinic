@@ -60,6 +60,29 @@
 - [x] **Patient Portal v2 (v1.33)**: Responsive, mobile-first parental dashboard with growth charts.
 - [x] **Unified Clinical History (v1.31)**: Longitudinal chronicle with trend analytics and delta highlighting.
 
+## Phase 11: Clinical Quality & Safety (COMPLETED)
+- [x] **Global Smart Triage**: Mandatory vitals capture and safety-first gating.
+- [x] **Hard-Stop Enforcement**: Clinical safety protocols for pediatric dosing and critical results.
+
+## Phase 12: Clinically-Guided Drug Discovery (COMPLETED)
+- [x] **Disease-First Discovery Flow**: Search by symptom/disease to find mapped medicines.
+- [x] **Normalized Disease Registry**: Canonical database of condition terms for search precision.
+- [x] **Prescribing Handoff**: Integration with the prescription engine to resolve exact form/strength.
+
+## Phase 13: Advanced Multi-Branch Coordination (COMPLETED)
+- [x] **Cross-Branch Inventory Sync**: Automated reordering and stock transfer.
+- [x] **Unified Enterprise Billing**: Consolidated reporting and tax management.
+
+## Phase 14: External Referral Network Integration (COMPLETED)
+- [x] **Secure Referral Exchange**: Inter-facility digital handshake for patient data.
+- [x] **MD Referral Tracking**: Dashboard for incoming/outgoing specialist consultations.
+- [x] **Governance Hardening**: Interactive Guide expansion and Guardrail Audit protocols.
+
+## Phase 17: Enterprise Clinical Catalog Ingestion (COMPLETED)
+- [x] **High-Integrity Bulk Ingest**: Ingested 4,111 brands and 3,384 medicine forms with rich metadata.
+- [x] **Regex Packaging Parser**: Automated extraction of strength, form, and price from catalog strings.
+- [x] **Clinical Audit Hardening**: Integrated `AuditLogTrait` across all catalog models.
+
 ## Deferred Features (Future Consideration)
 - [ ] Clinical Decision Support (CDS): Drug-interaction alerts and allergy warnings.
 - [ ] Multi-Specialty Modules: OB-GYN, Ophthalmology, and Cardiology specific charting.

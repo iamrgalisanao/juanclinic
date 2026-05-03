@@ -1,14 +1,20 @@
-# Current Feature: Core Protocol Alignment & Workflow Hardening
+# Current Feature: Clinical Catalog Ingestion (Phase 17)
 
 ## Objective
-Establish the primary documentation stack and operational gates to ensure the HIS development workflow is compliant with Philippines Data Privacy Act (RA 10173) and the A.N.T. architectural patterns.
+Ingest the high-integrity clinical catalog and mappings to power the Disease-First Drug Discovery engine, ensuring full audit compliance and data integrity.
 
 ## Active Tasks
-- [x] Synchronize `gemini.md`, `spec.md`, and `Operational_protocol.md`.
-- [x] Generate Supporting Workflow Documentation (Coding/Security standards).
-- [x] Perform a consistency audit across the `docs/` directory.
+- [x] Implement `ClinicalCatalogService` with Regex-based Packaging Parser.
+- [x] Ingest `all_brand_details.json` (4,111 Brands / 3,384 Forms).
+- [x] Ingest `all_disease_brands.json` (208 Mappings).
+- [x] Apply `AuditLogTrait` to Medicine and MedicineForm models.
+- [x] Perform Sync-Discovery & Guardrail Audit.
 
 ## Success Criteria
-- The "Source of Truth Quartet" is established and in sync.
-- RBAC and Tenant Isolation guardrails are explicitly documented.
-- All non-negotiables are integrated into the AI interaction rules.
+- [x] Catalog successfully hydrated in DB.
+- [x] Medicine forms correctly parsed (Strength/Form/Price).
+- [x] Audit trails active for all changes.
+- [x] Roadmap and Task Ledger synchronized.
+
+## Status
+🟢 **Completed (2026-05-03)**. Ready for Phase 18 or specialty hardening.
