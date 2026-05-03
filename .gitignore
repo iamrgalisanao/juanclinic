@@ -33,3 +33,4 @@ frontend/yarn-error.log*
 frontend/pnpm-debug.log*
 
 
+memory/auth.json

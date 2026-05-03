@@ -593,3 +593,4 @@ export const acknowledgeVital = (id) => api.post(`/safety/vitals/${id}/acknowled
 export const acknowledgeResult = (id) => api.post(`/safety/results/${id}/acknowledge`);
 
 export default api;
+export { API_BASE };

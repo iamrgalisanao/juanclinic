@@ -3,6 +3,7 @@ import ResultEntryForm from '../components/ResultEntryForm';
 import RadiologyResultForm from '../components/RadiologyResultForm';
 import ResultApprovalView from '../components/ResultApprovalView';
 import { useDialog } from '../context/DialogContext';
+import api, { API_BASE } from '../services/api';
 
 const RadiologyWorklist = ({ currentUser, activeTenant, searchTerm }) => {
     const { alert } = useDialog();
@@ -24,7 +25,7 @@ const RadiologyWorklist = ({ currentUser, activeTenant, searchTerm }) => {
 
         setLoading(true);
         try {
-            const response = await fetch('http://localhost:8001/api/orders/worklist', {
+            const response = await fetch(`${API_BASE}/orders/worklist`, {
                 headers: {
                     'Accept': 'application/json',
                     'X-Tenant-ID': activeTenant,
@@ -62,7 +63,7 @@ const RadiologyWorklist = ({ currentUser, activeTenant, searchTerm }) => {
         if (reason) finalPayload.amendment_reason = reason;
 
         try {
-            const response = await fetch(`http://localhost:8001/api/orders/${orderId}`, {
+            const response = await fetch(`${API_BASE}/orders/${orderId}`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',

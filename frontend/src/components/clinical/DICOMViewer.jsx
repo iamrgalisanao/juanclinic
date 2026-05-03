@@ -3,7 +3,7 @@ import * as cornerstone from 'cornerstone-core';
 import * as cornerstoneWADOImageLoader from 'cornerstone-wado-image-loader';
 import * as dicomParser from 'dicom-parser';
 import Hammer from 'hammerjs';
-import { submitImagingReport, finalizeImagingStudy } from '../../services/api';
+import { submitImagingReport, finalizeImagingStudy, API_BASE } from '../../services/api';
 import { useDialog } from '../../context/DialogContext';
 
 // Initialize Cornerstone WADO Image Loader
@@ -45,7 +45,7 @@ const DICOMViewer = ({ study: initialStudy, onClose }) => {
         const loadAndDisplayImage = async () => {
             setLoading(true);
             try {
-                const imageId = `wadouri:http://localhost:8001/api/imaging/instances/${currentInstance.id}`;
+                const imageId = `wadouri:${API_BASE}/imaging/instances/${currentInstance.id}`;
                 const image = await cornerstone.loadImage(imageId);
                 cornerstone.displayImage(element, image);
                 cornerstone.setViewport(element, cornerstone.getDefaultViewportForImage(element, image));
