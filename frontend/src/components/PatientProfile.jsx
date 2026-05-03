@@ -587,38 +587,38 @@ const PatientProfile = ({ patientId, onBack, activeTenant, stagedPrescription, s
                 </button>
                 <button
                     onClick={() => setActiveTab('ATTACHMENTS')}
-                    className={`pb-4 px-4 text-[11px] font-black uppercase tracking-widest transition-all relative ${activeTab === 'ATTACHMENTS' ? 'text-blue-500 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-blue-500' : 'text-slate-400 hover:text-slate-600'}`}
+                    className={`pb-4 px-4 text-[11px] font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === 'ATTACHMENTS' ? 'text-blue-500 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-blue-500' : 'text-slate-400 hover:text-slate-600'}`}
                 >
                     Clinical Folders
                 </button>
                 <button
                     onClick={() => setActiveTab('NOTES')}
-                    className={`pb-4 px-4 text-[11px] font-black uppercase tracking-widest transition-all relative ${activeTab === 'NOTES' ? 'text-purple-500 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-purple-500' : 'text-slate-400 hover:text-slate-600'}`}
+                    className={`pb-4 px-4 text-[11px] font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === 'NOTES' ? 'text-purple-500 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-purple-500' : 'text-slate-400 hover:text-slate-600'}`}
                 >
                     Clinical Notes & Encounters
                 </button>
                 <button
                     onClick={() => setActiveTab('VITALS')}
-                    className={`pb-4 px-4 text-[11px] font-black uppercase tracking-widest transition-all relative ${activeTab === 'VITALS' ? 'text-rose-500 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-rose-500' : 'text-slate-400 hover:text-slate-600'}`}
+                    className={`pb-4 px-4 text-[11px] font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === 'VITALS' ? 'text-rose-500 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-rose-500' : 'text-slate-400 hover:text-slate-600'}`}
                 >
                     Vitals & Triage
                 </button>
                 <button
                     onClick={() => setActiveTab('PEDIATRICS')}
-                    className={`pb-4 px-4 text-[11px] font-black uppercase tracking-widest transition-all relative ${activeTab === 'PEDIATRICS' ? 'text-his-green-500 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-his-green-500' : 'text-slate-400 hover:text-slate-600'}`}
+                    className={`pb-4 px-4 text-[11px] font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === 'PEDIATRICS' ? 'text-his-green-500 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-his-green-500' : 'text-slate-400 hover:text-slate-600'}`}
                 >
                     Pediatrics / Growth
                 </button>
                 <button
                     onClick={() => setActiveTab('PRESCRIPTIONS')}
-                    className={`pb-4 px-4 text-[11px] font-black uppercase tracking-widest transition-all relative ${activeTab === 'PRESCRIPTIONS' ? 'text-amber-500 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-amber-500' : 'text-slate-400 hover:text-slate-600'}`}
+                    className={`pb-4 px-4 text-[11px] font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === 'PRESCRIPTIONS' ? 'text-amber-500 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-amber-500' : 'text-slate-400 hover:text-slate-600'}`}
                 >
                     Medication & RX History
                 </button>
                 {activeTenant?.radiology_enabled && (
                     <button
                         onClick={() => setActiveTab('IMAGING')}
-                        className={`pb-4 px-4 text-[11px] font-black uppercase tracking-widest transition-all relative ${activeTab === 'IMAGING' ? 'text-purple-500 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-purple-500' : 'text-slate-400 hover:text-slate-600'}`}
+                        className={`pb-4 px-4 text-[11px] font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === 'IMAGING' ? 'text-purple-500 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-purple-500' : 'text-slate-400 hover:text-slate-600'}`}
                     >
                         Imaging & PACS
                     </button>

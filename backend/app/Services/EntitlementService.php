@@ -23,7 +23,12 @@ class EntitlementService
             return true;
         }
 
-        $tenant = app('tenant');
+        // Platform-wide Admins with null tenant always have all features enabled (Bypass multi-tenant isolation)
+        if (in_array($user->role, ['ADMIN', 'GLOBAL_ADMIN']) && is_null($user->tenant_id)) {
+            return true;
+        }
+
+        $tenant = app()->bound('tenant') ? app('tenant') : null;
         if (!$tenant) {
             return false;
         }

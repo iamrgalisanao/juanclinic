@@ -116,9 +116,9 @@ const TriageDashboard = ({ patientId, onVitalSaved }) => {
     };
 
     return (
-        <div className="flex gap-8 px-4 py-6 h-full overflow-hidden bg-his-slate-50/30">
+        <div className="flex flex-col lg:flex-row gap-8 px-4 py-6 bg-his-slate-50/30">
             {/* Triage Form (Nurse Mode) */}
-            <div className="flex-1 space-y-6 overflow-y-auto pr-4 scrollbar-thin scrollbar-thumb-slate-200">
+            <div className="flex-1 space-y-6">
                 <div className="flex items-center justify-between mb-4">
                     <div>
                         <h2 className="text-2xl font-black text-slate-800 tracking-tight">Active Triage</h2>
@@ -132,7 +132,7 @@ const TriageDashboard = ({ patientId, onVitalSaved }) => {
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                     {/* Primary Physical Metrics */}
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm space-y-3">
                             <label className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
                                 <Scale size={14} className="text-blue-500" /> Weight (kg)
@@ -161,7 +161,7 @@ const TriageDashboard = ({ patientId, onVitalSaved }) => {
                     </div>
 
                     {/* Cardiovascular & Respiratory */}
-                    <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm grid grid-cols-4 gap-8">
+                    <div className="bg-white p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] border border-slate-100 shadow-sm grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
                         <div className="space-y-3">
                             <label className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
                                 <Activity size={14} className="text-rose-500" /> Blood Pressure
@@ -193,7 +193,7 @@ const TriageDashboard = ({ patientId, onVitalSaved }) => {
                     </div>
 
                     {/* Clinical Specialties */}
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm space-y-6">
                             <div className="space-y-1">
                                 <label className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
@@ -236,7 +236,7 @@ const TriageDashboard = ({ patientId, onVitalSaved }) => {
                                 </label>
                                 <span className="text-[8px] font-black text-slate-500 uppercase px-2 py-1 bg-white/5 rounded-lg border border-white/10">Clinical Context</span>
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 xs:grid-cols-2 gap-4">
                                 <div>
                                     <p className="text-[8px] font-bold text-slate-500 uppercase mb-1">Blood Glucose (mg/dL)</p>
                                     <input name="blood_glucose_mgdl" value={formData.blood_glucose_mgdl} onChange={handleInputChange} type="number" className="w-full bg-transparent text-xl font-black text-white outline-none" placeholder="85" />
@@ -249,7 +249,7 @@ const TriageDashboard = ({ patientId, onVitalSaved }) => {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                          <div className="space-y-2">
                              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Oxygen Source</label>
                              <select name="oxygen_source" value={formData.oxygen_source} onChange={handleInputChange} className="w-full bg-white border border-slate-100 rounded-2xl p-4 text-sm font-bold text-slate-700 outline-none">
@@ -289,7 +289,7 @@ const TriageDashboard = ({ patientId, onVitalSaved }) => {
             </div>
 
             {/* Vitals History & Trends */}
-            <div className="w-[380px] space-y-6">
+            <div className="w-full lg:w-[380px] space-y-6">
                 <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm p-8 space-y-6 flex flex-col items-center text-center">
                     <div className="w-16 h-16 bg-blue-50 rounded-[1.5rem] flex items-center justify-center text-blue-500">
                         <History size={32} />

@@ -53,7 +53,7 @@ const NeonatalDashboard = ({ patientId, patient }) => {
                 <h2 className="text-3xl font-black tracking-tighter">Neonatal Care Unit</h2>
                 <div className="flex items-center gap-4 mt-2">
                     <span className="text-[10px] font-black uppercase tracking-[0.2em] px-3 py-1 bg-white/10 rounded-full border border-white/10">
-                        {summary.current_age_days} Days Chronological
+                        {Math.floor(summary.current_age_days)} Days Chronological
                     </span>
                     {summary.is_premature && (
                         <span className="text-[10px] font-black uppercase tracking-[0.2em] px-3 py-1 bg-amber-500 rounded-full text-slate-900">
@@ -66,10 +66,18 @@ const NeonatalDashboard = ({ patientId, patient }) => {
 
         <div className="relative z-10 flex flex-col items-end">
             <div className="text-right">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Corrected Age</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
+                    {summary.is_premature ? 'Corrected Age' : 'Clinical Status'}
+                </p>
                 <div className="flex items-baseline gap-2">
-                    <span className="text-4xl font-black">{summary.corrected_age_days}</span>
-                    <span className="text-xs font-black uppercase text-slate-400">Days</span>
+                    {summary.is_premature ? (
+                        <>
+                            <span className="text-4xl font-black">{Math.floor(summary.corrected_age_days)}</span>
+                            <span className="text-xs font-black uppercase text-slate-400">Days</span>
+                        </>
+                    ) : (
+                        <span className="text-xl font-black uppercase text-his-green-500 tracking-tighter">Full Term</span>
+                    )}
                 </div>
             </div>
         </div>

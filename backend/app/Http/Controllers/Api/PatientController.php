@@ -476,7 +476,8 @@ class PatientController extends Controller
         $this->authorize('view', $patient);
 
         // Neonatal period is up to 28 days chronologically or corrected
-        $isNeonatal = $patient->dob->diffInDays(now()) <= 28;
+        $now = now();
+        $isNeonatal = $patient->dob->diffInDays($now) <= 28;
         
         // Birth details
         $summary = [
@@ -484,8 +485,8 @@ class PatientController extends Controller
             'birth_weight_g' => $patient->birth_weight_g,
             'apgar_score' => $patient->apgar_score,
             'dob' => $patient->dob->toIso8601String(),
-            'current_age_days' => $patient->dob->diffInDays(now()),
-            'corrected_age_days' => $patient->getCorrectedAgeInDays(),
+            'current_age_days' => (int) floor($patient->dob->diffInDays($now)),
+            'corrected_age_days' => $patient->getCorrectedAgeInDays($now),
             'is_premature' => ($patient->gestational_weeks && $patient->gestational_weeks < 37),
         ];
 

@@ -57,10 +57,10 @@ const TopBar = ({ activeTenant, impersonatedTenant, tenants, onTenantChange, act
                 </div>
             </div>
 
-            <div className="flex items-center gap-8">
-                <div className="flex items-center gap-3 py-2 px-4 bg-his-green-50 rounded-2xl border border-his-green-100/50">
-                    <div className="w-2 h-2 rounded-full bg-his-green-500 animate-pulse" />
-                    <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest leading-none">
+            <div className="flex items-center gap-2 md:gap-8">
+                <div className="flex items-center gap-2 md:gap-3 py-2 px-3 md:px-4 bg-his-green-50 rounded-2xl border border-his-green-100/50">
+                    <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-his-green-500 animate-pulse" />
+                    <span className="hidden xl:inline text-[11px] font-black text-slate-400 uppercase tracking-widest leading-none">
                         {currentUser.role === 'GLOBAL_ADMIN' ? 'System Control' : 'Context'}
                     </span>
                     <select
@@ -70,7 +70,7 @@ const TopBar = ({ activeTenant, impersonatedTenant, tenants, onTenantChange, act
                             const tenant = tenants.find(t => t.id === parseInt(e.target.value));
                             if (tenant) onTenantChange(tenant);
                         }}
-                        className={`bg-transparent border-none text-his-green-600 text-[11px] font-black uppercase tracking-widest outline-none py-0.5 ${currentUser.tenant_id ? 'cursor-not-allowed opacity-70' : 'cursor-pointer hover:text-his-green-700 transition-colors'}`}
+                        className={`bg-transparent border-none text-his-green-600 text-[10px] md:text-[11px] font-black uppercase tracking-widest outline-none py-0.5 max-w-[80px] md:max-w-none truncate ${currentUser.tenant_id ? 'cursor-not-allowed opacity-70' : 'cursor-pointer hover:text-his-green-700 transition-colors'}`}
                     >
                         {tenants.map(t => (
                             <option key={t.id} value={t.id} className="bg-white text-slate-900 font-sans normal-case tracking-normal">{t.name}</option>
@@ -79,9 +79,9 @@ const TopBar = ({ activeTenant, impersonatedTenant, tenants, onTenantChange, act
                 </div>
 
                 {/* Branch Switcher */}
-                <div className="flex items-center gap-3 py-2 px-4 bg-blue-50 rounded-2xl border border-blue-100/50">
-                    <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-                    <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest leading-none">
+                <div className="flex items-center gap-2 md:gap-3 py-2 px-3 md:px-4 bg-blue-50 rounded-2xl border border-blue-100/50">
+                    <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-blue-500 animate-pulse" />
+                    <span className="hidden xl:inline text-[11px] font-black text-slate-400 uppercase tracking-widest leading-none">
                         {currentUser.role === 'GLOBAL_ADMIN' ? 'Site Node' : 'Facility'}
                     </span>
                     <select
@@ -91,7 +91,7 @@ const TopBar = ({ activeTenant, impersonatedTenant, tenants, onTenantChange, act
                             const branch = branches.find(b => b.id === parseInt(e.target.value));
                             if (branch) onBranchChange(branch);
                         }}
-                        className={`bg-transparent border-none text-blue-600 text-[11px] font-black uppercase tracking-widest outline-none py-0.5 ${currentUser.branch_id || branches.length === 0 ? 'cursor-not-allowed opacity-70' : 'cursor-pointer hover:text-blue-700 transition-colors'}`}
+                        className={`bg-transparent border-none text-blue-600 text-[10px] md:text-[11px] font-black uppercase tracking-widest outline-none py-0.5 max-w-[80px] md:max-w-none truncate ${currentUser.branch_id || branches.length === 0 ? 'cursor-not-allowed opacity-70' : 'cursor-pointer hover:text-blue-700 transition-colors'}`}
                     >
                         {branches.length === 0 ? (
                             <option value="" disabled className="bg-white text-slate-400 font-sans normal-case tracking-normal">No Facilities Found</option>
@@ -106,14 +106,14 @@ const TopBar = ({ activeTenant, impersonatedTenant, tenants, onTenantChange, act
                     </select>
                 </div>
 
-                <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-4 pl-6 border-l border-slate-100">
-                        <div className="text-right">
+                <div className="flex items-center gap-2 md:gap-4">
+                    <div className="flex items-center gap-2 md:gap-4 pl-3 md:pl-6 border-l border-slate-100">
+                        <div className="text-right hidden sm:block">
                             <p className="text-sm font-black text-slate-900 leading-none">{currentUser.name}</p>
                             <p className="text-[10px] font-bold text-his-green-500 uppercase tracking-widest mt-1.5">{currentUser.role} Control</p>
                         </div>
                         <div className="group relative">
-                            <div className="w-12 h-12 rounded-2xl bg-his-slate-100 border border-slate-100 overflow-hidden shadow-sm cursor-pointer hover:ring-2 hover:ring-his-green-500/20 transition-all">
+                            <div className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-his-slate-100 border border-slate-100 overflow-hidden shadow-sm cursor-pointer hover:ring-2 hover:ring-his-green-500/20 transition-all">
                                 <img
                                     src={`https://ui-avatars.com/api/?name=${currentUser.name.replace(' ', '+')}&background=f8fafc&color=22c55e&bold=true`}
                                     alt="Avatar"

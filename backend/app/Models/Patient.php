@@ -115,14 +115,14 @@ class Patient extends Model
         $atDate = $atDate ?? now();
         $chronologicalAgeDays = $this->dob->diffInDays($atDate);
         
-        // If not premature or no gestational data, return chronological age
+        // If not premature or no gestational data, return chronological age (as integer)
         if (!$this->gestational_weeks || $this->gestational_weeks >= 37) {
-            return $chronologicalAgeDays;
+            return (int) floor($chronologicalAgeDays);
         }
 
         $weeksEarly = 40 - $this->gestational_weeks;
         $daysEarly = $weeksEarly * 7;
-        return max(0, $chronologicalAgeDays - $daysEarly);
+        return (int) floor(max(0, $chronologicalAgeDays - $daysEarly));
     }
 
     /**
