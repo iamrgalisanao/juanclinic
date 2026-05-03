@@ -17,7 +17,14 @@ class EnsureGlobalAdmin
     {
         $user = $request->user();
 
-        if (!$user || !in_array($user->role, ['ADMIN', 'GLOBAL_ADMIN']) || (int) $user->tenant_id !== \App\Models\Tenant::SYSTEM_ID) {
+        $isMaster = false;
+        if ($user && in_array($user->role, ['ADMIN', 'GLOBAL_ADMIN'])) {
+            if (is_null($user->tenant_id) || (int) $user->tenant_id === \App\Models\Tenant::SYSTEM_ID) {
+                $isMaster = true;
+            }
+        }
+
+        if (!$isMaster) {
             return response()->json(['message' => 'Super Admin access required.'], 403);
         }
 

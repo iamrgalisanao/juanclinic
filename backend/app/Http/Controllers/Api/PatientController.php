@@ -51,6 +51,10 @@ class PatientController extends Controller
             'birth_weight_g' => 'nullable|integer|between:0,10000',
             'apgar_score' => 'nullable|string',
             'contact' => 'nullable|string',
+            'email' => 'nullable|email',
+            'preferred_language' => 'nullable|string|in:en,tl',
+            'receive_email_reminders' => 'nullable|boolean',
+            'receive_sms_reminders' => 'nullable|boolean',
             'metadata' => 'nullable|array',
         ]);
 
@@ -98,6 +102,10 @@ class PatientController extends Controller
             'birth_weight_g' => 'sometimes|integer|between:0,10000',
             'apgar_score' => 'sometimes|string',
             'contact' => 'nullable|string',
+            'email' => 'nullable|email',
+            'preferred_language' => 'nullable|string|in:en,tl',
+            'receive_email_reminders' => 'nullable|boolean',
+            'receive_sms_reminders' => 'nullable|boolean',
             'metadata' => 'nullable|array',
             'amendment_reason' => 'required|string|min:4',
         ]);
@@ -111,14 +119,36 @@ class PatientController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(string $id, Request $request)
     {
         $patient = \App\Models\Patient::findOrFail($id);
         $this->authorize('delete', $patient);
 
+        $reason = $request->input('reason', 'Formal Right to Erasure request under RA 10173');
+
+        // Log the formal erasure request for statutory compliance before deletion
+        \App\Models\AuditLog::create([
+            'tenant_id' => $patient->tenant_id,
+            'user_id' => auth()->id(),
+            'event' => 'formal_erasure_requested',
+            'auditable_type' => get_class($patient),
+            'auditable_id' => $patient->id,
+            'old_values' => ['status' => 'active'],
+            'new_values' => [
+                'status' => 'erased_soft',
+                'reason' => $reason,
+                'compliance' => 'RA 10173'
+            ],
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
+
         $patient->delete();
 
-        return response()->json(['message' => 'Patient deleted successfully.']);
+        return response()->json([
+            'message' => 'Patient record has been formally erased (Soft Delete) in compliance with Data Privacy standards.',
+            'request_id' => uniqid('DPA-')
+        ]);
     }
 
     /**
@@ -276,6 +306,102 @@ class PatientController extends Controller
 
         return response()->json($record, 201);
     }
+
+    /**
+     * Update existing immunization record (DOCTOR Only).
+     */
+    public function updateImmunizationRecord(Request $request, string $id, string $recordId)
+    {
+        $patient = \App\Models\Patient::findOrFail($id);
+        $this->authorize('update', $patient);
+
+        $record = \App\Models\ImmunizationRecord::where([
+            'id' => $recordId,
+            'patient_id' => $id
+        ])->firstOrFail();
+
+        $validated = $request->validate([
+            'vaccine_name' => 'sometimes|string',
+            'manufacturer' => 'nullable|string',
+            'dose_number' => 'sometimes|integer',
+            'administered_at' => 'sometimes|date',
+            'administered_by' => 'nullable|string',
+            'lot_number' => 'nullable|string',
+            'site' => 'nullable|string',
+            'route' => 'nullable|string',
+            'next_due_date' => 'nullable|date',
+            'vis_edition_date' => 'nullable|date',
+            'vis_provided_date' => 'nullable|date',
+            'remarks' => 'nullable|string',
+            'amendment_reason' => 'required|string|min:4',
+        ]);
+
+        // Clinical Record Amendment Rule: Reason must be logged
+        $record->update($validated);
+        
+        // Manual audit log for the reason
+        $record->logAudit('record_amended', [
+            'reason' => $validated['amendment_reason'],
+            'amended_by' => auth()->user()->id
+        ]);
+
+        return response()->json($record);
+    }
+
+    /**
+     * Enroll patient in a custom vaccine requirement (Added to Roadmap).
+     */
+    public function enrollInCustomVaccine(Request $request, string $id)
+    {
+        $patient = \App\Models\Patient::findOrFail($id);
+        $this->authorize('update', $patient);
+
+        $validated = $request->validate([
+            'vaccine_name' => 'required|string',
+            'doses_required' => 'required|integer|min:1',
+            'target_age_months' => 'required|numeric',
+            'scope' => 'required|in:PATIENT,CLINIC',
+            'description' => 'nullable|string',
+        ]);
+
+        $schedules = [];
+        for ($i = 1; $i <= $validated['doses_required']; $i++) {
+            $schedules[] = \App\Models\VaccineSchedule::create([
+                'tenant_id' => $patient->tenant_id,
+                'patient_id' => ($validated['scope'] === 'PATIENT') ? $patient->id : null,
+                'vaccine_name' => $validated['vaccine_name'],
+                'dose_number' => $i,
+                'recommended_age_months' => $validated['target_age_months'] + (($i - 1) * 2), // Auto-spacing
+                'source' => 'CUSTOM_' . auth()->user()->id,
+                'description' => $validated['description']
+            ]);
+        }
+
+        return response()->json($schedules, 201);
+    }
+
+    /**
+     * Remove custom vaccination requirement from roadmap (DOCTOR Only).
+     */
+    public function unenrollVaccine(Request $request, string $id, string $vaccineName)
+    {
+        $patient = \App\Models\Patient::findOrFail($id);
+        $this->authorize('update', $patient);
+
+        // We only delete schedules that are 'CUSTOM' and not yet administered
+        // Actually, we delete the schedule, but the record is in a different table anyway.
+        // So deleting VaccineSchedule is safe.
+        $deleted = \App\Models\VaccineSchedule::where([
+            'tenant_id' => $patient->tenant_id,
+            'patient_id' => $id,
+            'vaccine_name' => $vaccineName
+        ])
+        ->where('source', 'like', 'CUSTOM_%')
+        ->delete();
+
+        return response()->json(['deleted' => $deleted, 'message' => "Successfully removed {$vaccineName} from roadmap."]);
+    }
+
     /**
      * Get growth standards for background lines.
      */

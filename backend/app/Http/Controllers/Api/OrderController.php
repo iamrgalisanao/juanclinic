@@ -45,6 +45,17 @@ class OrderController extends Controller
             'priority' => 'required|in:ROUTINE,STAT',
         ]);
 
+        // Entitlement Check: Ensure tenant is allowed to issue this type of order
+        $entitlementService = app(\App\Services\EntitlementService::class);
+        $feature = $validated['order_type'] === 'LAB' ? 'laboratory_enabled' : 'radiology_enabled';
+        
+        if (!$entitlementService->hasFeature($feature)) {
+            return response()->json([
+                'message' => "Module '{$feature}' is not enabled. Upgrade to use " . ($validated['order_type'] === 'LAB' ? 'Laboratory' : 'Radiology') . " features.",
+                'error_code' => 'ENTITLEMENT_LOCKED'
+            ], 403);
+        }
+
         return \App\Models\Order::create($validated);
     }
 

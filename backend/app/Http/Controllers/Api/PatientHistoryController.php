@@ -31,6 +31,9 @@ class PatientHistoryController extends Controller
             },
             'vitals' => function ($query) {
                 $query->with('author')->orderBy('recorded_at', 'desc');
+            },
+            'referrals' => function ($query) {
+                $query->with('targetTenant', 'externalProvider')->orderBy('created_at', 'desc');
             }
         ]);
 
@@ -41,7 +44,8 @@ class PatientHistoryController extends Controller
                 'appointments' => $patient->appointments,
                 'prescriptions' => $patient->prescriptions,
                 'clinical_notes' => $patient->clinicalNotes,
-                'vitals' => $patient->vitals
+                'vitals' => $patient->vitals,
+                'referrals' => $patient->referrals
             ],
             'trends' => $this->calculateClinicalTrends($patient)
         ]);

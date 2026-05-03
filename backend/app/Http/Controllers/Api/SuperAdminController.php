@@ -35,15 +35,34 @@ class SuperAdminController extends Controller
             'pediatrics_enabled' => 'nullable|boolean',
             'inventory_enabled' => 'nullable|boolean',
             'pharmacy_enabled' => 'nullable|boolean',
-            'pacs_enabled' => 'nullable|boolean',
+            'laboratory_enabled' => 'nullable|boolean',
+            'radiology_enabled' => 'nullable|boolean',
             'workforce_enabled' => 'nullable|boolean',
+            'sms_enabled' => 'nullable|boolean',
+            'email_enabled' => 'nullable|boolean',
+            'billing_enabled' => 'nullable|boolean',
+            'portal_enabled' => 'nullable|boolean',
+            'empi_enabled' => 'nullable|boolean',
+            'telehealth_enabled' => 'nullable|boolean',
+            'analytics_enabled' => 'nullable|boolean',
+            'offline_sync_enabled' => 'nullable|boolean',
+            'referrals_enabled' => 'nullable|boolean',
+            'queue_enabled' => 'nullable|boolean',
+            'claims_enabled' => 'nullable|boolean',
             'trial_ends_at' => 'nullable|date'
         ]);
 
-        $tenant->update(collect($payload)->filter()->toArray());
+        $tenant->update(collect($payload)->filter(fn($val) => !is_null($val))->toArray());
 
         // Clear all relevant feature caches to ensure immediate real-time enforcement
-        foreach (['pediatrics_enabled', 'inventory_enabled', 'pharmacy_enabled', 'pacs_enabled', 'workforce_enabled'] as $gate) {
+        $gates = [
+            'pediatrics_enabled', 'inventory_enabled', 'pharmacy_enabled', 'pacs_enabled', 
+            'laboratory_enabled', 'radiology_enabled', 'workforce_enabled', 'sms_enabled', 
+            'email_enabled', 'billing_enabled', 'portal_enabled', 'empi_enabled', 
+            'telehealth_enabled', 'analytics_enabled', 'offline_sync_enabled', 
+            'referrals_enabled', 'queue_enabled', 'claims_enabled'
+        ];
+        foreach ($gates as $gate) {
             $this->entitlementService->clearCache($tenant->id, $gate);
         }
 

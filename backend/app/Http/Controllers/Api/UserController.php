@@ -13,7 +13,7 @@ class UserController extends Controller
      */
     public function index(Request $request)
     {
-        $query = User::where('id', '!=', auth()->id());
+        $query = User::query();
 
         if ($request->has('role')) {
             $query->where('role', $request->role);
@@ -35,7 +35,13 @@ class UserController extends Controller
             'password' => 'required|string|min:8',
             'role' => 'required|in:ADMIN,DOCTOR,TECH,DIAGNOSTIC_APPROVER,FRONT_DESK',
             'tenant_id' => 'nullable|integer|exists:tenants,id',
+            'branch_id' => 'nullable|integer|exists:branches,id',
         ]);
+
+        // Clinic Admins can only create users for their own tenant
+        if (auth()->user()->role === 'ADMIN' && auth()->user()->tenant_id) {
+            $validated['tenant_id'] = auth()->user()->tenant_id;
+        }
 
         $validated['password'] = bcrypt($validated['password']);
 
@@ -57,8 +63,14 @@ class UserController extends Controller
             'email' => 'sometimes|email|max:255|unique:users,email,' . $user->id,
             'password' => 'sometimes|string|min:8',
             'role' => 'sometimes|in:ADMIN,DOCTOR,TECH,DIAGNOSTIC_APPROVER,FRONT_DESK',
-            'tenant_id' => 'nullable|integer|exists:tenants,id',
+            'tenant_id' => 'sometimes|nullable|integer|exists:tenants,id',
+            'branch_id' => 'sometimes|nullable|integer|exists:branches,id',
         ]);
+
+        // Prevent Clinic Admins from reassigning users to other tenants
+        if (auth()->user()->role === 'ADMIN' && auth()->user()->tenant_id) {
+            unset($validated['tenant_id']);
+        }
 
         if (array_key_exists('password', $validated)) {
             $validated['password'] = bcrypt($validated['password']);

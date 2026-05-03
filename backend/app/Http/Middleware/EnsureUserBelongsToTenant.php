@@ -17,9 +17,11 @@ class EnsureUserBelongsToTenant
     {
         $user = $request->user();
 
-        // Allow Global Admins with SYSTEM_ID to access any tenant as global admins
-        if ($user && in_array($user->role, ['ADMIN', 'GLOBAL_ADMIN']) && (int) $user->tenant_id === \App\Models\Tenant::SYSTEM_ID) {
-            return $next($request);
+        // 2. Master Admin bypass: Role ADMIN or GLOBAL_ADMIN with either null tenant_id or SYSTEM_ID (888)
+        if ($user && in_array($user->role, ['ADMIN', 'GLOBAL_ADMIN'])) {
+            if (is_null($user->tenant_id) || (int) $user->tenant_id === \App\Models\Tenant::SYSTEM_ID) {
+                return $next($request);
+            }
         }
 
         if (!app()->bound('tenant')) {
@@ -28,9 +30,16 @@ class EnsureUserBelongsToTenant
 
         $tenant = app('tenant');
 
+        // 3. Ownership Check: User must belong to the tenant they are accessing
         if (!$tenant || $user->tenant_id != $tenant->id) {
-            \Log::warning("Tenant access denied: User ID {$user->id} (tenant {$user->tenant_id}) attempted to access Tenant " . ($tenant ? $tenant->id : 'null'));
-            return response()->json(['message' => 'User does not belong to this tenant.'], 403);
+            \Log::warning("Tenant access denied: User ID {$user->id} (User Tenant: {$user->tenant_id}) attempted to access Tenant Context: " . ($tenant ? $tenant->id : 'null'));
+            return response()->json([
+                'message' => 'User does not belong to this tenant.',
+                'debug_context' => [
+                    'user_tenant' => $user->tenant_id,
+                    'active_tenant' => $tenant ? $tenant->id : null
+                ]
+            ], 403);
         }
 
         // Load tenant-specific notification settings (SMTP, SMS API Keys, etc.)

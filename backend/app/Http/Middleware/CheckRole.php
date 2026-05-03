@@ -16,9 +16,12 @@ class CheckRole
      */
     public function handle(Request $request, Closure $next, ...$roles): Response
     {
-        // GLOBAL_ADMIN from the system root tenant bypasses all role restrictions
-        if ($request->user() && $request->user()->role === 'GLOBAL_ADMIN' && (int) $request->user()->tenant_id === \App\Models\Tenant::SYSTEM_ID) {
-            return $next($request);
+        // GLOBAL_ADMIN or unassigned ADMIN from roots bypass all role restrictions
+        if ($request->user() && in_array($request->user()->role, ['ADMIN', 'GLOBAL_ADMIN'])) {
+            $user = $request->user();
+            if (is_null($user->tenant_id) || (int) $user->tenant_id === \App\Models\Tenant::SYSTEM_ID) {
+                return $next($request);
+            }
         }
 
         if (!$request->user() || !in_array($request->user()->role, $roles)) {

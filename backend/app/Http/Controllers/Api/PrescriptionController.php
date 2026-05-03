@@ -18,21 +18,37 @@ class PrescriptionController extends Controller
     {
         $this->authorize('create', Prescription::class);
 
-        $validated = $request->validate([
-            'patient_id' => 'required|exists:patients,id',
-            'medicine_id' => 'nullable|exists:medicines,id',
-            'medication_name' => 'required|string',
-            'quantity' => 'required|integer|min:1',
-            'dosage' => 'required|string',
-            'frequency' => 'required|string',
-            'duration' => 'required|string',
-            'instructions' => 'nullable|string',
-        ]);
+        // Check if input is a bulk request or single entry
+        $isBulk = $request->has('prescriptions') && is_array($request->input('prescriptions'));
+        $data = $isBulk ? $request->input('prescriptions') : [$request->all()];
 
-        $validated['physician_id'] = $request->user()->id;
-        $validated['status'] = 'ACTIVE';
+        return \DB::transaction(function () use ($data, $request, $isBulk) {
+            $created = [];
+            
+            foreach ($data as $item) {
+                // Validation - we could use a custom FormRequest for bulk, 
+                // but for now we'll validate inline to keep it simple and robust.
+                $validated = \Validator::make($item, [
+                    'patient_id' => 'required|exists:patients,id',
+                    'medicine_id' => 'nullable|exists:medicines,id',
+                    'medicine_form_id' => 'nullable|exists:medicine_forms,id',
+                    'medication_name' => 'required|string',
+                    'quantity' => 'required|integer|min:1',
+                    'dosage' => 'required|string',
+                    'frequency' => 'required|string',
+                    'duration' => 'required|string',
+                    'instructions' => 'nullable|string',
+                ])->validate();
 
-        return Prescription::create($validated);
+                $validated['physician_id'] = $request->user()->id;
+                $validated['branch_id'] = $request->header('X-Branch-ID');
+                $validated['status'] = 'ACTIVE';
+
+                $created[] = Prescription::create($validated);
+            }
+
+            return $isBulk ? $created : $created[0];
+        });
     }
 
     public function show($id)
