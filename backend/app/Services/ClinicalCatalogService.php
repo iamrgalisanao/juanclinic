@@ -40,6 +40,7 @@ class ClinicalCatalogService
                     ['name' => trim($item['disease_name'])],
                     [
                         'source_id' => (string) ($item['disease_id'] ?? null),
+                        'code' => 'LOCAL-' . ($item['disease_id'] ?? Str::random(8)),
                         'is_system' => true,
                     ]
                 );
