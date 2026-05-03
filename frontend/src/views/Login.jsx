@@ -29,7 +29,7 @@ const Login = ({ onLoginSuccess }) => {
             {/* Background Image / Overlay */}
             <div
                 className="absolute inset-0 opacity-40 bg-cover bg-center bg-no-repeat transition-transform duration-[20s] hover:scale-110"
-                style={{ backgroundImage: 'url("/src/assets/login_bg.png")' }}
+                style={{ backgroundImage: 'url("/login_bg.png")' }}
             />
             <div className="absolute inset-0 bg-gradient-to-tr from-slate-900 via-slate-900/40 to-transparent" />
 
