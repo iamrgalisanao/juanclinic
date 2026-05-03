@@ -12,18 +12,15 @@ class ClinicalTemplateSeeder extends Seeder
 {
     public function run(): void
     {
-        $tenant = Tenant::first();
-
-        if (!$tenant) {
-            return;
-        }
+        $tenantId = \App\Models\Tenant::SYSTEM_ID;
 
         ClinicalTemplate::updateOrCreate(
-            ['tenant_id' => $tenant->id, 'name' => 'General SOAP Note'],
+            ['tenant_id' => $tenantId, 'name' => 'General SOAP Note'],
             [
-                'tenant_id' => $tenant->id,
+                'tenant_id' => $tenantId,
                 'name' => 'General SOAP Note',
                 'description' => 'Standard Subjective, Objective, Assessment, and Plan encounter note.',
+                'is_active' => true,
                 'schema' => [
                     ['name' => 'subjective', 'label' => 'Subjective (Chief Complaint & HPI)', 'type' => 'textarea', 'required' => true],
                     ['name' => 'objective', 'label' => 'Objective (Vitals & Physical Exam)', 'type' => 'textarea', 'required' => true],
@@ -34,11 +31,12 @@ class ClinicalTemplateSeeder extends Seeder
         );
 
         ClinicalTemplate::updateOrCreate(
-            ['tenant_id' => $tenant->id, 'name' => 'Pediatric Growth Checklist'],
+            ['tenant_id' => $tenantId, 'name' => 'Pediatric Growth Checklist'],
             [
-                'tenant_id' => $tenant->id,
+                'tenant_id' => $tenantId,
                 'name' => 'Pediatric Growth Checklist',
                 'description' => 'Standard infant and toddler growth tracking form.',
+                'is_active' => true,
                 'schema' => [
                     ['name' => 'age_months', 'label' => 'Age (Months)', 'type' => 'number', 'required' => true],
                     ['name' => 'weight_kg', 'label' => 'Weight (kg)', 'type' => 'number', 'required' => true],
@@ -51,9 +49,12 @@ class ClinicalTemplateSeeder extends Seeder
         );
 
         ClinicalTemplate::updateOrCreate(
-            ['tenant_id' => $tenant->id, 'name' => 'Medical Certificate'],
+            ['tenant_id' => $tenantId, 'name' => 'Medical Certificate'],
             [
+                'tenant_id' => $tenantId,
+                'name' => 'Medical Certificate',
                 'description' => 'Formal medical certificate detailing patient examination, diagnosis, and rest recommendations.',
+                'is_active' => true,
                 'schema' => [
                     ['name' => 'examination_date', 'label' => 'Date of Examination', 'type' => 'date', 'required' => true],
                     ['name' => 'diagnosis', 'label' => 'Diagnosis / Impression', 'type' => 'textarea', 'required' => true],
@@ -61,16 +62,16 @@ class ClinicalTemplateSeeder extends Seeder
                     ['name' => 'rest_days', 'label' => 'Number of Rest Days Recommended', 'type' => 'number', 'required' => true],
                     ['name' => 'remarks', 'label' => 'Additional Remarks', 'type' => 'textarea', 'required' => false],
                 ],
-                'is_active' => true,
             ]
         );
 
         ClinicalTemplate::updateOrCreate(
-            ['tenant_id' => $tenant->id, 'name' => 'Comprehensive SDE Note'],
+            ['tenant_id' => $tenantId, 'name' => 'Comprehensive SDE Note'],
             [
-                'tenant_id' => $tenant->id,
+                'tenant_id' => $tenantId,
                 'name' => 'Comprehensive SDE Note',
                 'description' => 'Professional Structured Data Entry (SDE) note with Concept Mapping (SNOMED CT) and Pertinent Negatives.',
+                'is_active' => true,
                 'schema' => [
                     [
                         'name' => 'chief_complaint', 
@@ -87,130 +88,20 @@ class ClinicalTemplateSeeder extends Seeder
                                 [
                                     'id' => 'constitutional',
                                     'label' => 'Constitutional',
-                                    'concept_id' => 'SNOMED:363713009', // General findings
+                                    'concept_id' => 'SNOMED:363713009',
                                     'symptoms' => [
                                         ['id' => 'no_acute_distress', 'label' => 'No Acute Distress (NAD)', 'concept_id' => 'SNOMED:162489007', 'modifiers' => []],
-                                        [
-                                            'id' => 'fever_chills', 
-                                            'label' => 'Fever / Chills', 
-                                            'concept_id' => 'SNOMED:386661006',
-                                            'modifiers' => [['id' => 'type', 'label' => 'Type', 'options' => ['Documented Temp', 'Subjective Fever', 'Chills/Rigors']]]
-                                        ],
+                                        ['id' => 'fever_chills', 'label' => 'Fever / Chills', 'concept_id' => 'SNOMED:386661006', 'modifiers' => []],
                                         ['id' => 'fatigue_malaise', 'label' => 'Fatigue / Malaise', 'concept_id' => 'SNOMED:84229001', 'modifiers' => []],
-                                        [
-                                            'id' => 'weight_change', 
-                                            'label' => 'Weight Change', 
-                                            'concept_id' => 'SNOMED:248325000',
-                                            'modifiers' => [['id' => 'direction', 'label' => 'Direction', 'options' => ['Unintentional Loss', 'Unintentional Gain']]]
-                                        ],
-                                        [
-                                            'id' => 'appetite_change', 
-                                            'label' => 'Appetite Change', 
-                                            'concept_id' => 'SNOMED:249468005',
-                                            'modifiers' => [['id' => 'type', 'label' => 'Type', 'options' => ['Increased', 'Decreased', 'Anorexia']]]
-                                        ],
-                                        ['id' => 'night_sweats', 'label' => 'Night Sweats', 'concept_id' => 'SNOMED:42915006', 'modifiers' => []]
                                     ]
                                 ],
                                 [
                                     'id' => 'respiratory',
                                     'label' => 'Respiratory',
-                                    'concept_id' => 'SNOMED:20139000', // Respiratory system
+                                    'concept_id' => 'SNOMED:20139000',
                                     'symptoms' => [
-                                        [
-                                            'id' => 'cough',
-                                            'label' => 'Cough',
-                                            'concept_id' => 'SNOMED:49727002',
-                                            'modifiers' => [
-                                                ['id' => 'type', 'label' => 'Type', 'options' => ['Dry', 'Productive', 'Barking', 'Chronic (>8wks)']]
-                                            ]
-                                        ],
-                                        [
-                                            'id' => 'sputum',
-                                            'label' => 'Sputum (Phlegm)',
-                                            'concept_id' => 'SNOMED:248559005',
-                                            'modifiers' => [
-                                                ['id' => 'color', 'label' => 'Color/Type', 'options' => ['White/Clear', 'Yellow/Green', 'Blood-tinged (Hemoptysis)']]
-                                            ]
-                                        ],
-                                        [
-                                            'id' => 'dyspnea',
-                                            'label' => 'Dyspnea (SOB)',
-                                            'concept_id' => 'SNOMED:267036007',
-                                            'modifiers' => [
-                                                ['id' => 'timing', 'label' => 'Timing', 'options' => ['At Rest', 'On Exertion (DOE)', 'Paroxysmal']]
-                                            ]
-                                        ],
-                                        ['id' => 'wheezing', 'label' => 'Wheezing', 'concept_id' => 'SNOMED:56018004', 'modifiers' => []],
-                                        ['id' => 'chest_pain_pleuritic', 'label' => 'Chest Pain (Pleuritic)', 'concept_id' => 'SNOMED:64344002', 'modifiers' => []],
-                                        ['id' => 'stridor', 'label' => 'Stridor (HARSH NOISE)', 'concept_id' => 'SNOMED:70407001', 'modifiers' => []]
-                                    ]
-                                ],
-                                [
-                                    'id' => 'cardiovascular',
-                                    'label' => 'Cardiovascular',
-                                    'concept_id' => 'SNOMED:113257007', // Circulatory system
-                                    'symptoms' => [
-                                        [
-                                            'id' => 'chest_pain_pressure',
-                                            'label' => 'Chest Pain / Pressure',
-                                            'concept_id' => 'SNOMED:29857009',
-                                            'modifiers' => [
-                                                ['id' => 'character', 'label' => 'Character', 'options' => ['Crushing', 'Sharp', 'Substernal']],
-                                                ['id' => 'radiation', 'label' => 'Radiation', 'options' => ['Left Arm', 'Jaw', 'Back', 'None']]
-                                            ]
-                                        ],
-                                        [
-                                            'id' => 'palpitations',
-                                            'label' => 'Palpitations',
-                                            'concept_id' => 'SNOMED:80313002',
-                                            'modifiers' => [
-                                                ['id' => 'rhythm', 'label' => 'Sensation', 'options' => ['Racing', 'Fluttering', 'Skipping Beats']]
-                                            ]
-                                        ],
-                                        ['id' => 'orthopnea', 'label' => 'Orthopnea (Needs Pillows)', 'concept_id' => 'SNOMED:271810006', 'modifiers' => []],
-                                        ['id' => 'edema', 'label' => 'Edema (Swelling)', 'concept_id' => 'SNOMED:267038008', 'modifiers' => [['id' => 'location', 'label' => 'Location', 'options' => ['Ankles', 'Feet', 'Generalized']]]],
-                                        ['id' => 'claudication', 'label' => 'Claudication (Leg Pain)', 'concept_id' => 'SNOMED:30554005', 'modifiers' => []],
-                                        ['id' => 'syncope', 'label' => 'Syncope / Fainting', 'concept_id' => 'SNOMED:271594007', 'modifiers' => [['id' => 'type', 'label' => 'Type', 'options' => ['True Syncope', 'Near-Syncope']]]]
-                                    ]
-                                ],
-                                [
-                                    'id' => 'gastrointestinal',
-                                    'label' => 'Gastrointestinal',
-                                    'concept_id' => 'SNOMED:30215005', // Digestive system
-                                    'symptoms' => [
-                                        [
-                                            'id' => 'abdominal_pain',
-                                            'label' => 'Abdominal Pain',
-                                            'concept_id' => 'SNOMED:21522001',
-                                            'modifiers' => [
-                                                ['id' => 'location', 'label' => 'Location', 'options' => ['RUQ', 'RLQ (Appendix)', 'LUQ', 'LLQ', 'Epigastric', 'Diffuse']],
-                                                ['id' => 'quality', 'label' => 'Quality', 'options' => ['Colicky', 'Burning', 'Cramping']]
-                                            ]
-                                        ],
-                                        [
-                                            'id' => 'nausea_vomiting',
-                                            'label' => 'Nausea / Vomiting',
-                                            'concept_id' => 'SNOMED:422400008',
-                                            'modifiers' => [
-                                                ['id' => 'character', 'label' => 'Character', 'options' => ['Bilious (Green)', 'Hematemesis (Blood)', 'Projectile', 'Standard']]
-                                            ]
-                                        ],
-                                        ['id' => 'dysphagia', 'label' => 'Dysphagia (Hard to Swallow)', 'concept_id' => 'SNOMED:40739000', 'modifiers' => []],
-                                        [
-                                            'id' => 'diarrhea',
-                                            'label' => 'Diarrhea',
-                                            'concept_id' => 'SNOMED:62315008',
-                                            'modifiers' => [['id' => 'type', 'label' => 'Type', 'options' => ['Watery', 'Mucoid', 'Bloody']]]
-                                        ],
-                                        [
-                                            'id' => 'constipation',
-                                            'label' => 'Constipation',
-                                            'concept_id' => 'SNOMED:14760008',
-                                            'modifiers' => [['id' => 'type', 'label' => 'Type', 'options' => ['Chronic', 'Straining']]]
-                                        ],
-                                        ['id' => 'heartburn', 'label' => 'Heartburn / GERD', 'concept_id' => 'SNOMED:16331000', 'modifiers' => []],
-                                        ['id' => 'jaundice', 'label' => 'Jaundice (Yellowing)', 'concept_id' => 'SNOMED:66771007', 'modifiers' => []]
+                                        ['id' => 'cough', 'label' => 'Cough', 'concept_id' => 'SNOMED:49727002', 'modifiers' => [['id' => 'type', 'label' => 'Type', 'options' => ['Dry', 'Productive']]]],
+                                        ['id' => 'dyspnea', 'label' => 'Dyspnea (SOB)', 'concept_id' => 'SNOMED:267036007', 'modifiers' => []],
                                     ]
                                 ]
                             ]
@@ -220,16 +111,16 @@ class ClinicalTemplateSeeder extends Seeder
                     ['name' => 'assessment', 'label' => 'Assessment / Diagnosis', 'type' => 'textarea', 'required' => true],
                     ['name' => 'plan', 'label' => 'Plan / Treatment', 'type' => 'textarea', 'required' => true],
                 ],
-                'is_active' => true,
             ]
         );
 
         ClinicalTemplate::updateOrCreate(
-            ['tenant_id' => $tenant->id, 'name' => 'Social Determinants of Health (SDOH)'],
+            ['tenant_id' => $tenantId, 'name' => 'Social Determinants of Health (SDOH)'],
             [
-                'tenant_id' => $tenant->id,
+                'tenant_id' => $tenantId,
                 'name' => 'Social Determinants of Health (SDOH)',
                 'description' => 'Standardized assessment of social factors including housing, food security, and transportation (RA 10173 compliant).',
+                'is_active' => true,
                 'schema' => [
                     ['name' => 'housing_security', 'label' => 'Housing Security', 'type' => 'select', 'options' => ['Stable', 'Unstable', 'Homeless', 'Risk of Eviction'], 'required' => true],
                     ['name' => 'food_security', 'label' => 'Food Security', 'type' => 'select', 'options' => ['Secure', 'Worry about Food', 'Skipping Meals'], 'required' => true],
@@ -238,7 +129,6 @@ class ClinicalTemplateSeeder extends Seeder
                     ['name' => 'social_support', 'label' => 'Social Support / Safety', 'type' => 'select', 'options' => ['Strong Support', 'Limited Support', 'Isolated / At Risk'], 'required' => true],
                     ['name' => 'additional_social_notes', 'label' => 'Socio-Economic Remarks', 'type' => 'textarea', 'required' => false],
                 ],
-                'is_active' => true,
             ]
         );
     }

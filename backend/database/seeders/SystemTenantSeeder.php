@@ -21,10 +21,27 @@ class SystemTenantSeeder extends Seeder
             [
                 'name' => 'JuanClinic System Root',
                 'slug' => 'system-root',
-                'subscription_plan' => 'ENTERPRISE',
+                'plan_tier' => 'GOLD',
+                'pediatrics_enabled' => true,
+                'inventory_enabled' => true,
+                'pharmacy_enabled' => true,
+                'pacs_enabled' => true,
+                'laboratory_enabled' => true,
+                'radiology_enabled' => true,
+                'workforce_enabled' => true,
+                'sms_enabled' => true,
+                'email_enabled' => true,
+                'billing_enabled' => true,
+                'portal_enabled' => true,
+                'empi_enabled' => true,
+                'telehealth_enabled' => true,
+                'analytics_enabled' => true,
+                'offline_sync_enabled' => true,
+                'referrals_enabled' => true,
+                'queue_enabled' => true,
+                'claims_enabled' => true,
                 'admin_settings' => [
                     'features' => [
-                        'pacs_enabled' => true,
                         'empi_sync_enabled' => true,
                     ]
                 ]
