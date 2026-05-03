@@ -1,0 +1,519 @@
+# Discovery-to-Prescription Bridge Implementation Plan
+
+## Approval
+
+Approved to proceed with the Discovery-to-Prescription Bridge as the next bounded module, subject to the execution boundaries and safeguards below.
+
+## Objective
+
+Implement a safe handoff from the Drug Discovery Center into the prescription workflow so that a clinician can:
+
+1. discover a medicine through disease-, brand-, or generic-led exploration,
+2. review structured medicine details,
+3. select a specific presentation variant,
+4. transition into the prescription composer with that variant prefilled,
+5. save the prescription against an exact `medicine_form_id`.
+
+This module is intended to convert the enriched discovery experience into a clinically useful prescribing workflow without introducing unsafe automation.
+
+---
+
+## Execution Boundaries
+
+### In Scope
+
+* add a prescribing handoff action from the Drug Discovery Center
+* pass selected `medicine_form_id` into the prescription workflow
+* prefill safe prescription fields in the prescription composer
+* preserve disease/discovery context as informational metadata in the UI
+* ensure prescription persistence uses `medicine_form_id`
+* validate end-to-end workflow from discovery to pharmacy worklist visibility
+
+### Out of Scope for This Module
+
+* automatic line-of-therapy ranking
+* patient-specific contraindication alerts
+* automated SIG generation without clinician confirmation
+* auto-prescribing or one-click order creation
+* medication interaction engine
+* Phase 3 schema cleanup of deprecated legacy medicine columns
+
+### Key Constraints
+
+* do not persist prescriptions against broad `medicine_id` where `medicine_form_id` is available
+* do not auto-populate dose/frequency/duration as final values without clinician review
+* do not remove manual clinician control from the prescription composer
+* do not add cleanup work for deprecated medicine columns in this phase
+
+---
+
+## Problem Summary
+
+The Drug Discovery Center is now clinically enriched and form-aware, but it is still primarily a reference/discovery module. Clinicians still need a seamless path to move from:
+
+* discovery context
+* medicine detail review
+* presentation variant selection
+
+into actual prescribing.
+
+Without this bridge, clinicians may need to:
+
+* re-search the medicine in another module
+* risk selecting the wrong form/strength
+* lose the context of the disease-led discovery path
+
+This module closes that workflow gap.
+
+---
+
+## Target User Flow
+
+## Step 1 — Discover Medicine
+
+The clinician uses the Drug Discovery Center via:
+
+* disease-led search
+* brand search
+* generic search
+
+## Step 2 — Review Detail Panel
+
+The clinician reviews:
+
+* indications
+  n- dose/administration text
+* contraindications
+* precautions
+* interactions
+* packaging
+* presentation variants
+
+## Step 3 — Select Presentation Variant
+
+The clinician chooses a specific presentation variant from the available forms table.
+
+Examples:
+
+* Tablet 500mg
+* Syrup 125mg/5mL
+* Capsule 250mg
+
+## Step 4 — Launch Prescribing Handoff
+
+The clinician clicks a bounded action such as:
+
+* `Prescribe this variant`
+
+## Step 5 — Open Prescription Composer
+
+The prescription form opens with safe prefilled information:
+
+* selected medicine name
+* selected form/strength
+* selected `medicine_form_id`
+* disease/discovery context label
+* source attribution if required for audit or UI visibility
+
+## Step 6 — Clinician Completes SIG
+
+The clinician manually confirms or fills:
+
+* dose
+* frequency
+* duration
+* instructions
+* quantity
+
+## Step 7 — Save Prescription
+
+The system persists the prescription against the selected `medicine_form_id`.
+
+## Step 8 — Downstream Resolution
+
+The prescription is visible in downstream workflows such as:
+
+* prescription history
+* pharmacy worklist
+* dispensing
+
+---
+
+## Functional Requirements
+
+## FR1 — Prescribe Action from Discovery Center
+
+The Drug Discovery Center shall expose a bounded prescribing action for a selected presentation variant.
+
+## FR2 — Exact Variant Handoff
+
+The handoff payload shall include the selected `medicine_form_id` and enough display context for the prescription composer to render the chosen medicine variant correctly.
+
+## FR3 — Context Preservation
+
+The prescription composer shall preserve the discovery context as informational UI metadata, such as:
+
+* matched disease term
+* indication-led path
+* selected medicine summary
+
+This metadata is informational and should not replace clinician judgment.
+
+## FR4 — Safe Prefill Only
+
+The system may prefill:
+
+* medicine/variant identity
+* form/strength display
+* discovery context label
+
+The system shall not silently finalize dose/frequency/duration without clinician confirmation.
+
+## FR5 — Form-Based Persistence
+
+Prescription creation shall persist against `medicine_form_id`.
+
+## FR6 — Downstream Compatibility
+
+The saved prescription shall render correctly in:
+
+* prescription detail/history
+* pharmacy worklist
+* dispensing flow
+
+## FR7 — Error Handling
+
+If a selected variant becomes invalid or unavailable, the system shall prevent save and prompt the clinician to reselect a valid variant.
+
+---
+
+## UX Design Principles
+
+### Principle 1 — Discovery is a Starting Point, Not the Final Order
+
+The Drug Discovery Center helps identify a likely medicine option, but the prescription composer remains the final point of clinical confirmation.
+
+### Principle 2 — Variant Precision is Mandatory
+
+The handoff must always preserve exact form/strength identity through `medicine_form_id`.
+
+### Principle 3 — Context Should Inform, Not Constrain
+
+Disease/discovery context should be visible to the clinician, but should not lock the prescription to one indication or prevent clinical judgment.
+
+### Principle 4 — Manual Confirmation Must Remain
+
+Dose, frequency, duration, and instructions should remain clinician-controlled in this phase.
+
+### Principle 5 — Workflow Continuity Matters
+
+The transition from discovery to prescribing should feel like one workflow, not two disconnected tools.
+
+---
+
+## Data Contract Proposal
+
+## Handoff Payload
+
+The discovery module should pass a bounded payload like:
+
+```json
+{
+  "medicine_id": 123,
+  "medicine_form_id": 456,
+  "brand_name": "Biogesic",
+  "generic_name": "Paracetamol",
+  "presentation": "Tablet",
+  "strength": "500mg",
+  "base_price": 5.00,
+  "discovery_context": {
+    "mode": "disease",
+    "matched_disease_id": 78,
+    "matched_disease_name": "Acute upper respiratory infection, unspecified",
+    "path_label": "Indication-led Path"
+  }
+}
+```
+
+### Notes
+
+* `medicine_form_id` is mandatory
+* `medicine_id` may be included for reference or back-navigation convenience
+* `discovery_context` is optional for persistence but useful for UX
+
+---
+
+## Backend Changes
+
+## 1. Prescription Entry Contract
+
+Ensure the prescription creation endpoint accepts and validates:
+
+* `medicine_form_id`
+* any required dosage/SIG fields
+* optional contextual display metadata handled separately from clinical persistence
+
+## 2. Controller and Validation Updates
+
+Update the relevant controller/form request so that:
+
+* `medicine_form_id` is required
+* the selected form exists and is valid
+* tenant access and catalog access rules are respected
+
+## 3. Query Resolution
+
+Prescription reads should continue using the relationship chain:
+
+```text
+prescription -> medicineForm -> medicine
+```
+
+## 4. Optional Draft Support
+
+If your prescription composer supports drafts, allow the handoff to open a draft/prefilled composer rather than immediately committing anything.
+
+---
+
+## Frontend Changes
+
+## Component 1 — Discovery Detail Action
+
+### Responsibilities
+
+* expose `Prescribe this variant` action in the presentation variants section
+* ensure a specific variant is selected before handoff
+* assemble the handoff payload
+
+## Component 2 — Prescription Composer Prefill
+
+### Responsibilities
+
+* receive handoff state or route payload
+* populate visible fields for medicine identity
+* preserve context labels such as matched disease or indication path
+* keep SIG fields editable
+
+## Component 3 — Variant Summary Panel
+
+### Responsibilities
+
+Within the prescription composer, display a compact summary such as:
+
+* selected medicine name
+* generic name
+* form/strength
+* matched disease context
+* source attribution if needed
+
+This summary should reassure the clinician that the correct variant is being prescribed.
+
+---
+
+## State Management Proposal
+
+Track at least the following temporary bridge state:
+
+* `selectedMedicineId`
+* `selectedMedicineFormId`
+* `selectedVariantLabel`
+* `selectedStrength`
+* `selectedBasePrice`
+* `discoveryContext`
+
+### Important Rule
+
+Bridge state must be cleared when:
+
+* the user cancels the prescription
+* the selected variant is invalidated
+* a new discovery selection replaces the current one
+
+---
+
+## Persistence Rules
+
+## Required Persistence
+
+The prescription record must persist:
+
+* `medicine_form_id`
+
+## Optional Persistence
+
+Discovery context may be retained only if you explicitly want analytics or audit support, such as:
+
+* `matched_disease_id`
+* `matched_disease_name`
+* `discovery_mode`
+
+If retained, store it clearly as contextual metadata, not as a clinical order authority field.
+
+---
+
+## Integration with Existing Workflows
+
+## Pharmacy Worklist
+
+The worklist must resolve the prescribed item using:
+
+```text
+prescription -> medicineForm -> medicine
+```
+
+and show the correct variant in the dispensing queue.
+
+## Dispensing
+
+Dispensing must continue to operate against the exact prescribed form variant.
+
+## Prescription History
+
+The saved prescription must render with the correct:
+
+* medicine name
+* form
+* strength
+
+without reliance on deprecated flat medicine columns.
+
+---
+
+## Validation Plan
+
+## Automated Verification
+
+### Backend
+
+* validate prescription create accepts `medicine_form_id`
+* reject prescription create when `medicine_form_id` is missing or invalid
+* verify saved prescription resolves correct medicine form and parent medicine
+
+### Frontend
+
+* selecting a variant enables prescribing handoff
+* composer opens with correct prefilled medicine identity
+* SIG fields remain editable
+* save submits `medicine_form_id`
+
+### Workflow Integrity
+
+* saved prescription appears correctly in pharmacy worklist
+* dispensing resolves the same variant
+* prescription history shows correct medicine form label
+
+## Manual Verification
+
+### Scenario 1 — Disease-Led Discovery to Prescription
+
+1. search via disease context
+2. select a medicine
+3. select a presentation variant
+4. click `Prescribe this variant`
+5. confirm composer opens with correct variant summary
+6. fill SIG fields manually
+7. save prescription
+8. confirm pharmacy worklist shows the exact variant
+
+### Scenario 2 — Invalid Variant Handling
+
+1. initiate bridge from discovery
+2. invalidate or simulate unavailable variant
+3. confirm save is blocked and reselection is required
+
+### Scenario 3 — Multi-Tenant Safety
+
+1. perform handoff in one tenant
+2. ensure the selected variant resolves only within valid tenant/catalog scope
+3. ensure no cross-tenant leakage in pricing or stock display
+
+---
+
+## Risks and Mitigations
+
+## Risk 1 — Wrong Variant Prescribed
+
+### Mitigation
+
+Require explicit variant selection and persist only `medicine_form_id`.
+
+## Risk 2 — Over-Automation of Clinical Choices
+
+### Mitigation
+
+Keep SIG fields editable and require clinician confirmation in this phase.
+
+## Risk 3 — Context Misinterpreted as Recommendation
+
+### Mitigation
+
+Display discovery context as informational metadata only, not as an enforced prescribing recommendation.
+
+## Risk 4 — Hidden Legacy Dependencies
+
+### Mitigation
+
+Verify prescription history, worklist, and dispensing do not fall back to deprecated medicine columns.
+
+## Risk 5 — Variant Becomes Stale During Handoff
+
+### Mitigation
+
+Validate selected `medicine_form_id` again at save time.
+
+---
+
+## Deferred Enhancements
+
+These should remain deferred until this bridge is stable:
+
+* automatic SIG suggestion from `dose_text`
+* patient-specific safety overlays
+* line-of-therapy ranking in discovery
+* therapeutic class browsing enhancements
+* one-click prescribe actions
+
+---
+
+## Success Criteria
+
+This module is successful when:
+
+1. clinicians can move from drug discovery to prescription entry without re-searching the drug
+2. the exact selected variant is preserved via `medicine_form_id`
+3. the prescription composer opens with safe, helpful prefilled context
+4. SIG fields remain clinician-controlled
+5. downstream pharmacy workflows resolve the same prescribed variant accurately
+
+---
+
+## Recommended Execution Sequence
+
+1. confirm discovery variant selection UX
+2. define handoff payload contract
+3. update prescription composer to accept bridge state
+4. update prescription persistence validation for `medicine_form_id`
+5. verify downstream worklist and dispensing paths
+6. document any remaining blockers before SIG assistance phase
+
+---
+
+## After Execution Return Items
+
+After implementation, return:
+
+1. handoff flow summary
+2. payload contract used
+3. frontend components changed
+4. backend controllers/requests changed
+5. screenshot or walkthrough of the prefilled prescription composer
+6. confirmation that prescriptions now save and resolve through `medicine_form_id`
+7. list of deferred next-phase enhancements
+
+---
+
+## Decision Summary
+
+Proceed with the Discovery-to-Prescription Bridge as the next module.
+
+This is the most practical next step after detail-layer enrichment because it converts the Drug Discovery Center from a high-quality reference tool into a clinically useful prescribing workflow while preserving clinician control and form-level precision.

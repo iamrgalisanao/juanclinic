@@ -51,17 +51,27 @@ This document is managed by the **JuanClinic Code Scanner** subagent.
 - **Issue**: Missing DPA Compliance Portal in Registry. (Compliance: RA 10173)
 - **Status**: **RESOLVED**. Privacy & DPA link added to footer (2026-03-18).
 
-## 🔵 Phase 5 - Tier 2 Restoration Findings (March 2026)
+## 🔵 Phase 11 - Clinical Hardening Audit (April 2026 - v1.35.0)
 
-- **File**: `frontend/src/views/MedicineManagement.jsx`
-- **Issue**: Performance degradation with large inventory (missing pagination). (Scalability)
-- **Status**: **RESOLVED**. Server-side pagination implemented (2026-03-25).
-- **File**: `backend/routes/api.php`
-- **Issue**: Diagnostic Approver role missing 403 authorization for patients/history. (RBAC Hardening)
-- **Status**: **RESOLVED**. Routes updated with correct role-based middleware (2026-03-25).
-- **File**: `frontend/src/App.jsx`
-- **Issue**: Main layout prevents vertical scrolling on small viewports. (UX)
-- **Status**: **RESOLVED**. `overflow-y-auto` added to main content container (2026-03-25).
+- **File**: `backend/app/Models/Vital.php`, `backend/app/Models/ImmunizationRecord.php`
+- **Issue**: Audit trail and tenant isolation check.
+- **Status**: **HEALTHY**. Verified `AuditLogTrait`, `BelongsToTenant`, and `BelongsToBranch`.
+
+- **File**: `backend/app/Models/DiagnosticResult.php`
+- **Issue**: Missing `BelongsToTenant` trait. (HIS-Specific: Tenant Isolation)
+- **Status**: **RESOLVED**. `tenant_id` column added via migration and trait implemented (2026-05-01).
+
+- **File**: `frontend/src/views/PatientPortal.jsx`
+- **Issue**: PHI access in portal lacks high-visibility audit indicators. (Audit-Ready)
+- **Status**: **RESOLVED**. Pulse indicators added in v1.33.
+
+- **File**: `backend/app/Models/Disease.php`, `DiseaseTerm.php`, `MedicineDiseaseMap.php`
+- **Issue**: Discovered "Shadow Feature" (Phase 12) missing mandatory audit trails.
+- **Status**: **RESOLVED**. `AuditLogTrait` applied to all discovery-layer models (2026-05-01).
+
+- **File**: `backend/app/Models/DiseaseTerm.php`
+- **Issue**: Architecture Drift - model has `tenant_id` in fillable but DB table lacks column.
+- **Status**: **UNDER REVIEW**. Removed from fillable as temporary fix. Decision needed on whether to support tenant-specific discovery terms.
 
 ---
-*Last scanned: 2026-03-25*
+*Last scanned: 2026-05-01 (v1.36.0-prep Discovery Audit)*
