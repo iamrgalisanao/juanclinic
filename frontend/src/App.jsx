@@ -87,7 +87,7 @@ function App() {
     const [isTransitioning, setIsTransitioning] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const contentRef = useRef(null);
-    const audioRef = useRef(new Audio('/hitech-scan.mp3'));
+    // const audioRef = useRef(new Audio('/hitech-scan.mp3'));
     const [systemVersion, setSystemVersion] = useState(null);
     const [refreshTrigger, setRefreshTrigger] = useState(0);
     const [stagedPrescription, setStagedPrescription] = useState(null);
