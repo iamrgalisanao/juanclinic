@@ -371,11 +371,15 @@ Hotfix work must still include:
 ## 15. Completion and Handover Gate
 
 Before declaring a task complete, the AI must:
-1. **Update CHANGELOG.md**: Record all additions, changes, and fixes in the main developer changelog.
-2. **Provide Instructions**: Deliver a structured set of manual verification steps in the `walkthrough.md`.
-3. **Request Validation**: Use `notify_user` to prompt the user to execute the verification protocol.
-4. **No Safe-to-Declare**: The AI cannot declare "Success" or "Fixed" until the user has confirmed the validation results.
-5. **Evidence Capture**: If the user provides screenshots or logs of their manual test, they should be referenced.
+1. **Mandatory Post-Implementation Protocol**: After every feature or fix, the AI ALWAYS invokes:
+    - **audit-guardrail**: Verify governance integrity.
+    - **sync-discovery**: Re-verify ground truth and documentation sync.
+    - **git-task-lifecycle**: Execute high-integrity commits and state cleanup.
+2. **Update CHANGELOG.md**: Record all additions, changes, and fixes in the main developer changelog.
+3. **Provide Instructions**: Deliver a structured set of manual verification steps in the `walkthrough.md`.
+4. **Request Validation**: Use `notify_user` to prompt the user to execute the verification protocol.
+5. **No Safe-to-Declare**: The AI cannot declare "Success" or "Fixed" until the user has confirmed the validation results.
+6. **Evidence Capture**: If the user provides screenshots or logs of their manual test, they should be referenced.
 
 ---
 
