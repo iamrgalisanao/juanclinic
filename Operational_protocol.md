@@ -64,9 +64,10 @@ Every task must progress through these stages, documented in `docs/ai-governance
 4.  **Stage 4: Architecture**: Review `docs/architecture/` and use specialized subagents.
 5.  **Stage 5: Implementation**: Create `implementation_plan.md` (Aesthetic & Clinical hardening).
 6.  **Stage 6: Validation**: Proof of correctness via `validation-report.md`.
-7.  **Stage 7: Code Review**: Use `code-scanner.md` subagent and manual spot checks.
-8.  **Stage 8: Security**: Check for tenant leakage and security hygiene.
-9.  **Stage 9: Release**: Update `CHANGELOG.md` and `ROADMAP.md`.
+7.  **Stage 7: Guardrail Audit**: Mandatory invocation of `guardrail-audit.md` to ensure governance integrity.
+8.  **Stage 8: Code Review**: Use `code-scanner.md` subagent and manual spot checks.
+9.  **Stage 9: Security**: Check for tenant leakage and security hygiene.
+10. **Stage 10: Release**: Update `CHANGELOG.md` and `ROADMAP.md`.
 
 ### Session Pre-flight Checklist:
 1. **Verify the active branch** (`git branch --show-current`).
@@ -186,6 +187,12 @@ For frontend quality and clinical UX safety, invoke the **JuanClinic UI-Reviewer
 1.  **Classification**: Tag UI changes as `Work Type: UI/UX` and `Risk Level: Medium` (unless Auth/Patient views are touched).
 2.  **Stitch Verification**: High-visibility clinical screens must follow the **[Stitch Workflow](.agents/workflows/stitch-workflow.md) (DS-012)**.
 3.  **Output**: Findings must be recorded in `findings.md` focusing on **Clinical Safety** (context confusion) and **Accessibility**.
+
+### 7.7 Guardrail Audit Integration (Mandatory)
+Before concluding any implementation or refactor, invoke the **JuanClinic Guardrail-Audit** subagent (`docs/architecture/subagents/guardrail-audit.md`):
+1. **Classification**: Mark the audit as `Work Type: Operational`.
+2. **Impact**: Assess the six failure modes.
+3. **Outcome**: No task is "Done" until a `guardrail-health-report.md` is generated with a "Proceed" recommendation.
 
 ### 7.7 Rule
 Do not proceed while known debug backdoors, exposed secrets, or unsafe temporary code remain unresolved.
