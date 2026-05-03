@@ -62,7 +62,7 @@ Every task must progress through these stages, documented in `docs/ai-governance
 2.  **Stage 2: Discovery**: Confirm tech stack and tool availability.
 3.  **Stage 3: Planning**: Break work into bounded stages in `delivery-plan.md`.
 4.  **Stage 4: Architecture**: Review `docs/architecture/` and use specialized subagents.
-5.  **Stage 5: Implementation**: Create `implementation_plan.md` (Aesthetic & Clinical hardening).
+5.  **Stage 5: Implementation**: Create `implementation_plan.md` (Aesthetic & Clinical hardening). **Mandatory**: Invoke the `architect-standard` skill to ensure file-first planning and naming conventions.
 6.  **Stage 6: Validation**: Proof of correctness via `validation-report.md`.
 7.  **Stage 7: Guardrail Audit**: Mandatory invocation of `guardrail-audit.md` to ensure governance integrity.
 8.  **Stage 8: Code Review**: Use `code-scanner.md` subagent and manual spot checks.

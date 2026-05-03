@@ -2,6 +2,7 @@
 
 ## Active Phase
 - Phase 17: Ingesting Enterprise Clinical Catalog (90k+ Brands)
+- Clinical Safety: Neonatal Age Precision & Corrected Age Logic Hardening
 
 ## Key Objectives
 - Import `docs/all_brand_details.json` into `medicines` table.
