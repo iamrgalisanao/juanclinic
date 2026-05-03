@@ -15,11 +15,18 @@ class Referral extends Model
         'patient_id',
         'source_tenant_id',
         'target_tenant_id',
+        'external_provider_id',
+        'type',
         'referred_by_user_id',
         'status',
         'clinical_notes',
         'consent_proof',
     ];
+
+    public function externalProvider()
+    {
+        return $this->belongsTo(ExternalProvider::class);
+    }
 
     /**
      * The "booted" method of the model.

@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { getReferrals, acceptReferral, revokeReferral } from '../services/api';
+import { getReferrals, updateReferral } from '../services/api';
+import { useDialog } from '../context/DialogContext';
 
 const Referrals = ({ activeTenant, activeBranch }) => {
+    const { confirm, alert } = useDialog();
     const [referrals, setReferrals] = useState([]);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('INCOMING'); // INCOMING or OUTGOING
@@ -26,21 +28,33 @@ const Referrals = ({ activeTenant, activeBranch }) => {
 
     const handleAccept = async (id) => {
         try {
-            await acceptReferral(id);
+            await updateReferral(id, { status: 'ACCEPTED' });
             fetchReferrals();
         } catch (err) {
-            alert(err.response?.data?.error || "Failed to accept referral");
+            await alert({
+                title: 'Acceptance Failed',
+                message: err.response?.data?.error || "Failed to accept referral"
+            });
         }
     };
 
     const handleRevoke = async (id) => {
-        if (window.confirm("Are you sure you want to revoke this referral?")) {
-            try {
-                await revokeReferral(id);
-                fetchReferrals();
-            } catch (err) {
-                alert("Failed to revoke referral");
-            }
+        const confirmed = await confirm({
+            title: 'Revoke Referral?',
+            message: 'Are you sure you want to revoke this referral? The target site will no longer be able to access the shared data.',
+            confirmText: 'Revoke',
+            cancelText: 'Abandon'
+        });
+        if (!confirmed) return;
+
+        try {
+            await updateReferral(id, { status: 'REVOKED' });
+            fetchReferrals();
+        } catch (err) {
+            await alert({
+                title: 'Revocation Failed',
+                message: 'Failed to revoke referral'
+            });
         }
     };
 
