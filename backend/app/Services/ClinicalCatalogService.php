@@ -55,7 +55,7 @@ class ClinicalCatalogService
                             ],
                             [
                                 'brand_name' => $brandData['brand_name'],
-                                'generic_name' => $brandData['generic_content'] ?? 'UNKNOWN',
+                                'generic_name' => $brandData['content'] ?? $brandData['generic_content'] ?? 'UNKNOWN',
                                 'company_name' => $brandData['company_name'] ?? null,
                                 'brand_shot_url' => $brandData['brand_shot']['small'] ?? null,
                                 'is_system' => true,
