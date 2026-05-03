@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE = 'http://localhost:8001/api';
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
 const api = axios.create({
     baseURL: API_BASE,
@@ -43,6 +43,7 @@ api.interceptors.response.use(
 
 export const setTenantToken = (tenantId) => {
     api.defaults.headers.common['X-Tenant-ID'] = tenantId;
+    localStorage.setItem('last_tenant_id', tenantId);
 };
 
 export const setBranchToken = (branchId) => {
@@ -107,11 +108,25 @@ export const getTenants = async () => {
 };
 
 export const createTenant = async (data) => {
+    if (data instanceof FormData) {
+        const response = await api.post('/tenants', data, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        return response.data;
+    }
     const response = await api.post('/tenants', data);
     return response.data;
 };
 
 export const updateTenant = async (id, data) => {
+    if (data instanceof FormData) {
+        // Laravel requires _method=PUT for multipart updates
+        data.append('_method', 'PUT');
+        const response = await api.post(`/tenants/${id}`, data, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        return response.data;
+    }
     const response = await api.put(`/tenants/${id}`, data);
     return response.data;
 };
@@ -151,6 +166,11 @@ export const updatePatient = async (patientId, data) => {
     return response.data;
 };
 
+export const deletePatient = async (patientId, reason = '') => {
+    const response = await api.delete(`/patients/${patientId}`, { data: { reason } });
+    return response.data;
+};
+
 export const ingestHL7 = async (hl7Message) => {
     const response = await api.post('/hl7/ingest', { hl7_message: hl7Message });
     return response.data;
@@ -179,6 +199,27 @@ export const updateAppointment = async (id, data) => {
 
 export const deleteAppointment = async (id) => {
     const response = await api.delete(`/appointments/${id}`);
+    return response.data;
+};
+
+// Notification Cadences API
+export const getNotificationCadences = async (params = {}) => {
+    const response = await api.get('/notification-cadences', { params });
+    return response.data;
+};
+
+export const createNotificationCadence = async (data) => {
+    const response = await api.post('/notification-cadences', data);
+    return response.data;
+};
+
+export const updateNotificationCadence = async (id, data) => {
+    const response = await api.put(`/notification-cadences/${id}`, data);
+    return response.data;
+};
+
+export const deleteNotificationCadence = async (id) => {
+    const response = await api.delete(`/notification-cadences/${id}`);
     return response.data;
 };
 
@@ -248,7 +289,7 @@ export const updatePrescription = async (id, data) => {
     return response.data;
 };
 
-// Medicine API
+// Medicine & Discovery API
 export const getMedicines = async (params = {}) => {
     const response = await api.get('/medicines', { params });
     return response.data;
@@ -258,6 +299,11 @@ export const createMedicine = async (data) => {
     const response = await api.post('/medicines', data);
     return response.data;
 };
+
+export const discoverySearch = (params) => api.get('/discovery/search', { params }).then(res => res.data);
+export const getDiseaseMedicines = (diseaseId) => api.get(`/diseases/${diseaseId}/medicines`).then(res => res.data);
+export const getMedicine = (id) => api.get(`/medicines/${id}`).then(res => res.data);
+
 
 // Attachment API
 export const getAttachments = async (patientId) => {
@@ -341,6 +387,20 @@ export const revokeReferral = async (id) => {
     const response = await api.delete(`/referrals/${id}`);
     return response.data;
 };
+export const updateReferral = async (id, data) => {
+    const response = await api.put(`/referrals/${id}`, data);
+    return response.data;
+};
+
+export const searchExternalProviders = async (query) => {
+    const response = await api.get('/external-providers/search', { params: { q: query } });
+    return response.data;
+};
+
+export const createExternalReferral = async (data) => {
+    const response = await api.post('/external-providers/refer', data);
+    return response.data;
+};
 
 // Clinical Templates & Notes API
 export const getClinicalTemplates = async () => {
@@ -387,6 +447,21 @@ export const storeImmunizationRecord = async (patientId, data) => {
 
 export const lookupVaccines = async (tenantId) => {
     const response = await api.get(`/pediatrics/vaccines/lookup`, { params: { tenant_id: tenantId } });
+    return response.data;
+};
+
+export const updateImmunizationRecord = async (patientId, recordId, data) => {
+    const response = await api.put(`/patients/${patientId}/pediatrics/immunizations/${recordId}`, data);
+    return response.data;
+};
+
+export const enrollCustomVaccine = async (patientId, data) => {
+    const response = await api.post(`/patients/${patientId}/pediatrics/roadmap/enroll`, data);
+    return response.data;
+};
+
+export const unenrollCustomVaccine = async (patientId, vaccineName) => {
+    const response = await api.delete(`/patients/${patientId}/pediatrics/roadmap/${encodeURIComponent(vaccineName)}`);
     return response.data;
 };
 

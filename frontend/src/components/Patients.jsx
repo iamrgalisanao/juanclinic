@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { getPatients } from '../services/api';
 import { getFromLocal } from '../services/db';
 
-const Patients = ({ onOpenPatient, onNewPatient, activeTenant }) => {
+const Patients = ({ onOpenPatient, onNewPatient, activeTenant, refreshTrigger }) => {
     const [patients, setPatients] = useState([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
@@ -45,7 +45,7 @@ const Patients = ({ onOpenPatient, onNewPatient, activeTenant }) => {
             }
         };
         load();
-    }, [activeTenant, pagination.currentPage, search, perPage]);
+    }, [activeTenant, pagination.currentPage, search, perPage, refreshTrigger]);
 
     const handlePageChange = (newPage) => {
         if (newPage >= 1 && newPage <= pagination.lastPage) {

@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { useDialog } from '../context/DialogContext';
 import { getInvoices, processPayment } from '../services/api';
 
 const CashierDashboard = () => {
+    const { alert } = useDialog();
     const [invoices, setInvoices] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedInvoice, setSelectedInvoice] = useState(null);
@@ -40,7 +42,10 @@ const CashierDashboard = () => {
             fetchInvoices();
         } catch (err) {
             console.error('Payment processing failed:', err);
-            alert('Failed to process payment. Please verify the amount.');
+            await alert({
+                title: 'Payment Error',
+                message: 'Failed to process payment. Please verify the amount.'
+            });
         }
     };
 

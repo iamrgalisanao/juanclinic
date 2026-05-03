@@ -11,19 +11,19 @@ const echo = new Echo({
     wssPort: import.meta.env.VITE_REVERB_PORT ?? 443,
     forceTLS: (import.meta.env.VITE_REVERB_SCHEME ?? 'https') === 'https',
     enabledTransports: ['ws', 'wss'],
-    // Adding authorization headers for private channels
-    authEndpoint: 'http://localhost:8001/broadcasting/auth',
+    // Dynamic authorization for private channels using getters to prevent stale tokens
+    authEndpoint: (import.meta.env.VITE_API_URL || 'http://localhost:8000/api').replace('/api', '') + '/api/broadcasting/auth',
     auth: {
         headers: {
-            // This will be set dynamically via handleSetEchoHeader
-            'X-Simulated-User': localStorage.getItem('simulated_user_email') || ''
+            get Authorization() {
+                const token = localStorage.getItem('auth_token');
+                return token ? `Bearer ${token}` : '';
+            },
+            get 'X-Tenant-ID'() {
+                return localStorage.getItem('last_tenant_id') || '';
+            }
         }
     }
 });
-
-export const setEchoAuthHeader = (email) => {
-    echo.options.auth.headers['X-Simulated-User'] = email;
-    localStorage.setItem('simulated_user_email', email);
-};
 
 export default echo;

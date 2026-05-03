@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { createOrder, checkSafetyStatus } from '../services/api';
+import { useDialog } from '../context/DialogContext';
 
 const OrderForm = ({ patientId, type = 'LAB', onSuccess, onCancel }) => {
     const [loading, setLoading] = useState(false);
@@ -9,6 +10,7 @@ const OrderForm = ({ patientId, type = 'LAB', onSuccess, onCancel }) => {
     const [instructions, setInstructions] = useState('');
     const [modality, setModality] = useState('X-RAY');
     const [bodyPart, setBodyPart] = useState('');
+    const { alert } = useDialog();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -19,7 +21,10 @@ const OrderForm = ({ patientId, type = 'LAB', onSuccess, onCancel }) => {
             // Safety Critical Check
             const { data: safety } = await checkSafetyStatus(patientId);
             if (safety.has_unacknowledged_criticals) {
-                setError(`SAFETY ALERT: This patient has ${safety.vitals_count + safety.labs_count} unacknowledged critical finding(s). You must review and acknowledge these findings in the Clinical Chronicle before placing new orders.`);
+                await alert({
+                    title: 'Safety Alert',
+                    message: `This patient has ${safety.vitals_count + safety.labs_count} unacknowledged critical finding(s). You must review and acknowledge these findings in the Clinical Chronicle before placing new orders.`
+                });
                 setLoading(false);
                 return;
             }

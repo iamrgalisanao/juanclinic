@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { getDoctors, createDoctor, updateDoctor, deleteDoctor } from '../services/api';
+import { useDialog } from '../context/DialogContext';
 
 const ROLE_LABELS = {
     ADMIN: 'Admin',
@@ -10,6 +11,7 @@ const ROLE_LABELS = {
 };
 
 const Doctors = ({ tenants, currentUser }) => {
+    const { confirm, alert } = useDialog();
     const [doctors, setDoctors] = useState([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
@@ -114,13 +116,28 @@ const Doctors = ({ tenants, currentUser }) => {
 
     const handleDelete = async (doctor) => {
         if (!isAdmin) return;
-        if (!window.confirm(`Remove ${doctor.name} from the directory?`)) return;
+        const confirmed = await confirm({
+            title: 'Expunge Practitioner?',
+            message: `You are about to remove ${doctor.name} from the active clinical directory. This action is irreversible for this tenant.`,
+            confirmText: 'Expunge',
+            cancelText: 'Abandon'
+        });
+
+        if (!confirmed) return;
         try {
             await deleteDoctor(doctor.id);
+            await alert({
+                title: 'Practitioner Expunged',
+                message: `${doctor.name} has been removed from the registry.`
+            });
             setLoading(true);
             await loadDoctors();
         } catch (err) {
             console.error('Failed to delete user', err);
+            await alert({
+                title: 'Expunge Failed',
+                message: 'Internal server error during directory modification.'
+            });
         }
     };
 

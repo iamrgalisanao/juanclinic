@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 
-const Sidebar = ({ activeTenant, impersonatedTenant, activeView, setActiveView, currentUser, isOpen, isSlim, setIsSlim, systemVersion, onClose }) => {
+const Sidebar = ({ activeTenant, impersonatedTenant, activeView, setActiveView, currentUser, isOpen, isSlim, setIsSlim, systemVersion, onClose, onLogout }) => {
     const [expandedMenus, setExpandedMenus] = useState([]);
 
     const allItems = [
         { id: 'dashboard', name: 'Dashboard', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6', roles: ['ADMIN', 'DOCTOR', 'TECH', 'DIAGNOSTIC_APPROVER', 'FRONT_DESK'] },
         { id: 'worklist', name: 'Worklist', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z', roles: ['ADMIN', 'TECH', 'DIAGNOSTIC_APPROVER'] },
-        { id: 'messages', name: 'Message', icon: 'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z', roles: ['ADMIN', 'DOCTOR', 'TECH', 'DIAGNOSTIC_APPROVER'] },
+        { id: 'messages', name: 'Message', icon: 'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z', roles: ['ADMIN', 'DOCTOR', 'TECH', 'DIAGNOSTIC_APPROVER', 'FRONT_DESK'] },
         { id: 'appointments', name: 'Appointment', icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z', roles: ['ADMIN', 'DOCTOR', 'FRONT_DESK'] },
         {
             id: 'pharmacy_parent',
@@ -16,7 +16,9 @@ const Sidebar = ({ activeTenant, impersonatedTenant, activeView, setActiveView, 
             subItems: [
                 { id: 'pharmacy', name: 'Dispensing' },
                 { id: 'medicine_management', name: 'Medicines' },
+                { id: 'drug_discovery', name: 'Discovery' },
             ]
+
         },
         { id: 'billing', name: 'Billing', icon: 'M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z', roles: ['ADMIN', 'FRONT_DESK'] },
         { id: 'clinical_notes', name: 'Clinical Notes', icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', roles: ['ADMIN', 'DOCTOR'] },
@@ -26,7 +28,9 @@ const Sidebar = ({ activeTenant, impersonatedTenant, activeView, setActiveView, 
         { id: 'referrals', name: 'Referrals', icon: 'M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4', roles: ['ADMIN', 'DOCTOR', 'FRONT_DESK'] },
         { id: 'tenant_management', name: 'Organization Settings', icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4', roles: ['ADMIN', 'GLOBAL_ADMIN'], globalOnly: true },
         { id: 'branch_management', name: 'Branch Settings', icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4', roles: ['ADMIN'] },
+        { id: 'notification_settings', name: 'Notification Rules', icon: 'M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9', roles: ['ADMIN'] },
         { id: 'audit', name: 'Audit', icon: 'M9 17v-6a2 2 0 012-2h7m-7 0l-2-2m2 2l-2 2M5 19h14', roles: ['ADMIN', 'GLOBAL_ADMIN'] },
+        { id: 'terminology_review', name: 'Terminology Review', icon: 'M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4', roles: ['ADMIN', 'GLOBAL_ADMIN'] },
         { id: 'hl7_transport', name: 'HL7 Transport', icon: 'M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h12a2 2 0 012 2v8a2 2 0 01-2 2h-2m-4 0v8m0 0l-3-3m3 3l3-3', roles: ['ADMIN', 'GLOBAL_ADMIN'] },
         { id: 'superadmin', name: 'Control Tower', icon: 'M13 10V3L4 14h7v7l9-11h-7z', roles: ['GLOBAL_ADMIN'] },
         { id: 'help', name: 'Help Center', icon: 'M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z', roles: ['ADMIN', 'DOCTOR', 'FRONT_DESK', 'TECH'] },
@@ -35,7 +39,7 @@ const Sidebar = ({ activeTenant, impersonatedTenant, activeView, setActiveView, 
         { name: 'Overview', items: ['dashboard', 'messages', 'help'] },
         { name: 'Clinical Core', items: ['patients', 'appointments', 'clinical_notes', 'referrals', 'doctors'] },
         { name: 'Operations', items: ['worklist', 'pharmacy_parent', 'billing'] },
-        { name: 'Governance', items: ['superadmin', 'reports', 'tenant_management', 'branch_management', 'audit', 'hl7_transport'] }
+        { name: 'Governance', items: ['superadmin', 'terminology_review', 'reports', 'tenant_management', 'branch_management', 'notification_settings', 'audit', 'hl7_transport'] }
     ];
 
     const filteredItems = allItems.filter(item => {
@@ -196,7 +200,10 @@ const Sidebar = ({ activeTenant, impersonatedTenant, activeView, setActiveView, 
                     </svg>
                     {!isSlim && <span className="animate-in fade-in duration-300">Minimize Menu</span>}
                 </button>
-                <button className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-slate-500 hover:text-rose-500 hover:bg-rose-500/5 transition-all duration-200">
+                <button 
+                    onClick={onLogout}
+                    className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-slate-500 hover:text-rose-500 hover:bg-rose-500/5 transition-all duration-200"
+                >
                     <svg className="w-6 h-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
                     {!isSlim && <span className="animate-in fade-in duration-300">Logout System</span>}
                 </button>

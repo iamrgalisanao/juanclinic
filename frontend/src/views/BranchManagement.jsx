@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { getBranches, createBranch, updateBranch, deleteBranch } from '../services/api';
+import { useDialog } from '../context/DialogContext';
 
 const BranchManagement = ({ activeTenant, tenants }) => {
+    const { alert, confirm } = useDialog();
     const [branches, setBranches] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
@@ -73,6 +75,10 @@ const BranchManagement = ({ activeTenant, tenants }) => {
             } else {
                 await createBranch(formData);
             }
+            await alert({
+                title: editingBranch ? 'Branch Updated' : 'Branch Created',
+                message: editingBranch ? 'Physical location data synchronized.' : 'New physical clinic location registered.'
+            });
             setShowModal(false);
             fetchBranches();
         } catch (error) {
@@ -80,19 +86,32 @@ const BranchManagement = ({ activeTenant, tenants }) => {
             if (error.response && error.response.status === 422) {
                 setErrors(error.response.data.errors || {});
             } else {
-                alert('An unexpected error occurred while saving.');
+                await alert({
+                    title: 'Storage Error',
+                    message: 'Failed to synchronize branch data.'
+                });
             }
         }
     };
 
     const handleDelete = async (id) => {
-        if (window.confirm('Are you sure you want to delete this branch?')) {
-            try {
-                await deleteBranch(id);
-                fetchBranches();
-            } catch (error) {
-                console.error('Error deleting branch:', error);
-            }
+        const confirmed = await confirm({
+            title: 'Decommission Branch?',
+            message: 'Are you sure you want to decommission this physical location? This will affect clinical routing.',
+            confirmText: 'Decommission',
+            cancelText: 'Retain'
+        });
+        if (!confirmed) return;
+
+        try {
+            await deleteBranch(id);
+            fetchBranches();
+        } catch (error) {
+            console.error('Error deleting branch:', error);
+            await alert({
+                title: 'Decommission Failed',
+                message: 'Failed to remove physical branch from active registry.'
+            });
         }
     };
 

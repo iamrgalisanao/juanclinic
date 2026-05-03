@@ -321,7 +321,7 @@ const Appointments = ({ activeTenant, currentUser }) => {
 
             {/* Notification Toast */}
             {notification && (
-                <div className={`fixed top-8 right-8 z-[100] px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 animate-slide-in-right ${notification.type === 'success' ? 'bg-his-green-500 text-white' : 'bg-rose-500 text-white'
+                <div className={`fixed top-6 right-8 z-[9999] px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 animate-slide-in-right ${notification.type === 'success' ? 'bg-his-green-500 text-white' : 'bg-rose-500 text-white'
                     }`}>
                     {notification.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <XCircle className="w-5 h-5" />}
                     <span className="text-sm font-bold tracking-tight">{notification.message}</span>

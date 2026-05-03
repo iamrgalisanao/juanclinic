@@ -122,6 +122,50 @@ const guideContent = {
             { id: 'sa5', text: "Click the impersonate icon (↗) on a tenant card to perform an authorized context switch into that clinic's live environment. All actions are logged to the Global Audit Ledger." }
         ],
         tip: "All commercial orchestration changes take effect immediately. Impersonation sessions are cryptographically logged and time-bound per the RA 10173 Data Privacy Act."
+    },
+    hl7_transport: {
+        title: "HL7 Transport Gateway",
+        description: "Monitor and manage outbound clinical data transmissions to external diagnostic facilities (LIS/RIS).",
+        steps: [
+            { id: 'hl7_1', text: "Monitor Outbox: Review the status of pending, sent, and failed HL7 v2 messages." },
+            { id: 'hl7_2', text: "Inspect Payloads: Click on a message to view the raw HL7 wire protocol and verify segment accuracy." },
+            { id: 'hl7_3', text: "Handle Failures: Identify transmission errors and use the 'Retry' action for failed synchronizations." },
+            { id: 'hl7_4', text: "Batch Process: Use 'Process Queue' to force a manual synchronization of all pending clinical events." }
+        ],
+        tip: "Ensure patient matching segments (PID) are fully verified in the Clinical Profile before forcing a manual HL7 transmission."
+    },
+    referrals: {
+        title: "Referral Management",
+        description: "Coordinate patient transfers and specialist referrals while maintaining continuity of care.",
+        steps: [
+            { id: 'ref1', text: "Initiate Referral: Select a patient and click 'MD Referral' to start the specialist handoff process." },
+            { id: 'ref2', text: "Search Specialists: Use the autocomplete search to find external providers by name or specialty." },
+            { id: 'ref3', text: "Clinical Justification: Document the reason for referral and include relevant patient history." },
+            { id: 'ref4', text: "Consent Check: Ensure the patient has consented to data sharing per RA 10173 requirements." }
+        ],
+        tip: "Use the 'Compact Mode' in the referral form to quickly process multiple specialist requests during a busy clinic session."
+    },
+    drug_discovery: {
+        title: "Drug Discovery & PNF",
+        description: "Search and evaluate medications against the Philippine National Formulary (PNF) for clinical compliance.",
+        steps: [
+            { id: 'dd1', text: "Search PNF: Enter a generic or brand name to search the master drug registry." },
+            { id: 'dd2', text: "Review Indications: Check the clinical indications and dosage forms for the selected medication." },
+            { id: 'dd3', text: "Verify Compliance: Ensure the medication is approved for use in the current clinical context." },
+            { id: 'dd4', text: "Handoff to Profile: Click 'Prescribe' to automatically transfer the drug details to the patient's Clinical Profile." }
+        ],
+        tip: "The 'High-Fidelity' handoff ensures that all PNF metadata is preserved when creating a new prescription."
+    },
+    terminology_review: {
+        title: "Terminology Governance",
+        description: "Audit and approve new disease terms and clinical vocabularies to ensure system-wide standardization.",
+        steps: [
+            { id: 'tg1', text: "Queue Audit: Review the 'Pending Review' queue for newly ingested disease terms." },
+            { id: 'tg2', text: "Map Standards: Verify that terms are correctly mapped to ICD-10 or clinical standards." },
+            { id: 'tg3', text: "Approve Terms: Promote verified terms to the 'Global Registry' to make them available for all clinicians." },
+            { id: 'tg4', text: "Flag Discrepancies: Use the 'Reject' or 'Flag' actions for terms that require further clinical validation." }
+        ],
+        tip: "Maintaining a clean terminology registry reduces clinical documentation errors and improves reporting accuracy."
     }
 };
 
@@ -154,13 +198,13 @@ const InteractiveGuide = ({ activeView }) => {
             {/* Floating Toggle Button */}
             <button
                 onClick={() => setIsOpen(true)}
-                className={`fixed bottom-8 right-8 z-[60] flex items-center gap-3 px-6 py-4 bg-slate-900 text-white rounded-[2rem] shadow-[0_20px_50px_rgba(34,197,94,0.15)] hover:shadow-his-green-500/30 hover:scale-105 active:scale-95 transition-all duration-300 group border border-white/20 ${isOpen ? 'opacity-0 scale-90' : 'opacity-100 scale-100'}`}
+                className={`fixed bottom-6 right-6 z-[60] flex items-center justify-center w-12 h-12 bg-slate-900 text-white rounded-2xl shadow-[0_12px_32px_rgba(0,0,0,0.3)] hover:shadow-his-green-500/20 hover:scale-105 active:scale-95 transition-all duration-300 group border border-white/10 ${isOpen ? 'opacity-0 scale-90 pointer-events-none' : 'opacity-100 scale-100'}`}
+                title="Help Guide"
             >
                 <div className="relative">
-                    <div className="absolute inset-0 bg-his-green-400 rounded-full animate-ping opacity-40" />
+                    <div className="absolute inset-0 bg-his-green-400 rounded-full animate-ping opacity-20" />
                     <HelpCircle className="w-5 h-5 text-his-green-400 relative z-10" />
                 </div>
-                <span className="text-xs font-black uppercase tracking-widest text-white shadow-sm">Help Guide</span>
             </button>
 
             {/* Guide Drawer */}

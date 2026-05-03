@@ -1,13 +1,38 @@
 import React, { useState, useEffect } from 'react';
-import { ShieldCheck, Clock, AlertTriangle, CheckCircle2, Plus, X, Syringe, Info, Search } from 'lucide-react';
-import { storeImmunizationRecord, lookupVaccines } from '../../services/api';
+import { 
+  HelpCircle, 
+  ChevronRight, 
+  CheckCircle2, 
+  X, 
+  AlertTriangle, 
+  Clock, 
+  ShieldCheck, 
+  Plus, 
+  Syringe, 
+  Info, 
+  Search,
+  Edit2,
+  FilePlus,
+  Stethoscope,
+  Trash2
+} from 'lucide-react';
+import { storeImmunizationRecord, updateImmunizationRecord, enrollCustomVaccine, unenrollCustomVaccine, lookupVaccines } from '../../services/api';
+import { useDialog } from '../../context/DialogContext';
 
 const ImmunizationLedger = ({ roadmap = [], patientId, onRecordAdded }) => {
+  const { alert, confirm } = useDialog();
+  const [currentUser] = useState(() => {
+    const saved = localStorage.getItem('auth_user');
+    return saved ? JSON.parse(saved) : null;
+  });
+
   const [showAdminModal, setShowAdminModal] = useState(false);
+  const [showEnrollModal, setShowEnrollModal] = useState(false);
   const [selectedVaccine, setSelectedVaccine] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  
   const [lookupData, setLookupData] = useState({ standard: [], medicines: [], history_presets: {} });
-  const [searchTerm, setSearchTerm] = useState('');
   const [formData, setFormData] = useState({
     vaccine_name: '',
     manufacturer: '',
@@ -20,7 +45,17 @@ const ImmunizationLedger = ({ roadmap = [], patientId, onRecordAdded }) => {
     vis_provided_date: '',
     cvx_code: '',
     remarks: '',
+    amendment_reason: '',
   });
+
+  const [enrollData, setEnrollData] = useState({
+    vaccine_name: '',
+    doses_required: 1,
+    target_age_months: 6,
+    scope: 'PATIENT',
+    description: '',
+  });
+
   const [presetAvailable, setPresetAvailable] = useState(null);
 
   useEffect(() => {
@@ -46,33 +81,85 @@ const ImmunizationLedger = ({ roadmap = [], patientId, onRecordAdded }) => {
     };
 
     try {
-      await storeImmunizationRecord(patientId, payload);
+      if (isEditMode && selectedVaccine?.id) {
+        await updateImmunizationRecord(patientId, selectedVaccine.id, payload);
+      } else {
+        await storeImmunizationRecord(patientId, payload);
+      }
       setShowAdminModal(false);
       if (onRecordAdded) onRecordAdded();
     } catch (err) {
       console.error("Failed to record immunization", err);
-      const msg = err.response?.data?.message || "Registration Failed: Please check requirements.";
-      alert(msg);
+      const msg = err.response?.data?.message || "Operation Failed: Please check clinical requirements.";
+      await alert({
+        title: 'Operation Failed',
+        message: msg
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const openAdminModal = (vaccine = null) => {
-    const isManual = !vaccine;
-    setSelectedVaccine(isManual ? { isManual: true } : { ...vaccine, isManual: false });
+  const handleEnrollSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await enrollCustomVaccine(patientId, enrollData);
+      setShowEnrollModal(false);
+      if (onRecordAdded) onRecordAdded();
+    } catch (err) {
+      console.error("Failed to enroll vaccine", err);
+      await alert({
+        title: 'Enrollment Failed',
+        message: err.response?.data?.message || "Could not add requirement to roadmap."
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteRequirement = async (vaccineName) => {
+    const ok = await confirm({
+        title: 'Revoke Requirement?',
+        message: `Are you sure you want to remove ${vaccineName} from the child's immunization roadmap? This will cancel all future scheduled doses for this vaccine.`,
+        confirmText: 'Yes, Revoke',
+        confirmStyle: 'danger'
+    });
+
+    if (ok) {
+        try {
+            await unenrollCustomVaccine(patientId, vaccineName);
+            if (onRecordAdded) onRecordAdded();
+        } catch (err) {
+            console.error("Failed to delete requirement", err);
+            await alert({
+                title: 'Revocation Failed',
+                message: "Could not remove card. This may be a standard DOH requirement which cannot be deleted."
+            });
+        }
+    }
+  };
+
+  const openAdminModal = (vaccine = null, editItem = null) => {
+    const isManual = !vaccine && !editItem;
+    setIsEditMode(!!editItem);
+    setSelectedVaccine(editItem ? { ...editItem, isManual: false } : (vaccine ? { ...vaccine, isManual: false } : { isManual: true }));
+    
+    const baseData = editItem || vaccine || {};
+    
     setFormData({
-      vaccine_name: vaccine?.vaccine_name || '',
-      manufacturer: '',
-      lot_number: '',
-      administered_at: new Date().toISOString().split('T')[0],
-      administered_by: '',
-      site: 'Left Deltoid',
-      route: 'IM',
-      vis_edition_date: '',
-      vis_provided_date: '',
-      cvx_code: '',
-      remarks: '',
+      vaccine_name: baseData.vaccine_name || '',
+      manufacturer: baseData.manufacturer || '',
+      lot_number: baseData.lot_number || '',
+      administered_at: baseData.administered_at ? new Date(baseData.administered_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      administered_by: baseData.administered_by || currentUser?.name || '',
+      site: baseData.site || 'Left Deltoid',
+      route: baseData.route || 'IM',
+      vis_edition_date: baseData.vis_edition_date ? new Date(baseData.vis_edition_date).toISOString().split('T')[0] : '',
+      vis_provided_date: baseData.vis_provided_date ? new Date(baseData.vis_provided_date).toISOString().split('T')[0] : '',
+      cvx_code: baseData.cvx_code || '',
+      remarks: baseData.remarks || '',
+      amendment_reason: '',
     });
     setPresetAvailable(null);
     setShowAdminModal(true);
@@ -82,7 +169,6 @@ const ImmunizationLedger = ({ roadmap = [], patientId, onRecordAdded }) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     
-    // Check for presets if vaccine name changes
     if (name === 'vaccine_name' || name === 'vaccine') {
        const vName = value || selectedVaccine?.name;
        if (vName && lookupData.history_presets[vName]) {
@@ -92,9 +178,7 @@ const ImmunizationLedger = ({ roadmap = [], patientId, onRecordAdded }) => {
        }
     }
 
-    // NEW: Smart Lot Auto-populate
     if (name === 'lot_number' && value.length > 2) {
-        // Search through all medicines and their lots
         for (const med of lookupData.medicines) {
             const foundLot = med.lots?.find(l => l.lot_number === value);
             if (foundLot) {
@@ -103,7 +187,6 @@ const ImmunizationLedger = ({ roadmap = [], patientId, onRecordAdded }) => {
                     manufacturer: foundLot.manufacturer || prev.manufacturer,
                     vis_edition_date: foundLot.vis_edition_date || prev.vis_edition_date,
                     cvx_code: foundLot.cvx_code || prev.cvx_code,
-                    // Note: We don't auto-set VIS Provided Date as it's a point-of-care action
                 }));
                 break;
             }
@@ -111,32 +194,10 @@ const ImmunizationLedger = ({ roadmap = [], patientId, onRecordAdded }) => {
     }
   };
 
-  const applyPreset = () => {
-    if (presetAvailable) {
-        setFormData(prev => ({
-            ...prev,
-            manufacturer: presetAvailable.manufacturer || prev.manufacturer,
-            site: presetAvailable.site || prev.site,
-            route: presetAvailable.route || prev.route,
-            vis_edition_date: presetAvailable.vis_edition_date || prev.vis_edition_date,
-            cvx_code: presetAvailable.cvx_code || prev.cvx_code
-        }));
-        setPresetAvailable(null);
-    }
-  };
-
-  if (roadmap.length === 0) {
-    return (
-      <div className="bg-slate-50/50 rounded-3xl p-10 text-center border border-slate-100 border-dashed">
-        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Immunization roadmap not available.</p>
-      </div>
-    );
-  }
-
   const getStatusColor = (status) => {
     switch (status) {
       case 'ADMINISTERED': return 'bg-emerald-50 text-emerald-600 border-emerald-100';
-      case 'OVERDUE': return 'bg-rose-50 text-rose-600 border-rose-100 animate-pulse';
+      case 'OVERDUE': return 'bg-rose-50 text-rose-600 border-rose-100';
       case 'PENDING': return 'bg-amber-50 text-amber-600 border-amber-100';
       default: return 'bg-slate-50 text-slate-400 border-slate-100';
     }
@@ -151,14 +212,25 @@ const ImmunizationLedger = ({ roadmap = [], patientId, onRecordAdded }) => {
     }
   };
 
+  const isDoctor = currentUser?.role === 'DOCTOR';
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between px-2">
         <h3 className="text-sm font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2">
           <ShieldCheck className="w-4 h-4 text-his-green-500" />
-          Mandatory Immunization Roadmap
+          Clinical Immunization Roadmap
         </h3>
         <div className="flex items-center gap-4">
+            {isDoctor && (
+                <button 
+                  onClick={() => setShowEnrollModal(true)}
+                  className="text-[9px] font-black text-blue-600 uppercase tracking-widest bg-blue-50 px-3 py-1.5 rounded-full border border-blue-100 hover:bg-blue-500 hover:text-white transition-all flex items-center gap-2"
+                >
+                  <FilePlus size={10} />
+                  Add Requirement
+                </button>
+            )}
             <button 
                 onClick={() => openAdminModal(null)}
                 className="text-[9px] font-black text-his-green-600 uppercase tracking-widest bg-his-green-50 px-3 py-1.5 rounded-full border border-his-green-100 hover:bg-his-green-500 hover:text-white transition-all flex items-center gap-2"
@@ -166,7 +238,6 @@ const ImmunizationLedger = ({ roadmap = [], patientId, onRecordAdded }) => {
                 <Plus size={10} />
                 Record Other
             </button>
-            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest border border-slate-100 px-2 py-0.5 rounded-full">Source: PH DOH NIP</span>
         </div>
       </div>
 
@@ -174,7 +245,7 @@ const ImmunizationLedger = ({ roadmap = [], patientId, onRecordAdded }) => {
         {roadmap.map((item, idx) => (
           <div 
             key={idx} 
-            className={`p-5 rounded-3xl border transition-all duration-300 group hover:shadow-xl hover:shadow-slate-200/50 hover:-translate-y-1 ${getStatusColor(item.status)}`}
+            className={`p-5 rounded-3xl border transition-all duration-300 group ${getStatusColor(item.status)}`}
           >
             <div className="flex justify-between items-start mb-3">
               <div className="flex items-center gap-2">
@@ -183,12 +254,34 @@ const ImmunizationLedger = ({ roadmap = [], patientId, onRecordAdded }) => {
                  </div>
                  <span className="text-[10px] font-black uppercase tracking-widest">{item.status}</span>
               </div>
-              <span className="text-[9px] font-black uppercase opacity-60">Dose {item.dose_number}</span>
+              <div className="flex items-center gap-2">
+                {item.status === 'ADMINISTERED' && isDoctor && (
+                   <button 
+                    onClick={() => openAdminModal(null, item.history?.[0])}
+                    className="p-1.5 hover:bg-white/60 rounded-lg text-slate-400 hover:text-his-green-500 transition-all"
+                    title="Edit Administration Record"
+                   >
+                     <Edit2 size={12} />
+                   </button>
+                )}
+                {item.source && item.source.startsWith('CUSTOM_') && isDoctor && (
+                    <button 
+                        onClick={() => handleDeleteRequirement(item.vaccine_name)}
+                        className="p-1.5 hover:bg-rose-100 rounded-lg text-rose-300 hover:text-rose-600 transition-all"
+                        title="Delete Custom Requirement"
+                    >
+                        <Trash2 size={12} />
+                    </button>
+                )}
+                <span className="text-[9px] font-black uppercase opacity-60">
+                   {item.doses_administered} / {item.doses_required} Doses
+                </span>
+              </div>
             </div>
             
             <h4 className="text-sm font-black text-slate-900 leading-tight mb-1">{item.vaccine_name}</h4>
             <p className="text-[10px] font-bold text-slate-500 mb-4 opacity-80">
-                {item.recommended_age_weeks !== null ? `${item.recommended_age_weeks} Weeks` : `${item.recommended_age_months} Months`} Old
+                Target: {item.target_month} Months Old
             </p>
 
             {item.status !== 'ADMINISTERED' && (
@@ -203,13 +296,15 @@ const ImmunizationLedger = ({ roadmap = [], patientId, onRecordAdded }) => {
 
             <div className="flex justify-between items-center pt-3 border-t border-black/5">
                 <div className="flex flex-col">
-                    <span className="text-[8px] font-black uppercase tracking-tighter opacity-50">Due Date</span>
-                    <span className="text-[11px] font-black text-slate-900">{new Date(item.due_date).toLocaleDateString()}</span>
+                    <span className="text-[8px] font-black uppercase tracking-tighter opacity-50 text-slate-400">Source Portfolio</span>
+                    <span className="text-[10px] font-black text-slate-900">{item.source || 'PH DOH NIP'}</span>
                 </div>
-                {item.administered_at && (
+                {item.status === 'ADMINISTERED' && (
                     <div className="flex flex-col items-end">
-                        <span className="text-[8px] font-black uppercase tracking-tighter opacity-50 text-emerald-600">Administered On</span>
-                        <span className="text-[11px] font-black text-emerald-700">{new Date(item.administered_at).toLocaleDateString()}</span>
+                        <span className="text-[8px] font-black uppercase tracking-tighter opacity-50 text-emerald-600">Last Dose</span>
+                        <span className="text-[10px] font-black text-emerald-700">
+                          {item.history?.[0]?.administered_at ? new Date(item.history[0].administered_at).toLocaleDateString() : 'N/A'}
+                        </span>
                     </div>
                 )}
             </div>
@@ -217,234 +312,132 @@ const ImmunizationLedger = ({ roadmap = [], patientId, onRecordAdded }) => {
         ))}
       </div>
 
-      {/* Administration Modal */}
+      {/* Administration / Edit Modal */}
       {showAdminModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[150] flex items-center justify-center p-6 animate-in fade-in duration-300">
           <div className="bg-white rounded-[2.5rem] w-full max-w-2xl shadow-2xl border border-white/20 animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]">
-            {/* Modal Header */}
             <div className="p-8 border-b border-slate-50 flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-his-green-500 text-white flex items-center justify-center shadow-lg shadow-his-green-500/20">
-                  <Syringe size={24} />
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg ${isEditMode ? 'bg-amber-500 shadow-amber-500/20' : 'bg-his-green-500 shadow-his-green-500/20'} text-white`}>
+                  {isEditMode ? <Edit2 size={24} /> : <Syringe size={24} />}
                 </div>
                 <div>
-                  <h3 className="text-xl font-black text-slate-900 tracking-tight">Record Vaccination</h3>
+                  <h3 className="text-xl font-black text-slate-900 tracking-tight">
+                    {isEditMode ? 'Edit Administration' : 'Record Vaccination'}
+                  </h3>
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
-                    {selectedVaccine?.isManual ? 'Manual Selection' : `${selectedVaccine?.vaccine_name} — Dose ${selectedVaccine?.dose_number}`}
+                    {selectedVaccine?.vaccine_name} — Clinical Modification
                   </p>
                 </div>
               </div>
-              <button 
-                onClick={() => setShowAdminModal(false)}
-                className="p-3 bg-slate-50 text-slate-400 rounded-2xl hover:bg-slate-100 transition-all"
-              >
+              <button onClick={() => setShowAdminModal(false)} className="p-3 bg-slate-50 text-slate-400 rounded-2xl hover:bg-slate-100 transition-all">
                 <X size={20} />
               </button>
             </div>
 
-            {/* Modal Content */}
-            <form id="admin-modal-form" onSubmit={handleAdministerSubmit} className="flex-1 overflow-y-auto p-8 space-y-8">
-              {/* Clinical Guidance Alert */}
-              <div className="bg-blue-50/50 border border-blue-100 rounded-[1.5rem] p-4 flex gap-4 items-start">
-                 <Info className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
-                 <div className="flex-1">
-                    <p className="text-[10px] font-black text-blue-900 uppercase tracking-widest mb-1">CDC Compliance Check</p>
-                    <p className="text-[10px] font-bold text-blue-600 leading-relaxed">
-                      Ensure the Vaccine Information Statement (VIS) has been provided to the guardian before administration. Double-check Lot Number for product recall traceability.
-                    </p>
-                 </div>
-                 {presetAvailable && (
-                    <button 
-                        type="button"
-                        onClick={applyPreset}
-                        className="bg-his-green-500 text-white text-[9px] font-black uppercase px-3 py-2 rounded-xl shadow-lg shadow-his-green-500/20 hover:bg-his-green-600 transition-all ml-2"
-                    >
-                        Apply Presets
-                    </button>
-                 )}
-              </div>
+            <form onSubmit={handleAdministerSubmit} className="flex-1 overflow-y-auto p-8 space-y-8">
+              {isEditMode && (
+                <div className="bg-amber-50 border border-amber-200 rounded-[1.5rem] p-6 space-y-3">
+                   <div className="flex items-center gap-2">
+                     <AlertTriangle className="w-4 h-4 text-amber-600" />
+                     <p className="text-[10px] font-black text-amber-900 uppercase tracking-widest">Amendment Log Required</p>
+                   </div>
+                   <textarea 
+                     required
+                     name="amendment_reason"
+                     value={formData.amendment_reason}
+                     onChange={handleInputChange}
+                     placeholder="State exactly why this record is being modified (e.g., Typo in Lot Number)..."
+                     className="w-full bg-white border border-amber-100 rounded-2xl p-4 text-sm font-bold text-slate-700 outline-none focus:border-amber-500 transition-all resize-none"
+                     rows="2"
+                   />
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-6">
-                {selectedVaccine?.isManual && (
-                    <div className="col-span-2 space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
-                            <Search size={10} />
-                            Search Vaccine Catalog
-                        </label>
-                        <div className="relative group">
-                            <input 
-                                required
-                                name="vaccine_name"
-                                list="vaccine-lookup-list"
-                                value={formData.vaccine_name}
-                                onChange={handleInputChange}
-                                placeholder="Start typing vaccine name..."
-                                className="w-full bg-his-green-50/30 border-2 border-his-green-100 focus:border-his-green-500 focus:bg-white rounded-2xl p-4 text-sm font-black text-slate-900 outline-none transition-all placeholder:text-slate-300" 
-                            />
-                            <datalist id="vaccine-lookup-list">
-                                {lookupData.standard.map((name, i) => <option key={i} value={name} />)}
-                                {lookupData.medicines.map((m, i) => (
-                                    <option key={`m-${i}`} value={m.brand_name || m.generic_name}>
-                                        {m.brand_name || m.generic_name} ({m.stock} Units In Stock)
-                                    </option>
-                                ))}
-                            </datalist>
-                        </div>
-                    </div>
-                )}
-
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Manufacturer</label>
-                  <input 
-                    name="manufacturer" 
-                    value={formData.manufacturer}
-                    onChange={handleInputChange}
-                    placeholder="e.g. GSK, Pfizer, Sanofi"
-                    className="w-full bg-his-slate-50 border-2 border-transparent focus:border-his-green-500/10 focus:bg-white rounded-2xl p-4 text-sm font-bold text-slate-700 outline-none transition-all placeholder:text-slate-300" 
-                  />
+                  <input name="manufacturer" value={formData.manufacturer} onChange={handleInputChange} className="w-full bg-his-slate-50 border-2 border-transparent focus:border-his-green-500/10 focus:bg-white rounded-2xl p-4 text-sm font-bold text-slate-700 outline-none transition-all" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Lot / Batch Number</label>
-                  <input 
-                    required 
-                    name="lot_number" 
-                    value={formData.lot_number}
-                    onChange={handleInputChange}
-                    placeholder="Mandatory Audit Code"
-                    className="w-full bg-his-slate-50 border-2 border-transparent focus:border-his-green-500/10 focus:bg-white rounded-2xl p-4 text-sm font-black text-slate-900 outline-none transition-all placeholder:text-slate-300" 
-                  />
+                  <input required name="lot_number" value={formData.lot_number} onChange={handleInputChange} className="w-full bg-his-slate-50 border-2 border-transparent focus:border-his-green-500/10 focus:bg-white rounded-2xl p-4 text-sm font-black text-slate-900 outline-none transition-all" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Administration Date</label>
-                  <input 
-                    required 
-                    type="date" 
-                    name="administered_at" 
-                    value={formData.administered_at}
-                    onChange={handleInputChange}
-                    className="w-full bg-his-slate-50 border-2 border-transparent focus:border-his-green-500/10 focus:bg-white rounded-2xl p-4 text-sm font-bold text-slate-700 outline-none transition-all" 
-                  />
+                  <input required type="date" name="administered_at" value={formData.administered_at} onChange={handleInputChange} className="w-full bg-his-slate-50 border-2 border-transparent focus:border-his-green-500/10 focus:bg-white rounded-2xl p-4 text-sm font-bold text-slate-700 outline-none transition-all" />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Administered By</label>
-                  <input 
-                    name="administered_by" 
-                    value={formData.administered_by}
-                    onChange={handleInputChange}
-                    placeholder="Clinician Name"
-                    className="w-full bg-his-slate-50 border-2 border-transparent focus:border-his-green-500/10 focus:bg-white rounded-2xl p-4 text-sm font-bold text-slate-700 outline-none transition-all placeholder:text-slate-300" 
-                  />
+                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Administered By</label>
+                   <input required name="administered_by" value={formData.administered_by} onChange={handleInputChange} className="w-full bg-his-slate-50 border-2 border-transparent focus:border-his-green-500/10 focus:bg-white rounded-2xl p-4 text-sm font-bold text-slate-700 outline-none transition-all" />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Anatomical Site</label>
-                  <select 
-                    name="site" 
-                    value={formData.site}
-                    onChange={handleInputChange}
-                    className="w-full bg-his-slate-50 border-2 border-transparent focus:border-his-green-500/10 focus:bg-white rounded-2xl p-4 text-sm font-bold text-slate-700 outline-none transition-all appearance-none"
-                  >
-                    <option value="Left Deltoid">Left Deltoid (Arm)</option>
-                    <option value="Right Deltoid">Right Deltoid (Arm)</option>
-                    <option value="Left Thigh">Left Thigh (Anterolateral)</option>
-                    <option value="Right Thigh">Right Thigh (Anterolateral)</option>
-                    <option value="Oral">Oral (N/A)</option>
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Route</label>
-                  <select 
-                    name="route" 
-                    value={formData.route}
-                    onChange={handleInputChange}
-                    className="w-full bg-his-slate-50 border-2 border-transparent focus:border-his-green-500/10 focus:bg-white rounded-2xl p-4 text-sm font-bold text-slate-700 outline-none transition-all appearance-none"
-                  >
-                    <option value="IM">Intramuscular (IM)</option>
-                    <option value="SC">Subcutaneous (SC)</option>
-                    <option value="ID">Intradermal (ID)</option>
-                    <option value="PO">Oral (PO)</option>
-                    <option value="IN">Intranasal (IN)</option>
-                  </select>
-                </div>
-
-                {/* NCVIA Mandated VIS Section */}
-                <div className="col-span-2 grid grid-cols-2 gap-6 p-6 bg-slate-50 rounded-3xl border border-slate-100">
-                    <div className="col-span-2 mb-2">
-                        <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest">NCVIA Mandated Documentation</p>
-                    </div>
-                    <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">VIS Edition Date</label>
-                        <input 
-                            type="date"
-                            name="vis_edition_date" 
-                            value={formData.vis_edition_date}
-                            onChange={handleInputChange}
-                            className="w-full bg-white border-2 border-transparent focus:border-his-green-500/10 rounded-2xl p-4 text-sm font-bold text-slate-700 outline-none transition-all" 
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Date VIS Provided</label>
-                        <input 
-                            type="date"
-                            name="vis_provided_date" 
-                            value={formData.vis_provided_date}
-                            onChange={handleInputChange}
-                            className="w-full bg-white border-2 border-transparent focus:border-his-green-500/10 rounded-2xl p-4 text-sm font-bold text-slate-700 outline-none transition-all" 
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">CVX Code</label>
-                        <input 
-                            name="cvx_code" 
-                            value={formData.cvx_code}
-                            onChange={handleInputChange}
-                            placeholder="e.g. 03, 110"
-                            className="w-full bg-white border-2 border-transparent focus:border-his-green-500/10 rounded-2xl p-4 text-sm font-bold text-slate-700 outline-none transition-all" 
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">NDC Code</label>
-                        <input 
-                            name="ndc_code" 
-                            value={formData.ndc_code}
-                            onChange={handleInputChange}
-                            placeholder="Optional"
-                            className="w-full bg-white border-2 border-transparent focus:border-his-green-500/10 rounded-2xl p-4 text-sm font-bold text-slate-700 outline-none transition-all" 
-                        />
-                    </div>
-                </div>
-
-                <div className="col-span-2 space-y-2">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Clinical Remarks</label>
-                  <textarea 
-                    name="remarks" 
-                    value={formData.remarks}
-                    onChange={handleInputChange}
-                    rows="2"
-                    placeholder="Note any adverse reactions or provider guidance here..."
-                    className="w-full bg-his-slate-50 border-2 border-transparent focus:border-his-green-500/10 focus:bg-white rounded-3xl p-4 text-sm font-bold text-slate-700 outline-none transition-all placeholder:text-slate-300 resize-none" 
-                  />
+                  <textarea name="remarks" value={formData.remarks} onChange={handleInputChange} rows="2" className="w-full bg-his-slate-50 border-2 border-transparent focus:border-his-green-500/10 focus:bg-white rounded-3xl p-4 text-sm font-bold text-slate-700 outline-none transition-all resize-none" />
                 </div>
               </div>
 
-              {/* Modal Footer */}
               <div className="pt-6 border-t border-slate-50 flex gap-4">
-                  <button 
-                    type="button" 
-                    onClick={() => setShowAdminModal(false)}
-                    className="flex-1 py-4 bg-his-slate-50 text-slate-400 text-[10px] font-black rounded-2xl hover:bg-his-slate-100 transition-all uppercase tracking-widest"
-                  >
-                    Cancel
-                  </button>
-                  <button 
-                    type="submit" 
-                    disabled={loading}
-                    className="flex-1 py-4 bg-his-green-500 text-white text-[10px] font-black rounded-2xl shadow-xl shadow-his-green-500/20 hover:bg-his-green-600 transition-all uppercase tracking-widest disabled:opacity-50"
-                  >
-                    {loading ? 'Registering...' : 'Finalize Administration'}
+                  <button type="button" onClick={() => setShowAdminModal(false)} className="flex-1 py-4 bg-his-slate-50 text-slate-400 text-[10px] font-black rounded-2xl hover:bg-his-slate-100 transition-all uppercase tracking-widest">Cancel</button>
+                  <button type="submit" disabled={loading} className={`flex-1 py-4 ${isEditMode ? 'bg-amber-500 shadow-amber-500/20' : 'bg-his-green-500 shadow-his-green-500/20'} text-white text-[10px] font-black rounded-2xl shadow-xl transition-all uppercase tracking-widest disabled:opacity-50`}>
+                    {loading ? 'Processing...' : (isEditMode ? 'Update Record' : 'Finalize Administration')}
                   </button>
               </div>
             </form>
           </div>
+        </div>
+      )}
+
+      {/* Enroll Custom Requirement Modal */}
+      {showEnrollModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[150] flex items-center justify-center p-6 animate-in fade-in duration-300">
+           <div className="bg-white rounded-[2.5rem] w-full max-w-md shadow-2xl border border-white/20 animate-in zoom-in-95 duration-300">
+              <div className="p-8 border-b border-slate-50 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-blue-500 text-white flex items-center justify-center shadow-lg shadow-blue-500/20">
+                    <FilePlus size={24} />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-black text-slate-900 tracking-tight">Add Requirement</h3>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Customize Patient Roadmap</p>
+                  </div>
+                </div>
+                <button onClick={() => setShowEnrollModal(false)} className="p-3 bg-slate-50 text-slate-400 rounded-2xl hover:bg-slate-100 transition-all">
+                  <X size={20} />
+                </button>
+              </div>
+
+              <form onSubmit={handleEnrollSubmit} className="p-8 space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Vaccine Name</label>
+                  <input required value={enrollData.vaccine_name} onChange={(e) => setEnrollData({...enrollData, vaccine_name: e.target.value})} placeholder="e.g. Varicella, Influenza" className="w-full bg-slate-50 border-2 border-transparent focus:border-blue-500/10 focus:bg-white rounded-2xl p-4 text-sm font-black text-slate-900 outline-none transition-all" />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Doses Required</label>
+                    <input type="number" min="1" value={enrollData.doses_required} onChange={(e) => setEnrollData({...enrollData, doses_required: e.target.value})} className="w-full bg-slate-50 border-2 border-transparent focus:border-blue-500/10 rounded-2xl p-4 text-sm font-bold text-slate-700" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Target Age (Mos)</label>
+                    <input type="number" step="0.5" value={enrollData.target_age_months} onChange={(e) => setEnrollData({...enrollData, target_age_months: e.target.value})} className="w-full bg-slate-50 border-2 border-transparent focus:border-blue-500/10 rounded-2xl p-4 text-sm font-bold text-slate-700" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Enrollment Scope</label>
+                   <select value={enrollData.scope} onChange={(e) => setEnrollData({...enrollData, scope: e.target.value})} className="w-full bg-slate-50 border-2 border-transparent focus:border-blue-500/10 rounded-2xl p-4 text-sm font-black text-slate-700 outline-none transition-all appearance-none">
+                     <option value="PATIENT">Personalized (This child only)</option>
+                     <option value="CLINIC">Clinic Standard (All patients)</option>
+                   </select>
+                </div>
+                
+                <div className="flex gap-4 pt-4">
+                  <button type="button" onClick={() => setShowEnrollModal(false)} className="flex-1 py-4 bg-slate-50 text-slate-400 text-[10px] font-black rounded-2xl uppercase tracking-widest">Cancel</button>
+                  <button type="submit" disabled={loading} className="flex-1 py-4 bg-blue-500 text-white text-[10px] font-black rounded-2xl shadow-xl shadow-blue-500/20 hover:bg-blue-600 transition-all uppercase tracking-widest disabled:opacity-50">
+                    {loading ? 'Adding...' : 'Add Card to Roadmap'}
+                  </button>
+                </div>
+              </form>
+           </div>
         </div>
       )}
     </div>

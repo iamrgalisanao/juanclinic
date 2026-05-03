@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getVitals, storeVital, deleteVital } from '../../services/api';
+import { useDialog } from '../../context/DialogContext';
 import { 
     Activity, 
     Plus, 
@@ -16,6 +17,7 @@ import {
 } from 'lucide-react';
 
 const VitalsManager = ({ patient }) => {
+    const { confirm, alert } = useDialog();
     const [vitals, setVitals] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
@@ -95,9 +97,15 @@ const VitalsManager = ({ patient }) => {
             const errors = error.response?.data?.errors;
             if (errors) {
                 const detailedError = Object.values(errors).flat().join('\n');
-                alert(`Validation Error:\n${detailedError}`);
+                await alert({
+                    title: 'Validation Error',
+                    message: detailedError
+                });
             } else {
-                alert(message);
+                await alert({
+                    title: 'Clinical Data Error',
+                    message: message
+                });
             }
         } finally {
             setSubmitting(false);
@@ -105,7 +113,13 @@ const VitalsManager = ({ patient }) => {
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm('Are you sure you want to delete this vital record?')) return;
+        const confirmed = await confirm({
+            title: 'Delete Vital Record?',
+            message: 'Are you sure you want to permanently remove this clinical vital record?',
+            confirmText: 'Delete',
+            cancelText: 'Cancel'
+        });
+        if (!confirmed) return;
         try {
             await deleteVital(id);
             loadVitals();

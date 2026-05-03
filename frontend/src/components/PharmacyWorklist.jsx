@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { getPharmacyWorklist, dispenseMedication } from '../services/api';
+import { useDialog } from '../context/DialogContext';
 
 const PharmacyWorklist = ({ activeBranch, currentUser }) => {
     const [prescriptions, setPrescriptions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const { alert } = useDialog();
 
     const fetchWorklist = async () => {
         try {
@@ -33,7 +35,10 @@ const PharmacyWorklist = ({ activeBranch, currentUser }) => {
             fetchWorklist();
         } catch (err) {
             console.error('Dispensing failed:', err);
-            alert('Failed to dispense medication. Please check the logs.');
+            await alert({
+                title: 'Dispense Failed',
+                message: 'Internal inventory error. Failed to dispense medication from clinical stocks.'
+            });
         }
     };
 

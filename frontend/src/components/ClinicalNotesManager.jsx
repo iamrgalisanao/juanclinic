@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { getClinicalTemplates, getClinicalNotes, createClinicalNote } from '../services/api';
+import { useDialog } from '../context/DialogContext';
 import DynamicClinicalForm from './forms/DynamicClinicalForm';
 import MedicalCertificatePrintView from './MedicalCertificatePrintView';
 
-const ClinicalNotesManager = ({ patientId, patient }) => {
+const ClinicalNotesManager = ({ patientId, patient, activeTenant }) => {
+    const { alert } = useDialog();
     const [notes, setNotes] = useState([]);
     const [templates, setTemplates] = useState([]);
     const [selectedTemplate, setSelectedTemplate] = useState(null);
@@ -57,7 +59,10 @@ const ClinicalNotesManager = ({ patientId, patient }) => {
             setSelectedTemplate(null);
         } catch (err) {
             console.error('Error saving clinical note:', err);
-            alert('Failed to save note. Please check required fields.');
+            await alert({
+                title: 'Storage Error',
+                message: 'Failed to synchronize clinical encounter data. Please check required fields.'
+            });
         }
     };
 
@@ -150,13 +155,13 @@ const ClinicalNotesManager = ({ patientId, patient }) => {
                                             {note.status}
                                         </span>
                                     </div>
-                                    {note.template?.name === 'Medical Certificate' && (
+                                    {note.status === 'SIGNED' && (
                                         <button
                                             onClick={() => setPrintCertNote(note)}
                                             className="text-[10px] font-black uppercase tracking-widest text-his-green-600 hover:text-his-green-700 bg-his-green-50 px-3 py-1.5 rounded-lg border border-his-green-100 transition-colors flex items-center gap-1.5"
                                         >
                                             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
-                                            Print Certificate
+                                            Issue Certificate
                                         </button>
                                     )}
                                 </div>
@@ -259,7 +264,11 @@ const ClinicalNotesManager = ({ patientId, patient }) => {
                         >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
                         </button>
-                        <MedicalCertificatePrintView note={printCertNote} patient={patient} />
+                        <MedicalCertificatePrintView 
+                            note={printCertNote} 
+                            patient={patient} 
+                            activeTenant={activeTenant} 
+                        />
                     </div>
                 </div>
             )}

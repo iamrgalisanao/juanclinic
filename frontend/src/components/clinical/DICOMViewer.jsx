@@ -4,6 +4,7 @@ import * as cornerstoneWADOImageLoader from 'cornerstone-wado-image-loader';
 import * as dicomParser from 'dicom-parser';
 import Hammer from 'hammerjs';
 import { submitImagingReport, finalizeImagingStudy } from '../../services/api';
+import { useDialog } from '../../context/DialogContext';
 
 // Initialize Cornerstone WADO Image Loader
 cornerstoneWADOImageLoader.external.cornerstone = cornerstone;
@@ -20,6 +21,7 @@ cornerstoneWADOImageLoader.configure({
 });
 
 const DICOMViewer = ({ study: initialStudy, onClose }) => {
+    const { confirm, alert } = useDialog();
     const viewerRef = useRef(null);
     const [study, setStudy] = useState(initialStudy);
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -66,16 +68,29 @@ const DICOMViewer = ({ study: initialStudy, onClose }) => {
         try {
             const response = await submitImagingReport(study.id, { findings, impression });
             setStudy(response.study);
-            alert("Preliminary report saved.");
+            await alert({
+                title: 'Report Saved',
+                message: 'Preliminary report saved successfully.'
+            });
         } catch (err) {
-            alert(err.response?.data?.message || "Failed to save report.");
+            await alert({
+                title: 'Save Failed',
+                message: err.response?.data?.message || "Failed to save report."
+            });
         } finally {
             setSaving(false);
         }
     };
 
     const handleFinalize = async () => {
-        if (!window.confirm("Are you sure you want to finalize this study? This will lock the report and complete the diagnostic order.")) return;
+        const confirmed = await confirm({
+            title: 'Finalize Study?',
+            message: 'Are you sure you want to finalize this study? This will lock the report and complete the diagnostic order.',
+            confirmText: 'Finalize',
+            cancelText: 'Cancel'
+        });
+        
+        if (!confirmed) return;
         
         setSaving(true);
         try {
@@ -85,9 +100,15 @@ const DICOMViewer = ({ study: initialStudy, onClose }) => {
             }
             const response = await finalizeImagingStudy(study.id);
             setStudy(response.study);
-            alert("Study finalized successfully.");
+            await alert({
+                title: 'Study Finalized',
+                message: 'Study finalized successfully.'
+            });
         } catch (err) {
-            alert(err.response?.data?.message || "Failed to finalize study.");
+            await alert({
+                title: 'Finalization Failed',
+                message: err.response?.data?.message || "Failed to finalize study."
+            });
         } finally {
             setSaving(false);
         }

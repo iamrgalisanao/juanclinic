@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useDialog } from '../../context/DialogContext';
 import { 
     Send, 
     RefreshCcw, 
@@ -12,6 +13,7 @@ import {
 import { getHL7Outbox, retryHL7Message, processHL7Outbox } from '../../services/api';
 
 const HL7OutboxViewer = () => {
+    const { alert } = useDialog();
     const [messages, setMessages] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedMessage, setSelectedMessage] = useState(null);
@@ -39,7 +41,10 @@ const HL7OutboxViewer = () => {
             await retryHL7Message(id);
             fetchOutbox(); // Refresh
         } catch (err) {
-            alert("Retry failed: " + err.message);
+            await alert({
+                title: 'HL7 Transmission Error',
+                message: "Retry failed: " + err.message
+            });
         }
     };
 

@@ -1,12 +1,33 @@
 import React, { useState } from 'react';
+import { AlertTriangle } from 'lucide-react';
 
 const PediatricDosageCalculator = ({ patientWeight, onApply }) => {
     const [dosePerKg, setDosePerKg] = useState('');
     const [result, setResult] = useState(null);
+    const [warning, setWarning] = useState(null);
 
     const calculate = () => {
         if (!patientWeight || !dosePerKg) return;
-        const total = parseFloat(patientWeight) * parseFloat(dosePerKg);
+        
+        const dose = parseFloat(dosePerKg);
+        const weight = parseFloat(patientWeight);
+        
+        let total = weight * dose;
+        let currentWarning = null;
+
+        // Clinical Safety Ceiling Rule 1: Toxicity Check
+        if (dose > 60) {
+            currentWarning = "CAUTION: Input exceeds conventional safe mg/kg dosing limits. Verify clinical guidelines.";
+        }
+
+        // Clinical Safety Ceiling Rule 2: Absolute Maximum Cap
+        const MAX_DAILY_DOSE = 1000; // General safe cap for standard pediatric generics like Paracetamol/Amoxicillin
+        if (total > MAX_DAILY_DOSE) {
+            total = MAX_DAILY_DOSE;
+            currentWarning = "WARNING: Computation exceeded standard adult/max ceiling. Hard-capped at 1000mg.";
+        }
+
+        setWarning(currentWarning);
         setResult(total.toFixed(2));
     };
 
@@ -51,6 +72,16 @@ const PediatricDosageCalculator = ({ patientWeight, onApply }) => {
                     <p className="text-4xl font-black text-his-green-500 italic">
                         {result} <span className="text-sm text-white">MG</span>
                     </p>
+                    
+                    {warning && (
+                        <div className="mt-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-start gap-2 text-left">
+                            <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                            <p className="text-[9px] font-black text-amber-400 uppercase tracking-widest leading-relaxed">
+                                {warning}
+                            </p>
+                        </div>
+                    )}
+
                     <button 
                         onClick={() => onApply(result)}
                         className="mt-6 text-[9px] font-black text-slate-300 uppercase underline tracking-widest hover:text-white transition-colors"

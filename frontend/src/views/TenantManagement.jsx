@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getTenants, createTenant, updateTenant, deleteTenant } from '../services/api';
+import { useDialog } from '../context/DialogContext';
 
 const TenantManagement = ({ onTenantUpdate }) => {
     const [tenants, setTenants] = useState([]);
@@ -10,8 +11,13 @@ const TenantManagement = ({ onTenantUpdate }) => {
     const [formData, setFormData] = useState({
         name: '',
         slug: '',
+        official_address: '',
+        contact_number: '',
         admin_settings: {}
     });
+    const [logoFile, setLogoFile] = useState(null);
+    const [logoPreview, setLogoPreview] = useState(null);
+    const { alert, confirm } = useDialog();
 
     useEffect(() => {
         fetchTenants();
@@ -36,15 +42,23 @@ const TenantManagement = ({ onTenantUpdate }) => {
             setFormData({
                 name: tenant.name,
                 slug: tenant.slug,
+                official_address: tenant.official_address || '',
+                contact_number: tenant.contact_number || '',
                 admin_settings: tenant.admin_settings || {}
             });
+            setLogoPreview(tenant.logo_url);
+            setLogoFile(null);
         } else {
             setEditingTenant(null);
             setFormData({
                 name: '',
                 slug: '',
+                official_address: '',
+                contact_number: '',
                 admin_settings: {}
             });
+            setLogoPreview(null);
+            setLogoFile(null);
         }
         setShowModal(true);
     };
@@ -52,33 +66,62 @@ const TenantManagement = ({ onTenantUpdate }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setErrors({});
+        const data = new FormData();
+        data.append('name', formData.name);
+        data.append('slug', formData.slug);
+        data.append('official_address', formData.official_address);
+        data.append('contact_number', formData.contact_number);
+        data.append('admin_settings', JSON.stringify(formData.admin_settings));
+        if (logoFile) {
+            data.append('logo', logoFile);
+        }
+
         try {
             if (editingTenant) {
-                await updateTenant(editingTenant.id, formData);
+                await updateTenant(editingTenant.id, data);
             } else {
-                await createTenant(formData);
+                await createTenant(data);
             }
             setShowModal(false);
             fetchTenants();
             if (onTenantUpdate) onTenantUpdate();
+            await alert({
+                title: editingTenant ? 'Organization Updated' : 'Organization Provisioned',
+                message: editingTenant ? 'The organization configuration has been updated successfully.' : 'The new organization has been provisioned successfully.'
+            });
         } catch (error) {
             console.error('Error saving tenant:', error);
             if (error.response && error.response.status === 422) {
+                console.error('Validation Errors:', error.response.data.errors);
                 setErrors(error.response.data.errors || {});
             } else {
-                alert('An unexpected error occurred while saving.');
+                await alert({
+                    title: 'Operation Failed',
+                    message: 'An unexpected error occurred while saving.'
+                });
             }
         }
     };
 
     const handleDelete = async (id) => {
-        if (window.confirm('Are you sure you want to delete this tenant? All associated branches and users may be orphaned! Contine?')) {
+        const confirmed = await confirm({
+            title: 'Delete Organization?',
+            message: 'Are you sure you want to delete this tenant? All associated branches and users may be orphaned! Continue?',
+            confirmText: 'Delete',
+            cancelText: 'Cancel'
+        });
+
+        if (confirmed) {
             try {
                 await deleteTenant(id);
                 fetchTenants();
                 if (onTenantUpdate) onTenantUpdate();
             } catch (error) {
                 console.error('Error deleting tenant:', error);
+                await alert({
+                    title: 'Delete Failed',
+                    message: 'An error occurred while trying to delete the tenant.'
+                });
             }
         }
     };
@@ -94,6 +137,18 @@ const TenantManagement = ({ onTenantUpdate }) => {
             name,
             slug: editingTenant ? formData.slug : generateSlug(name)
         });
+    };
+
+    const handleLogoChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setLogoFile(file);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setLogoPreview(reader.result);
+            };
+            reader.readAsDataURL(file);
+        }
     };
 
     return (
@@ -137,8 +192,14 @@ const TenantManagement = ({ onTenantUpdate }) => {
                                 </div>
 
                                 <div className="flex items-center gap-4 mb-6">
-                                    <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center text-xl font-black text-slate-900 border border-slate-200">
-                                        {tenant.name[0]}
+                                    <div className="w-14 h-14 rounded-2xl bg-white border border-slate-100 flex items-center justify-center overflow-hidden shadow-sm">
+                                        {tenant.logo_url ? (
+                                            <img src={tenant.logo_url} alt={tenant.name} className="w-full h-full object-contain p-2" />
+                                        ) : (
+                                            <div className="w-full h-full bg-slate-100 flex items-center justify-center text-xl font-black text-slate-900 uppercase">
+                                                {tenant.name[0]}
+                                            </div>
+                                        )}
                                     </div>
                                     <div>
                                         <h3 className="font-black text-slate-900 leading-tight">{tenant.name}</h3>
@@ -192,8 +253,50 @@ const TenantManagement = ({ onTenantUpdate }) => {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 text-xs">System Identifier (Slug)</label>
-                                <div className="relative">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 text-xs">Clinic Logo (High Fidelity)</label>
+                                <div className="flex items-start gap-6 bg-his-slate-50 p-6 rounded-[2rem] border border-his-slate-100">
+                                    <div className="w-24 h-24 rounded-2xl bg-white border border-slate-100 flex items-center justify-center overflow-hidden shadow-sm relative group">
+                                        {logoPreview ? (
+                                            <img src={logoPreview} alt="Preview" className="w-full h-full object-contain p-2" />
+                                        ) : (
+                                            <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                        )}
+                                        <input
+                                            type="file"
+                                            className="absolute inset-0 opacity-0 cursor-pointer"
+                                            onChange={handleLogoChange}
+                                            accept="image/*"
+                                        />
+                                    </div>
+                                    <div className="flex-1">
+                                        <p className="text-[10px] font-black text-slate-900 leading-tight">Upload organization logo</p>
+                                        <p className="text-[8px] font-bold text-slate-400 mt-1 leading-relaxed">PNG, JPG or SVG. <br/>Max size: 2MB. Recommended: Landscape/Square.</p>
+                                        <button 
+                                            type="button"
+                                            className="mt-3 text-[10px] font-black text-his-green-500 uppercase tracking-widest hover:text-his-green-600 transition-colors"
+                                            onClick={() => document.querySelector('input[type="file"]').click()}
+                                        >
+                                            Change Logo
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 text-xs">Contact Number</label>
+                                    <input
+                                        type="text"
+                                        className={`w-full px-6 py-4 bg-his-slate-50 border ${errors.contact_number ? 'border-rose-300' : 'border-his-slate-100'} rounded-2xl text-sm font-bold text-slate-900 focus:bg-white focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10 transition-all outline-none`}
+                                        placeholder="+63 900 000 0000"
+                                        value={formData.contact_number}
+                                        onChange={e => setFormData({ ...formData, contact_number: e.target.value })}
+                                    />
+                                    {errors.contact_number && <p className="text-[10px] font-bold text-rose-500 ml-1">{errors.contact_number[0]}</p>}
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 text-xs">System Identifier (Slug)</label>
                                     <input
                                         type="text"
                                         required
@@ -202,12 +305,18 @@ const TenantManagement = ({ onTenantUpdate }) => {
                                         value={formData.slug}
                                         onChange={e => setFormData({ ...formData, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]+/g, '') })}
                                     />
-                                    <div className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none">
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6.172 13.828a4 4 0 015.656-0l4-4a4 4 0 115.656 5.656l-1.102 1.101" /></svg>
-                                    </div>
                                 </div>
-                                {errors.slug && <p className="text-[10px] font-bold text-rose-500 ml-1">{errors.slug[0]}</p>}
-                                <p className="text-[8px] font-bold text-slate-400 ml-1 uppercase tracking-widest leading-relaxed">Unique identifier used for multi-tenant isolation and routing.</p>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 text-xs">Official Clinic Address</label>
+                                <textarea
+                                    className={`w-full px-6 py-4 bg-his-slate-50 border ${errors.official_address ? 'border-rose-300' : 'border-his-slate-100'} rounded-2xl text-sm font-bold text-slate-900 focus:bg-white focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10 transition-all outline-none min-h-[100px] resize-none`}
+                                    placeholder="e.g. 123 Medical Ave, Quezon City, Philippines"
+                                    value={formData.official_address}
+                                    onChange={e => setFormData({ ...formData, official_address: e.target.value })}
+                                />
+                                {errors.official_address && <p className="text-[10px] font-bold text-rose-500 ml-1">{errors.official_address[0]}</p>}
+                                <p className="text-[8px] font-bold text-slate-400 ml-1 uppercase tracking-widest leading-relaxed">This address will appear in the header of all printed Medical Certificates and Prescriptions.</p>
                             </div>
 
                             <button

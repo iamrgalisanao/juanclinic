@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { getAttachments, uploadAttachment, downloadAttachment, deleteAttachment } from '../services/api';
+import { useDialog } from '../context/DialogContext';
 
 const AttachmentManager = ({ patientId }) => {
     const [attachments, setAttachments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
     const [error, setError] = useState(null);
+    const { confirm, alert } = useDialog();
 
     useEffect(() => {
         if (patientId) {
@@ -66,14 +68,23 @@ const AttachmentManager = ({ patientId }) => {
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm("CRITICAL: Permanently delete this clinical document? This action is logged.")) return;
+        const confirmed = await confirm({
+            title: 'Delete Clinical Document?',
+            message: 'This will permanently remove the document from the clinical repository. This action is audited.',
+            confirmText: 'Delete Permanently',
+            cancelText: 'Retain'
+        });
+        if (!confirmed) return;
         
         try {
             await deleteAttachment(id);
             setAttachments(attachments.filter(a => a.id !== id));
         } catch (err) {
             console.error("Delete failed", err);
-            alert("Failed to remove document.");
+            await alert({
+                title: 'Deletion Failed',
+                message: 'Failed to remove document from secure storage.'
+            });
         }
     };
 

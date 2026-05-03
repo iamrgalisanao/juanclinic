@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getPatientImaging, uploadDicom } from '../../services/api';
+import { useDialog } from '../../context/DialogContext';
 import DICOMViewer from './DICOMViewer';
 
 const ImagingDashboard = ({ patientId, patient }) => {
@@ -8,6 +9,7 @@ const ImagingDashboard = ({ patientId, patient }) => {
     const [error, setError] = useState(null);
     const [isUploading, setIsUploading] = useState(false);
     const [selectedStudy, setSelectedStudy] = useState(null);
+    const { alert } = useDialog();
     
     // Check if the current user is a System Admin or has the feature enabled
     const user = JSON.parse(localStorage.getItem('auth_user') || '{}');
@@ -46,9 +48,15 @@ const ImagingDashboard = ({ patientId, patient }) => {
         try {
             await uploadDicom(formData);
             await fetchStudies();
-            alert("DICOM image ingested successfully into PACS.");
+            await alert({
+                title: 'Ingestion Success',
+                message: 'DICOM image ingested successfully into PACS infrastructure.'
+            });
         } catch (err) {
-            alert(err.response?.data?.message || "Ingestion failed.");
+            await alert({
+                title: 'Ingestion Failed',
+                message: err.response?.data?.message || "Secure clinical ingestion failed."
+            });
         } finally {
             setIsUploading(false);
         }

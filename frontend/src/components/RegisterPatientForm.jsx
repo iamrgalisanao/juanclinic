@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { registerPatient } from '../services/api';
 import { addToSyncQueue, saveToLocal } from '../services/db';
+import { useDialog } from '../context/DialogContext';
 
 const RegisterPatientForm = ({ onPatientAdded, onClose, activeTenant }) => {
+    const { alert } = useDialog();
     const [step, setStep] = useState(1);
     const [formData, setFormData] = useState({
         first_name: '',
@@ -15,8 +17,8 @@ const RegisterPatientForm = ({ onPatientAdded, onClose, activeTenant }) => {
         contact: '',
         email: '',
         preferred_language: 'en',
-        receive_email_reminders: true,
-        receive_sms_reminders: true,
+        receive_email_reminders: !!activeTenant?.email_enabled,
+        receive_sms_reminders: !!activeTenant?.sms_enabled,
         patient_external_id: 'PAT-' + Date.now().toString(36).toUpperCase(),
     });
     const [isPediatric, setIsPediatric] = useState(false);
@@ -60,9 +62,15 @@ const RegisterPatientForm = ({ onPatientAdded, onClose, activeTenant }) => {
                 if (err.response.data.errors.first_name || err.response.data.errors.last_name || err.response.data.errors.dob) setStep(1);
                 else if (err.response.data.errors.contact || err.response.data.errors.email) setStep(2);
             } else if (err.response && err.response.status === 409) {
-                alert("Critical: Potential duplicate patient detected in the secure clinical registry.");
+                await alert({
+                    title: 'Credential Clash',
+                    message: "Critical: Potential duplicate patient detected in the secure clinical registry. This operation has been flagged for audit review."
+                });
             } else {
-                alert(`Registration Failed: ${err.message || 'Server connection error.'}`);
+                await alert({
+                    title: 'Registry Failure',
+                    message: `Registration Failed: ${err.message || 'Server connection error.'}`
+                });
             }
         } finally {
             setLoading(false);
@@ -255,25 +263,31 @@ const RegisterPatientForm = ({ onPatientAdded, onClose, activeTenant }) => {
                             />
                         </div>
 
-                        <div className="col-span-2 p-6 bg-slate-50 rounded-[2rem] border border-slate-100 space-y-4">
-                            <h4 className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Notification Preferences</h4>
-                            <div className="flex gap-6">
-                                <label className="flex items-center gap-3 cursor-pointer group">
-                                    <div className={`w-10 h-6 rounded-full p-1 transition-all ${formData.receive_email_reminders ? 'bg-his-green-500' : 'bg-slate-200'}`}
-                                         onClick={() => setFormData({...formData, receive_email_reminders: !formData.receive_email_reminders})}>
-                                        <div className={`w-4 h-4 bg-white rounded-full transition-all ${formData.receive_email_reminders ? 'translate-x-4' : 'translate-x-0'}`} />
-                                    </div>
-                                    <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">Email</span>
-                                </label>
-                                <label className="flex items-center gap-3 cursor-pointer group">
-                                    <div className={`w-10 h-6 rounded-full p-1 transition-all ${formData.receive_sms_reminders ? 'bg-his-green-500' : 'bg-slate-200'}`}
-                                         onClick={() => setFormData({...formData, receive_sms_reminders: !formData.receive_sms_reminders})}>
-                                        <div className={`w-4 h-4 bg-white rounded-full transition-all ${formData.receive_sms_reminders ? 'translate-x-4' : 'translate-x-0'}`} />
-                                    </div>
-                                    <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">SMS</span>
-                                </label>
+                        {(activeTenant?.email_enabled || activeTenant?.sms_enabled) && (
+                            <div className="col-span-2 p-6 bg-slate-50 rounded-[2rem] border border-slate-100 space-y-4">
+                                <h4 className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Notification Preferences</h4>
+                                <div className="flex gap-6">
+                                    {activeTenant?.email_enabled && (
+                                        <label className="flex items-center gap-3 cursor-pointer group">
+                                            <div className={`w-10 h-6 rounded-full p-1 transition-all ${formData.receive_email_reminders ? 'bg-his-green-500' : 'bg-slate-200'}`}
+                                                onClick={() => setFormData({...formData, receive_email_reminders: !formData.receive_email_reminders})}>
+                                                <div className={`w-4 h-4 bg-white rounded-full transition-all ${formData.receive_email_reminders ? 'translate-x-4' : 'translate-x-0'}`} />
+                                            </div>
+                                            <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">Email</span>
+                                        </label>
+                                    )}
+                                    {activeTenant?.sms_enabled && (
+                                        <label className="flex items-center gap-3 cursor-pointer group">
+                                            <div className={`w-10 h-6 rounded-full p-1 transition-all ${formData.receive_sms_reminders ? 'bg-his-green-500' : 'bg-slate-200'}`}
+                                                onClick={() => setFormData({...formData, receive_sms_reminders: !formData.receive_sms_reminders})}>
+                                                <div className={`w-4 h-4 bg-white rounded-full transition-all ${formData.receive_sms_reminders ? 'translate-x-4' : 'translate-x-0'}`} />
+                                            </div>
+                                            <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">SMS</span>
+                                        </label>
+                                    )}
+                                </div>
                             </div>
-                        </div>
+                        )}
                     </div>
                 )}
 

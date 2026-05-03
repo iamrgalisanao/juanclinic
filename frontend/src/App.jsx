@@ -1,6 +1,7 @@
+// JuanClinic HIS - Modernized with Global Dialog System
 import React, { useState, useEffect, useRef } from 'react';
 import { getPatients, getTenants, setTenantToken, getOrders, ingestHL7, updateOrder, getAuditLogs, getPrescriptions, getBranches, setBranchToken, getDashboardReports, getDoctors, getSystemVersion } from './services/api';
-import { setEchoAuthHeader } from './services/echo';
+import echo from './services/echo';
 import { startAutoSync } from './services/syncService';
 import Sidebar from './components/Sidebar';
 import TopBar from './components/TopBar';
@@ -23,12 +24,18 @@ import CashierDashboard from './components/CashierDashboard';
 import Referrals from './components/Referrals';
 import BranchManagement from './views/BranchManagement';
 import TenantManagement from './views/TenantManagement';
+import NotificationSettings from './views/settings/NotificationSettings';
 import SuperAdminDashboard from './views/admin/SuperAdminDashboard';
 import HelpCenter from './views/HelpCenter';
 import HL7OutboxViewer from './components/admin/HL7OutboxViewer';
 import Login from './views/Login';
 import PatientPortal from './views/PatientPortal';
 import api from './services/api';
+import { DialogProvider } from './context/DialogContext';
+import GlobalDialog from './components/GlobalDialog';
+import DrugDiscovery from './pages/DrugDiscovery';
+import TerminologyReviewDashboard from './components/admin/TerminologyReviewDashboard';
+
 
 // Authentication persistence helpers
 const getInitialAuthUser = () => {
@@ -52,10 +59,20 @@ function App() {
     });
 
     const [branches, setBranches] = useState([]);
-    const [activeBranch, setActiveBranch] = useState(null);
+    const [activeBranch, setActiveBranch] = useState(() => {
+        const stored = localStorage.getItem('active_branch');
+        try {
+            return stored ? JSON.parse(stored) : null;
+        } catch (e) {
+            return null;
+        }
+    });
     const [loading, setLoading] = useState(true);
     const [showRegister, setShowRegister] = useState(false);
-    const [selectedPatient, setSelectedPatient] = useState(null);
+    const [selectedPatient, setSelectedPatient] = useState(() => {
+        const saved = localStorage.getItem('selected_patient_id');
+        return saved ? parseInt(saved) : null;
+    });
     const [prescriptions, setPrescriptions] = useState([]);
     const [currentUser, setCurrentUser] = useState(getInitialAuthUser);
     const [userToken, setUserToken] = useState(() => localStorage.getItem('auth_token'));
@@ -72,13 +89,14 @@ function App() {
     const contentRef = useRef(null);
     const audioRef = useRef(new Audio('/hitech-scan.mp3'));
     const [systemVersion, setSystemVersion] = useState(null);
+    const [refreshTrigger, setRefreshTrigger] = useState(0);
+    const [stagedPrescription, setStagedPrescription] = useState(null);
 
 
 
     // Sync currentUser to API Headers & LocalStorage
     useEffect(() => {
         if (currentUser) {
-            setEchoAuthHeader(currentUser.email);
             localStorage.setItem('auth_user', JSON.stringify(currentUser));
         } else {
             localStorage.removeItem('auth_user');
@@ -109,6 +127,23 @@ function App() {
     useEffect(() => {
         localStorage.setItem('sidebar_slim', isSidebarSlim);
     }, [isSidebarSlim]);
+    
+    // Persist Patient & Branch Context
+    useEffect(() => {
+        if (selectedPatient) {
+            localStorage.setItem('selected_patient_id', selectedPatient);
+        } else {
+            localStorage.removeItem('selected_patient_id');
+        }
+    }, [selectedPatient]);
+
+    useEffect(() => {
+        if (activeBranch) {
+            localStorage.setItem('active_branch', JSON.stringify(activeBranch));
+        } else {
+            localStorage.removeItem('active_branch');
+        }
+    }, [activeBranch]);
 
     // Track sync state and prevent concurrent loops
     const syncLockRef = useRef({ userEmail: '', tenantId: null, isSyncing: false });
@@ -127,45 +162,52 @@ function App() {
                 return;
             }
 
-            let targetTenant = activeTenant;
-
             // Priority for Sync alignment:
             // 1. Explicit Impersonated context (highest priority to keep us in the clinic)
             // 2. Auth User's assigned home tenant (888 for Global Admin)
             const targetId = impersonatedTenant?.id || currentUser.tenant_id;
+            let targetTenant = activeTenant;
             
+            console.log(`[Tenant Sync] targetId: ${targetId}, currentUser.tenant_id: ${currentUser.tenant_id}, impersonated: ${impersonatedTenant?.id || 'NULL'}`);
+
             if (targetId) {
-                const matched = tenants.find(t => t.id === targetId);
-                if (matched && activeTenant?.id !== matched.id) {
+                const matched = tenants.find(t => t.id == targetId);
+                if (matched && activeTenant?.id != matched.id) {
                     targetTenant = matched;
+                } else if (!matched) {
+                    console.error(`[Tenant Sync] CRITICAL: Could not find tenant with ID ${targetId} in the tenants list!`);
                 }
-            } else if (!activeTenant && tenants.length > 0) {
+            } else if (!activeTenant && tenants.length > 0 && currentUser.role === 'GLOBAL_ADMIN') {
                 // Global Admin: default to first tenant if none active
                 targetTenant = tenants[0];
+                console.log(`[Tenant Sync] Global Admin fallback to first tenant: ${targetTenant.name}`);
             }
 
             // If we are already synced to the target, just clear the transition state
-            if (targetTenant?.id && targetTenant.id === syncLockRef.current.tenantId) {
+            if (targetTenant?.id && targetTenant.id == syncLockRef.current.tenantId) {
+                console.log(`[Tenant Sync] Already synced to ${targetTenant.id}. Bypassing.`);
                 setIsTransitioning(false);
                 return;
             }
 
             // Only sync if actual change is needed
             if (targetTenant) {
+                console.log(`[Tenant Sync] Initiating switch to: ${targetTenant.name} (ID: ${targetTenant.id})`);
                 syncLockRef.current.isSyncing = true;
                 setIsTransitioning(true);
                 try {
                     setTenantToken(targetTenant.id);
                     await handleTenantChange(targetTenant);
                     syncLockRef.current.tenantId = targetTenant.id;
+                    console.log(`[Tenant Sync] Successfully aligned to ${targetTenant.name}`);
                 } catch (err) {
-                    console.error("Sync failed", err);
+                    console.error("[Tenant Sync] Alignment failure", err);
                 } finally {
                     syncLockRef.current.isSyncing = false;
                     setIsTransitioning(false);
                 }
             } else {
-                // If no target tenant (e.g. Admin or no match found), still clear transition
+                console.log(`[Tenant Sync] No alignment required or possible. targetTenant is NULL.`);
                 setIsTransitioning(false);
             }
         };
@@ -185,10 +227,12 @@ function App() {
         }
     }, [activeTenant, currentUser]);
 
+
     const [activeView, setActiveView] = useState(() => {
         const hash = window.location.hash.replace('#', '').split('?')[0];
-        return ['dashboard', 'worklist', 'messages', 'message', 'appointments', 'appointment', 'patients', 'doctors', 'reports', 'audit', 'patient_profile', 'pharmacy', 'billing', 'clinical_notes', 'medicine_management', 'referrals', 'branch_management', 'hl7_transport', 'portal', 'superadmin'].includes(hash) ? hash : 'dashboard';
+        return ['dashboard', 'worklist', 'messages', 'message', 'appointments', 'appointment', 'patients', 'doctors', 'reports', 'audit', 'patient_profile', 'pharmacy', 'billing', 'clinical_notes', 'medicine_management', 'referrals', 'branch_management', 'hl7_transport', 'portal', 'superadmin', 'drug_discovery', 'terminology_review'].includes(hash) ? hash : 'dashboard';
     });
+
 
     // Hash sync: State -> URL + Context-aware data fetching
     useEffect(() => {
@@ -215,9 +259,16 @@ function App() {
 
     useEffect(() => {
         fetchInitialData();
-    }, []);
+    }, [userToken]);
 
     const fetchInitialData = async () => {
+        // Guard: Do not attempt to fetch protected data if no token exists
+        // This prevents 401 interceptors from triggering reload loops during login
+        if (!userToken) {
+            setLoading(false);
+            return;
+        }
+
         try {
             const tenantData = await getTenants();
             setTenants(tenantData);
@@ -226,7 +277,10 @@ function App() {
             const version = await getSystemVersion();
             setSystemVersion(version);
         } catch (err) {
-            console.error("Initialization failed", err);
+            // Only log if it's not an abort error (which is expected on intentional navigation/reload)
+            if (err.name !== 'CanceledError' && err.code !== 'ERR_CANCELED') {
+                console.error("Initialization failed", err);
+            }
         } finally {
             setLoading(false);
         }
@@ -243,17 +297,31 @@ function App() {
         localStorage.setItem('simulated_user_email', user.email);
     };
 
+    const handlePrescribeFromDiscovery = (prescriptionData) => {
+        if (!selectedPatient) {
+            window.alert('Please select a patient from the Registry before initiating a high-fidelity prescription handoff.');
+            setActiveView('patients');
+            return;
+        }
+        setStagedPrescription(prescriptionData);
+        setActiveView('patient_profile');
+    };
+
     useEffect(() => {
-        if (tenants.length > 0) {
-            // Sync the activeTenant state based on priorities
-            const targetId = impersonatedTenant?.id || currentUser?.tenant_id || activeTenant?.id;
+        if (tenants.length > 0 && currentUser) {
+            // Priority for Sync alignment:
+            // 1. Explicit Impersonated context
+            // 2. Auth User's assigned home tenant
+            const targetId = impersonatedTenant?.id || currentUser.tenant_id;
             const targetTenant = tenants.find(t => t.id === targetId);
             
-            if (targetTenant && targetTenant.id !== activeTenant?.id) {
-                console.log(`[Tenant Sync] Aligning context to: ${targetTenant.name} (Source: ${impersonatedTenant ? 'Impersonation' : 'Home'})`);
-                setActiveTenant(targetTenant);
-            } else if (!activeTenant && tenants.length > 0) {
-                // Global Admin fallback
+            if (targetTenant) {
+                if (targetTenant.id !== activeTenant?.id) {
+                    console.log(`[Tenant Sync] Aligning context to: ${targetTenant.name} (Source: ${impersonatedTenant ? 'Impersonation' : 'Home'})`);
+                    setActiveTenant(targetTenant);
+                }
+            } else if (currentUser.role === 'GLOBAL_ADMIN' && !activeTenant && tenants.length > 0) {
+                // Global Admin fallback only (to the first tenant in the list for orchestration)
                 setActiveTenant(tenants[0]);
             }
         }
@@ -295,17 +363,27 @@ function App() {
             setBranchToken(initialBranch?.id);
 
             // Role-based fetching to prevent 403s
-            const fetchPromises = [getOrders()];
-            if (['ADMIN', 'DOCTOR', 'FRONT_DESK'].includes(currentUser.role)) {
-                fetchPromises.push(getPatients());
-            }
+            const fetchPromises = [];
+            const canSeeOrders = ['ADMIN', 'DOCTOR', 'TECH', 'DIAGNOSTIC_APPROVER'].includes(currentUser.role);
+            const canSeePatients = ['ADMIN', 'DOCTOR', 'FRONT_DESK', 'DIAGNOSTIC_APPROVER'].includes(currentUser.role);
+
+            if (canSeeOrders) fetchPromises.push(getOrders());
+            if (canSeePatients) fetchPromises.push(getPatients());
 
             const results = await Promise.all(fetchPromises);
-            setOrders(results[0]);
-            if (results.length > 1) {
-                setPatients(results[1]?.data || []);
+            
+            // Map results back to state based on what was fetched
+            let resultIdx = 0;
+            if (canSeeOrders) {
+                setOrders(results[resultIdx++] || []);
             } else {
-                setPatients([]); // Clear patients if no access
+                setOrders([]);
+            }
+
+            if (canSeePatients) {
+                setPatients(results[resultIdx++]?.data || []);
+            } else {
+                setPatients([]);
             }
 
             // Fetch Dashboard Analytics & Activity
@@ -356,6 +434,7 @@ function App() {
 
     const onPatientAdded = (newPatient) => {
         setPatients([...patients, newPatient]);
+        setRefreshTrigger(prev => prev + 1);
         setShowRegister(false);
     };
 
@@ -388,21 +467,22 @@ function App() {
         const rolePermissions = {
             'dashboard': ['ADMIN', 'DOCTOR', 'TECH', 'DIAGNOSTIC_APPROVER', 'FRONT_DESK'],
             'worklist': ['ADMIN', 'DOCTOR', 'TECH', 'DIAGNOSTIC_APPROVER'],
-            'messages': ['ADMIN', 'DOCTOR', 'TECH', 'DIAGNOSTIC_APPROVER'],
+            'messages': ['ADMIN', 'DOCTOR', 'TECH', 'DIAGNOSTIC_APPROVER', 'FRONT_DESK'],
             'appointments': ['ADMIN', 'DOCTOR', 'FRONT_DESK'],
             'pharmacy': ['ADMIN', 'DOCTOR', 'TECH'],
             'medicine_management': ['ADMIN', 'DOCTOR', 'TECH'],
             'billing': ['ADMIN', 'FRONT_DESK'],
             'clinical_notes': ['ADMIN', 'DOCTOR'],
             'patients': ['ADMIN', 'DOCTOR', 'FRONT_DESK', 'DIAGNOSTIC_APPROVER'],
-            'doctors': ['ADMIN'],
+            'doctors': ['ADMIN', 'DOCTOR'],
             'reports': ['ADMIN', 'FRONT_DESK', 'DOCTOR', 'DIAGNOSTIC_APPROVER'],
             'audit': ['ADMIN', 'DOCTOR'],
             'tenant_management': ['ADMIN'],
             'branch_management': ['ADMIN'],
             'patient_profile': ['ADMIN', 'DOCTOR', 'FRONT_DESK', 'DIAGNOSTIC_APPROVER'],
             'hl7_transport': ['ADMIN'],
-            'superadmin': ['GLOBAL_ADMIN']
+            'superadmin': ['GLOBAL_ADMIN'],
+            'terminology_review': ['ADMIN', 'GLOBAL_ADMIN']
         };
         const allowedRoles = rolePermissions[view];
         if (!allowedRoles) return false;
@@ -434,10 +514,11 @@ function App() {
     }
 
     return (
-        <div className="flex h-screen bg-slate-50 text-slate-900 font-sans overflow-hidden">
+        <DialogProvider>
+            <div className="flex h-screen bg-slate-50 text-slate-900 font-sans overflow-hidden">
             {/* Impersonation Warning Banner */}
             {impersonatedTenant && (
-                <div className="fixed top-0 left-0 right-0 z-[100] flex items-center justify-between px-6 py-2.5 bg-amber-500 text-white text-xs font-black uppercase tracking-widest shadow-lg">
+                <div className="fixed top-0 left-0 right-0 z-[500] flex items-center justify-between px-6 py-2.5 bg-amber-500 text-white text-xs font-black uppercase tracking-widest shadow-lg">
                     <div className="flex items-center gap-3">
                         <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
                         <span>⚠ IMPERSONATING — {impersonatedTenant.name} (ID: {impersonatedTenant.id}) — All actions are logged to the Global Audit Ledger</span>
@@ -474,6 +555,7 @@ function App() {
                 setIsSlim={setIsSidebarSlim}
                 systemVersion={systemVersion}
                 onClose={() => setIsSidebarOpen(false)}
+                onLogout={handleLogout}
             />
 
             <main className={`flex-1 flex flex-col min-w-0 h-screen overflow-hidden transition-all duration-300 ${isSidebarSlim ? 'lg:ml-20' : 'lg:ml-64'}`}>
@@ -500,26 +582,44 @@ function App() {
                 >
                     <div className="p-10 space-y-10 max-w-[1600px] mx-auto min-h-full">
                     {(() => {
-                        // Shield Governance views from unmounting during background syncs
-                        const isGovernanceView = ['superadmin', 'audit', 'reports', 'hl7_transport'].includes(activeView);
-                        const showBlockingOverlay = (loading || isTransitioning) && !isGovernanceView;
+                        // Governance views that are stable even without a clinical tenant context
+                        const isGovernanceView = ['superadmin', 'audit', 'hl7_transport'].includes(activeView);
                         
-                        if (showBlockingOverlay) {
+                        // SAFETY GATE: Ensure activeTenant matches currentUser's tenant_id (or impersonation) before rendering
+                        // This prevents race-condition API calls to Tenant ID 1 during transition.
+                        const expectedTenantId = impersonatedTenant?.id || currentUser?.tenant_id;
+                        const isUnaligned = !impersonatedTenant && currentUser?.role !== 'GLOBAL_ADMIN' && activeTenant?.id != expectedTenantId;
+
+                        const showLoadingOverlay = (loading || isTransitioning);
+                        const showUnalignedOverlay = isUnaligned && !isGovernanceView;
+                        
+                        if (showLoadingOverlay || showUnalignedOverlay) {
                             return (
                                 <div className="flex flex-col items-center justify-center p-20 bg-white rounded-[2.5rem] shadow-sleek">
                                     <div className="w-16 h-16 border-4 border-his-green-500 border-t-transparent rounded-full animate-spin mb-6" />
                                     <h3 className="text-xl font-black text-slate-900 tracking-tight italic">
-                                        {isTransitioning ? "Securing Tenant Environment..." : "Initializing juanclinic Secure Environment..."}
+                                        {showUnalignedOverlay ? "Synchronizing Organization Context..." : (isTransitioning ? "Securing Tenant Environment..." : "Initializing juanclinic Secure Environment...")}
                                     </h3>
+                                    {showUnalignedOverlay && <p className="text-[10px] font-bold text-slate-400 mt-4 uppercase tracking-[0.2em]">Enforcing Multi-Tenant Isolation Boundaries</p>}
                                 </div>
                             );
                         }
                         return null;
                     })()}
 
-                    {/* Content View is rendered conditionally but Governance views have stability */}
-                    {!((loading || isTransitioning) && !['superadmin', 'audit', 'reports', 'hl7_transport'].includes(activeView)) && (
-                        <div className="space-y-10">
+                    {/* Content View is rendered only when fully aligned and loaded */}
+                    {(() => {
+                        const isGovernanceView = ['superadmin', 'audit', 'hl7_transport'].includes(activeView);
+                        const expectedTenantId = impersonatedTenant?.id || currentUser?.tenant_id;
+                        const isUnaligned = !impersonatedTenant && currentUser?.role !== 'GLOBAL_ADMIN' && activeTenant?.id != expectedTenantId;
+                        
+                        // Hide content if loading or unaligned (unless it's a governance view)
+                        if ((loading || isTransitioning || isUnaligned) && !isGovernanceView) {
+                            return null;
+                        }
+
+                        return (
+                            <div className="space-y-10">
                             {/* Modern View Router */}
                             {(() => {
                                 switch (activeView) {
@@ -535,194 +635,193 @@ function App() {
                                                     <div className="flex gap-3">
                                                         {!(currentUser.role === 'GLOBAL_ADMIN' && !impersonatedTenant) && (
                                                             <button onClick={() => setShowRegister(true)} className="px-6 py-3 bg-his-green-500 text-white text-xs font-black rounded-2xl hover:bg-his-green-600 transition-all uppercase tracking-widest shadow-xl shadow-his-green-500/20 flex items-center gap-2">
-                                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 4v16m8-8H4" /></svg>
-                                                                New Patient
+                                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" /></svg>
+                                                                <span>Register Patient</span>
                                                             </button>
                                                         )}
                                                     </div>
                                                 </div>
 
-                                                {/* Stats Bar */}
-                                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                                                    <StatCard
-                                                        title="Total Patients"
-                                                        value={patients.length}
-                                                        percentage="10.2"
-                                                        isUp={true}
-                                                        icon="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-                                                        colorClass="bg-blue-50 text-blue-500"
-                                                    />
-                                                    <StatCard
-                                                        title="Active Orders"
-                                                        value={orders.length}
-                                                        percentage="2.4"
-                                                        isUp={false}
-                                                        icon="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
-                                                        colorClass="bg-purple-50 text-purple-500"
-                                                    />
-                                                    <StatCard
-                                                        title="Available Doctors"
-                                                        value={doctorsCount}
-                                                        percentage="0"
-                                                        isUp={true}
-                                                        icon="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                                                        colorClass="bg-his-green-50 text-his-green-500"
-                                                    />
-                                                    <StatCard
-                                                        title="Total Revenue"
-                                                        value={`₱${dashboardStats?.stats?.total_revenue?.toLocaleString() || '0'}`}
-                                                        percentage={dashboardStats?.stats?.completion_rate || '0'}
-                                                        isUp={true}
-                                                        icon="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"
-                                                        colorClass="bg-orange-50 text-orange-500"
-                                                    />
-                                                </div>
+                                                {/* Dashboard Content */}
+                                                <div className="space-y-10">
+                                                    {/* Stat Grid */}
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                                                        <StatCard
+                                                            title="Total Capacity"
+                                                            value={patients.length}
+                                                            trend="+12% vs last month"
+                                                            color="bg-white"
+                                                            icon="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                                                        />
+                                                        <StatCard
+                                                            title="Doctors Active"
+                                                            value={doctorsCount}
+                                                            trend="Current shift"
+                                                            color="bg-white"
+                                                            icon="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+                                                        />
+                                                        <StatCard
+                                                            title="Reports Generated"
+                                                            value={dashboardStats?.stats?.total_revenue || 0}
+                                                            trend="Statutory compliant"
+                                                            color="bg-white"
+                                                            icon="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                                        />
+                                                        <StatCard
+                                                            title="HL7 Packets"
+                                                            value={orders.length}
+                                                            trend="Last 24h traffic"
+                                                            color="bg-white"
+                                                            icon="M13 10V3L4 14h7v7l9-11h-7z"
+                                                        />
+                                                    </div>
 
-                                                <div className="grid grid-cols-1 xl:grid-cols-3 gap-10">
-                                                    <div className="xl:col-span-2 space-y-10">
+                                                    <div className="grid grid-cols-1 xl:grid-cols-3 gap-10">
                                                         {/* Patient Registry Section */}
-                                                        <div className="bg-white rounded-[2.5rem] p-10 shadow-sleek border border-his-slate-100 hover:shadow-2xl hover:shadow-his-slate-200/40 transition-all duration-500">
-                                                            <div className="flex justify-between items-center mb-10">
-                                                                <div>
-                                                                    <h2 className="text-xl font-black text-slate-900 tracking-tight">Patient Registry</h2>
-                                                                    <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] mt-2">Managing data for {activeTenant?.name}</p>
+                                                        <div className="xl:col-span-2 space-y-10">
+                                                            <div className="bg-white rounded-[2.5rem] p-10 shadow-sleek border border-his-slate-100 hover:shadow-2xl hover:shadow-his-slate-200/40 transition-all duration-500">
+                                                                <div className="flex justify-between items-center mb-10">
+                                                                    <div>
+                                                                        <h2 className="text-xl font-black text-slate-900 tracking-tight">Active Patient Registry</h2>
+                                                                        <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] mt-2">Latest clinical admissions</p>
+                                                                    </div>
+                                                                    <div className="flex gap-4">
+                                                                        <button onClick={() => setShowRegister(true)} className="px-6 py-3 bg-his-green-500 hover:bg-his-green-600 active:scale-95 text-white rounded-2xl text-[10px] font-black transition-all shadow-xl shadow-his-green-500/20 uppercase tracking-widest">Register Patient</button>
+                                                                        <button onClick={() => setActiveView('patients')} className="px-6 py-3 bg-his-slate-50 text-slate-400 rounded-2xl text-[10px] font-black hover:bg-his-slate-100 transition-all uppercase tracking-widest border border-slate-100">View All</button>
+                                                                    </div>
                                                                 </div>
-                                                                <button className="text-[10px] font-black text-his-green-500 uppercase tracking-widest border-b-2 border-his-green-500/10 pb-1 hover:border-his-green-500 transition-all">
-                                                                    View All Patients
-                                                                </button>
-                                                            </div>
-
-                                                            <div className="overflow-x-auto -mx-10 px-10">
-                                                                <table className="w-full text-left border-separate border-spacing-0">
-                                                                    <thead>
-                                                                        <tr className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em]">
-                                                                            <th className="pb-6 pl-2">Patient Details</th>
-                                                                            <th className="pb-6">Gender</th>
-                                                                            <th className="pb-6">DOB</th>
-                                                                            <th className="pb-6">ID System</th>
-                                                                            <th className="pb-6 text-right pr-2">Status</th>
-                                                                        </tr>
-                                                                    </thead>
-                                                                    <tbody className="divide-y divide-slate-50">
-                                                                        {patients.map(p => (
-                                                                            <tr
-                                                                                key={p.id}
-                                                                                onClick={() => {
-                                                                                    setSelectedPatient(p.id);
-                                                                                    setActiveView('patient_profile');
-                                                                                }}
-                                                                                className="group hover:bg-his-slate-100/30 transition-all duration-300 cursor-pointer"
-                                                                            >
-                                                                                <td className="py-6 pl-2">
-                                                                                    <div className="flex items-center gap-4">
-                                                                                        <div className="w-12 h-12 rounded-2xl bg-his-slate-100 flex items-center justify-center text-slate-400 font-black text-sm group-hover:bg-his-green-50 group-hover:text-his-green-500 transition-colors duration-300">
-                                                                                            {p.first_name[0]}{p.last_name[0]}
-                                                                                        </div>
-                                                                                        <div>
-                                                                                            <p className="font-black text-sm text-slate-900 leading-tight">{p.first_name} {p.last_name}</p>
-                                                                                            <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">Medical Record</p>
-                                                                                        </div>
-                                                                                    </div>
-                                                                                </td>
-                                                                                <td className="py-6 text-xs text-slate-500 font-bold uppercase tracking-widest">{p.gender === 'M' ? 'Male' : 'Female'}</td>
-                                                                                <td className="py-6 text-xs text-slate-500 font-bold uppercase tracking-widest">{p.dob}</td>
-                                                                                <td className="py-6">
-                                                                                    <span className="text-[10px] font-mono font-bold text-slate-400 bg-his-slate-50 px-2 py-1 rounded-md border border-slate-100 italic">
-                                                                                        {p.patient_external_id}
-                                                                                    </span>
-                                                                                </td>
-                                                                                <td className="py-6 text-right pr-2">
-                                                                                    <div className="flex items-center justify-end gap-2">
-                                                                                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                                                                                        <span className="text-[10px] font-black uppercase text-emerald-600 tracking-widest">Active</span>
-                                                                                    </div>
-                                                                                </td>
+                                                                <div className="overflow-x-auto">
+                                                                    <table className="w-full">
+                                                                        <thead>
+                                                                            <tr className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em]">
+                                                                                <th className="pb-6 pl-2">Patient Details</th>
+                                                                                <th className="pb-6">Gender</th>
+                                                                                <th className="pb-6">DOB</th>
+                                                                                <th className="pb-6">ID System</th>
+                                                                                <th className="pb-6 text-right pr-2">Status</th>
                                                                             </tr>
-                                                                        ))}
-                                                                    </tbody>
-                                                                </table>
+                                                                        </thead>
+                                                                        <tbody className="divide-y divide-slate-50">
+                                                                            {patients.map(p => (
+                                                                                <tr
+                                                                                    key={p.id}
+                                                                                    onClick={() => {
+                                                                                        setSelectedPatient(p.id);
+                                                                                        setActiveView('patient_profile');
+                                                                                    }}
+                                                                                    className="group hover:bg-his-slate-100/30 transition-all duration-300 cursor-pointer"
+                                                                                >
+                                                                                    <td className="py-6 pl-2">
+                                                                                        <div className="flex items-center gap-4">
+                                                                                            <div className="w-12 h-12 rounded-2xl bg-his-slate-100 flex items-center justify-center text-slate-400 font-black text-sm group-hover:bg-his-green-50 group-hover:text-his-green-500 transition-colors duration-300">
+                                                                                                {p.first_name[0]}{p.last_name[0]}
+                                                                                            </div>
+                                                                                            <div>
+                                                                                                <p className="font-black text-sm text-slate-900 leading-tight">{p.first_name} {p.last_name}</p>
+                                                                                                <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">Medical Record</p>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    </td>
+                                                                                    <td className="py-6 text-xs text-slate-500 font-bold uppercase tracking-widest">{p.gender === 'M' ? 'Male' : 'Female'}</td>
+                                                                                    <td className="py-6 text-xs text-slate-500 font-bold uppercase tracking-widest">{p.dob}</td>
+                                                                                    <td className="py-6">
+                                                                                        <span className="text-[10px] font-mono font-bold text-slate-400 bg-his-slate-50 px-2 py-1 rounded-md border border-slate-100 italic">
+                                                                                            {p.patient_external_id}
+                                                                                        </span>
+                                                                                    </td>
+                                                                                    <td className="py-6 text-right pr-2">
+                                                                                        <div className="flex items-center justify-end gap-2">
+                                                                                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                                                                            <span className="text-[10px] font-black uppercase text-emerald-600 tracking-widest">Active</span>
+                                                                                        </div>
+                                                                                    </td>
+                                                                                </tr>
+                                                                            ))}
+                                                                        </tbody>
+                                                                    </table>
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Clinical Worklist Section */}
+                                                            <div className="bg-white rounded-[2.5rem] p-10 shadow-sleek border border-his-slate-100 hover:shadow-2xl hover:shadow-his-slate-200/40 transition-all duration-500">
+                                                                <div className="flex justify-between items-center mb-10">
+                                                                    <div>
+                                                                        <h2 className="text-xl font-black text-slate-900 tracking-tight">Clinical Worklist</h2>
+                                                                        <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] mt-2">Real-time HL7 Feed</p>
+                                                                    </div>
+                                                                    <button className="w-10 h-10 rounded-xl bg-slate-50 text-slate-400 flex items-center justify-center hover:bg-his-green-50 hover:text-his-green-500 transition-all">
+                                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                                                                    </button>
+                                                                </div>
+                                                                <Worklist
+                                                                    orders={orders}
+                                                                    loading={loading}
+                                                                    onStatusUpdate={async (id, status) => {
+                                                                        await updateOrder(id, { status });
+                                                                        const orderData = await getOrders();
+                                                                        setOrders(orderData);
+                                                                    }}
+                                                                />
                                                             </div>
                                                         </div>
 
-                                                        {/* Clinical Worklist Section */}
-                                                        <div className="bg-white rounded-[2.5rem] p-10 shadow-sleek border border-his-slate-100 hover:shadow-2xl hover:shadow-his-slate-200/40 transition-all duration-500">
-                                                            <div className="flex justify-between items-center mb-10">
-                                                                <div>
-                                                                    <h2 className="text-xl font-black text-slate-900 tracking-tight">Clinical Worklist</h2>
-                                                                    <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] mt-2">Real-time HL7 Feed</p>
+                                                        {/* Recent Activity / Side Panel */}
+                                                        <div className="space-y-10">
+                                                            <div className="bg-white rounded-[2.5rem] p-10 shadow-sleek border border-his-slate-100">
+                                                                <h3 className="text-sm font-black text-slate-900 uppercase tracking-[0.2em] mb-10 border-b border-his-slate-50 pb-6 flex items-center gap-3">
+                                                                    <div className="w-2 h-2 rounded-full bg-his-green-500" />
+                                                                    Recent Activity
+                                                                </h3>
+                                                                <div className="space-y-10 relative before:absolute before:left-[7px] before:top-2 before:bottom-2 before:w-[2px] before:bg-his-slate-50">
+                                                                    {recentActivity.length > 0 ? recentActivity.map((log, i) => (
+                                                                        <div key={log.id} className="flex gap-6 relative z-10 transition-transform hover:translate-x-1 cursor-default group">
+                                                                            <div className="w-4 h-4 rounded-full bg-white border-4 border-his-green-500 shrink-0 group-hover:bg-his-green-500 transition-colors" />
+                                                                            <div>
+                                                                                <p className="text-xs font-black text-slate-900 leading-tight capitalize">
+                                                                                    {log.event.replace('_', ' ')}: {log.auditable_type.split('\\').pop()}
+                                                                                </p>
+                                                                                <p className="text-[10px] font-bold text-slate-400 mt-2 uppercase tracking-widest">
+                                                                                    {new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {log.user?.name || 'System'}
+                                                                                </p>
+                                                                            </div>
+                                                                        </div>
+                                                                    )) : (
+                                                                        <p className="text-[10px] font-bold text-slate-300 uppercase italic">No recent activity</p>
+                                                                    )}
                                                                 </div>
-                                                                <button className="w-10 h-10 rounded-xl bg-slate-50 text-slate-400 flex items-center justify-center hover:bg-his-green-50 hover:text-his-green-500 transition-all">
-                                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                                                                <button className="w-full mt-10 py-5 bg-his-slate-100/50 text-slate-500 text-[10px] font-black rounded-2xl hover:bg-his-slate-100 hover:text-slate-900 transition-all uppercase tracking-widest border border-transparent hover:border-his-slate-200">
+                                                                    Full Audit History
                                                                 </button>
                                                             </div>
-                                                            <Worklist
-                                                                orders={orders}
-                                                                loading={loading}
-                                                                onStatusUpdate={async (id, status) => {
-                                                                    await updateOrder(id, { status });
-                                                                    const orderData = await getOrders();
-                                                                    setOrders(orderData);
-                                                                }}
-                                                            />
-                                                        </div>
-                                                    </div>
 
-                                                    {/* Recent Activity / Side Panel */}
-                                                    <div className="space-y-10">
-                                                        <div className="bg-white rounded-[2.5rem] p-10 shadow-sleek border border-his-slate-100">
-                                                            <h3 className="text-sm font-black text-slate-900 uppercase tracking-[0.2em] mb-10 border-b border-his-slate-50 pb-6 flex items-center gap-3">
-                                                                <div className="w-2 h-2 rounded-full bg-his-green-500" />
-                                                                Recent Activity
-                                                            </h3>
-                                                            <div className="space-y-10 relative before:absolute before:left-[7px] before:top-2 before:bottom-2 before:w-[2px] before:bg-his-slate-50">
-                                                                {recentActivity.length > 0 ? recentActivity.map((log, i) => (
-                                                                    <div key={log.id} className="flex gap-6 relative z-10 transition-transform hover:translate-x-1 cursor-default group">
-                                                                        <div className="w-4 h-4 rounded-full bg-white border-4 border-his-green-500 shrink-0 group-hover:bg-his-green-500 transition-colors" />
-                                                                        <div>
-                                                                            <p className="text-xs font-black text-slate-900 leading-tight capitalize">
-                                                                                {log.event.replace('_', ' ')}: {log.auditable_type.split('\\').pop()}
-                                                                            </p>
-                                                                            <p className="text-[10px] font-bold text-slate-400 mt-2 uppercase tracking-widest">
-                                                                                {new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {log.user?.name || 'System'}
-                                                                            </p>
+                                                            {activeTenant && (
+                                                                <div className="bg-slate-900 rounded-[2.5rem] p-10 text-white shadow-2xl shadow-slate-900/40 relative overflow-hidden group">
+                                                                    <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:scale-110 transition-transform duration-700">
+                                                                        <svg className="w-32 h-32" fill="currentColor" viewBox="0 0 20 20">
+                                                                            <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
+                                                                        </svg>
+                                                                    </div>
+                                                                    <div className="relative z-10">
+                                                                        <div className="flex items-center gap-2 mb-6">
+                                                                            <div className="w-2 h-2 rounded-full bg-his-green-500 animate-pulse" />
+                                                                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-his-green-500">Security Active</span>
                                                                         </div>
-                                                                    </div>
-                                                                )) : (
-                                                                    <p className="text-[10px] font-bold text-slate-300 uppercase italic">No recent activity</p>
-                                                                )}
-                                                            </div>
-                                                            <button className="w-full mt-10 py-5 bg-his-slate-100/50 text-slate-500 text-[10px] font-black rounded-2xl hover:bg-his-slate-100 hover:text-slate-900 transition-all uppercase tracking-widest border border-transparent hover:border-his-slate-200">
-                                                                Full Audit History
-                                                            </button>
-                                                        </div>
-
-                                                        {activeTenant && (
-                                                            <div className="bg-slate-900 rounded-[2.5rem] p-10 text-white shadow-2xl shadow-slate-900/40 relative overflow-hidden group">
-                                                                <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:scale-110 transition-transform duration-700">
-                                                                    <svg className="w-32 h-32" fill="currentColor" viewBox="0 0 20 20">
-                                                                        <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
-                                                                    </svg>
-                                                                </div>
-                                                                <div className="relative z-10">
-                                                                    <div className="flex items-center gap-2 mb-6">
-                                                                        <div className="w-2 h-2 rounded-full bg-his-green-500 animate-pulse" />
-                                                                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-his-green-500">Security Active</span>
-                                                                    </div>
-                                                                    <h3 className="text-2xl font-black leading-tight mb-4">Multi-Tenant<br />Isolation</h3>
-                                                                    <p className="text-xs text-slate-400 font-bold leading-relaxed mb-10">All clinical data is strictly cryptographically isolated for {activeTenant.name}.</p>
-                                                                    <div className="flex -space-x-3">
-                                                                        {[1, 2, 3, 4].map(i => (
-                                                                            <div key={i} className="w-10 h-10 rounded-2xl border-4 border-slate-900 overflow-hidden shadow-xl">
-                                                                                <img src={`https://ui-avatars.com/api/?name=User${i}&background=334155&color=fff`} className="w-full h-full object-cover" />
+                                                                        <h3 className="text-2xl font-black leading-tight mb-4">Multi-Tenant<br />Isolation</h3>
+                                                                        <p className="text-xs text-slate-400 font-bold leading-relaxed mb-10">All clinical data is strictly cryptographically isolated for {activeTenant.name}.</p>
+                                                                        <div className="flex -space-x-3">
+                                                                            {[1, 2, 3, 4].map(i => (
+                                                                                <div key={i} className="w-10 h-10 rounded-2xl border-4 border-slate-900 overflow-hidden shadow-xl">
+                                                                                    <img src={`https://ui-avatars.com/api/?name=User${i}&background=334155&color=fff`} className="w-full h-full object-cover" />
+                                                                                </div>
+                                                                            ))}
+                                                                            <div className="w-10 h-10 rounded-2xl border-4 border-slate-900 bg-his-green-500 flex items-center justify-center text-[10px] font-black text-white shadow-xl">
+                                                                                +12
                                                                             </div>
-                                                                        ))}
-                                                                        <div className="w-10 h-10 rounded-2xl border-4 border-slate-900 bg-his-green-500 flex items-center justify-center text-[10px] font-black text-white shadow-xl">
-                                                                            +12
                                                                         </div>
                                                                     </div>
                                                                 </div>
-                                                            </div>
-                                                        )}
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </>
@@ -740,6 +839,7 @@ function App() {
                                         return (
                                             <Patients
                                                 activeTenant={activeTenant}
+                                                refreshTrigger={refreshTrigger}
                                                 onOpenPatient={(id) => {
                                                     setSelectedPatient(id);
                                                     setActiveView('patient_profile');
@@ -774,19 +874,35 @@ function App() {
                                             </div>
                                         );
                                     case 'patient_profile':
-                                        return <PatientProfile patientId={selectedPatient} onBack={() => setActiveView('dashboard')} />;
+                                        return <PatientProfile 
+                                            patientId={selectedPatient} 
+                                            onBack={() => {
+                                                setSelectedPatient(null);
+                                                setActiveView('dashboard');
+                                            }} 
+                                            activeTenant={activeTenant} 
+                                            stagedPrescription={stagedPrescription}
+                                            setStagedPrescription={setStagedPrescription}
+                                        />;
                                     case 'referrals':
                                         return <Referrals activeTenant={activeTenant} activeBranch={activeBranch} />;
                                     case 'branch_management':
                                         return <BranchManagement activeTenant={activeTenant} tenants={tenants} />;
                                     case 'tenant_management':
                                         return <TenantManagement onTenantUpdate={fetchInitialData} />;
+                                    case 'notification_settings':
+                                        return <NotificationSettings />;
                                     case 'hl7_transport':
                                         return <HL7OutboxViewer />;
                                     case 'superadmin':
                                         return <SuperAdminDashboard />;
+                                    case 'terminology_review':
+                                        return <TerminologyReviewDashboard />;
+                                    case 'drug_discovery':
+                                        return <DrugDiscovery onPrescribe={handlePrescribeFromDiscovery} />;
                                     case 'help':
                                         return <HelpCenter />;
+
                                     default:
                                         return (
                                             <div className="flex items-center justify-center p-20 bg-white rounded-[2.5rem] border border-his-slate-100 shadow-sleek">
@@ -799,35 +915,40 @@ function App() {
                                                 </div>
                                             </div>
                                         );
-                                }
-                            })()}
-                        </div>
-                    )}
-                </div>
-            </div>
-        </main>
-
-            {showRegister && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md transition-opacity duration-300">
-                    <div className="bg-white rounded-[3rem] p-12 max-w-2xl w-full shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] relative overflow-hidden">
-                        <div className="absolute top-0 right-0 p-8">
-                            <button onClick={() => setShowRegister(false)} className="w-12 h-12 flex items-center justify-center rounded-2xl bg-his-slate-50 text-slate-400 hover:bg-rose-50 hover:text-rose-500 transition-all group">
-                                <svg className="w-6 h-6 group-hover:rotate-90 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </button>
-                        </div>
-                        <RegisterPatientForm
-                            onPatientAdded={onPatientAdded}
-                            onClose={() => setShowRegister(false)}
-                            activeTenant={activeTenant}
-                        />
+                                    }
+                                })()}
+                            </div>
+                        );
+                    })()}
                     </div>
                 </div>
-            )}
+            </main>
 
-            <InteractiveGuide activeView={activeView} />
-        </div>
+                {showRegister && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md transition-opacity duration-300">
+                        <div className="bg-white rounded-[3rem] p-12 max-w-2xl w-full shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] relative overflow-hidden">
+                            <div className="absolute top-0 right-0 p-8">
+                                <button onClick={() => setShowRegister(false)} className="w-12 h-12 flex items-center justify-center rounded-2xl bg-his-slate-50 text-slate-400 hover:bg-rose-50 hover:text-rose-500 transition-all group">
+                                    <svg className="w-6 h-6 group-hover:rotate-90 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+                            <RegisterPatientForm
+                                onPatientAdded={onPatientAdded}
+                                onClose={() => setShowRegister(false)}
+                                activeTenant={activeTenant}
+                            />
+                        </div>
+                    </div>
+                )}
+
+                <InteractiveGuide activeView={activeView} />
+
+                {/* Global Dialog Component */}
+                <GlobalDialog />
+            </div>
+        </DialogProvider>
     );
 }
 

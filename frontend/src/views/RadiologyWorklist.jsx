@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import ResultEntryForm from '../components/ResultEntryForm';
 import RadiologyResultForm from '../components/RadiologyResultForm';
 import ResultApprovalView from '../components/ResultApprovalView';
+import { useDialog } from '../context/DialogContext';
 
 const RadiologyWorklist = ({ currentUser, activeTenant, searchTerm }) => {
+    const { alert } = useDialog();
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedOrder, setSelectedOrder] = useState(null);
@@ -33,6 +35,10 @@ const RadiologyWorklist = ({ currentUser, activeTenant, searchTerm }) => {
             setOrders(Array.isArray(data) ? data : []);
         } catch (error) {
             console.error("Failed to fetch worklist", error);
+            await alert({
+                title: 'Data Fetch Error',
+                message: 'Internal error while retrieving clinical queue.'
+            });
             setOrders([]);
         } finally {
             setLoading(false);
@@ -76,7 +82,10 @@ const RadiologyWorklist = ({ currentUser, activeTenant, searchTerm }) => {
             fetchWorklist();
         } catch (error) {
             console.error("Update failed", error);
-            alert(`Update failed: ${error.message}`);
+            await alert({
+                title: 'Operation Failed',
+                message: `Update failed: ${error.message}`
+            });
         }
     };
 
