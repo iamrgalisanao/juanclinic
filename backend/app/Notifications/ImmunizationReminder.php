@@ -47,21 +47,43 @@ class ImmunizationReminder extends JuanClinicNotification
      */
     public function toMail(object $notifiable): MailMessage
     {
-        $clinicName = config('mail.from.name', 'JuanClinic');
         $vaccine = $this->vaccineData['vaccine_name'];
         $dose = $this->vaccineData['dose_number'];
         $dueDate = \Carbon\Carbon::parse($this->vaccineData['due_date'])->format('M d, Y');
+        $tier = $this->vaccineData['tier'] ?? 'DUE_TODAY';
 
-        return (new MailMessage)
-            ->subject("Immunization Reminder: {$vaccine} Dose #{$dose}")
-            ->greeting("Hello {$notifiable->name},")
-            ->line("This is a reminder that **{$this->patient->name}** has an upcoming or overdue immunization milestone.")
-            ->line("**Vaccine:** {$vaccine}")
-            ->line("**Dose:** #{$dose}")
+        $subject = match($tier) {
+            'UPCOMING' => "Upcoming Immunization: {$vaccine} (Dose #{$dose})",
+            'OVERDUE' => "URGENT: Immunization Overdue for {$this->patient->name}",
+            default => "Immunization Due Today: {$vaccine} Dose #{$dose}",
+        };
+
+        $educationalSnippet = match(strtoupper($vaccine)) {
+            'BCG' => 'BCG protects infants against tuberculosis (TB), which remains a health concern in the Philippines.',
+            'HEPB', 'HEPATITIS B' => 'Hepatitis B vaccination prevents chronic liver disease and liver cancer later in life.',
+            'DPT', 'PENTAVALENT' => 'This combined vaccine protects against Diphtheria, Pertussis (Whooping Cough), and Tetanus.',
+            'OPV', 'IPV', 'POLIO' => 'Polio vaccination is critical to maintain the Philippines\' polio-free status.',
+            'MEASLES', 'MR', 'MMR' => 'Measles is highly contagious; timely vaccination is the only way to prevent outbreaks.',
+            default => 'Timely vaccination is vital for building long-term immunity and protecting your child from preventable diseases.',
+        };
+
+        $mail = (new MailMessage)
+            ->subject($subject . " - JuanClinic")
+            ->greeting("Hello {$notifiable->name},");
+
+        if ($tier === 'UPCOMING') {
+            $mail->line("This is a friendly reminder that **{$this->patient->name}** has an upcoming immunization scheduled for {$dueDate}.");
+        } elseif ($tier === 'OVERDUE') {
+            $mail->line("Our records show that **{$this->patient->name}** is **OVERDUE** for a critical immunization milestone.");
+        } else {
+            $mail->line("This is a reminder that **{$this->patient->name}** has an immunization milestone due today, {$dueDate}.");
+        }
+
+        return $mail->line("**Vaccine:** {$vaccine} (Dose #{$dose})")
             ->line("**Due Date:** {$dueDate}")
-            ->action('View Health Record', url("/patients/{$this->patient->id}/pediatrics"))
-            ->line('Keeping up with the vaccination schedule is vital for long-term health and immunity.')
-            ->line('Thank you for choosing our clinic!');
+            ->line($educationalSnippet)
+            ->action('View Pediatric Roadmap', url("/portal/patients/{$this->patient->id}/pediatrics"))
+            ->line('Thank you for choosing our clinic for your family\'s healthcare!');
     }
 
     /**
