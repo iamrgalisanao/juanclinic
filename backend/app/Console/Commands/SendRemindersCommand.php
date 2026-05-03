@@ -28,47 +28,78 @@ class SendRemindersCommand extends Command
      */
     public function handle()
     {
-        $this->info("Scanning for appointments scheduled for tomorrow...");
+        $this->info("Starting dynamic appointment reminder scan...");
 
-        $tomorrow = now()->addDay()->toDateString();
+        $tenants = \App\Models\Tenant::all();
+        $totalSent = 0;
 
-        $appointments = Appointment::where('appointment_date', $tomorrow)
-            ->where('status', 'PENDING')
-            ->whereNull('last_reminder_sent_at')
-            ->with(['patient', 'branch', 'doctor'])
-            ->get();
+        foreach ($tenants as $tenant) {
+            // Set tenant context
+            app()->instance('tenant', $tenant);
+            
+            // Fetch active appointment cadences for this tenant
+            $cadences = \App\Models\NotificationCadence::where('category', 'APPOINTMENT')
+                ->where('trigger_type', 'BEFORE_DUE')
+                ->where('is_active', true)
+                ->get();
 
-        $this->info("Found {$appointments->count()} pending appointments for {$tomorrow}.");
-
-        $sentCount = 0;
-        foreach ($appointments as $appointment) {
-            $patient = $appointment->patient;
-
-            if (!$patient) {
-                $this->warn("Skipping appointment ID {$appointment->id} as patient record is missing.");
-                continue;
+            // Fallback to defaults if none configured
+            if ($cadences->isEmpty()) {
+                $cadences = collect([
+                    (object)['days' => 3, 'description' => 'Default 72h Reminder'],
+                    (object)['days' => 1, 'description' => 'Default 24h Reminder'],
+                ]);
             }
 
-            try {
-                // Send Notification
-                $patient->notify(new PatientAppointmentReminder($appointment));
+            foreach ($cadences as $cadence) {
+                $targetDate = now()->addDays($cadence->days)->toDateString();
+                $this->info("Scanning [{$tenant->name}] for appointments on {$targetDate} ({$cadence->description})...");
 
-                // Log SMS Simulation (Simplified)
-                if ($patient->receive_sms_reminders && $patient->contact) {
-                    Log::info("[SMS SIMULATION] To: {$patient->contact} | Msg: Hi {$patient->first_name}, reminder for your visit tomorrow at {$appointment->start_time}.");
+                $appointments = Appointment::where('appointment_date', $targetDate)
+                    ->where('status', 'PENDING')
+                    ->where(function ($query) use ($cadence) {
+                        // Allow if no reminder sent yet for this cadence window
+                        // (Simplified logic: ensure we don't double-send same cadence today)
+                        $query->whereNull('last_reminder_sent_at')
+                              ->orWhere('last_reminder_sent_at', '<', now()->subHours(20));
+                    })
+                    ->with(['patient', 'branch', 'doctor'])
+                    ->get();
+
+                if ($appointments->isEmpty()) continue;
+
+                $this->info("Found {$appointments->count()} eligible appointments for {$cadence->description}.");
+
+                foreach ($appointments as $appointment) {
+                    $patient = $appointment->patient;
+
+                    if (!$patient) continue;
+
+                    try {
+                        // Send Notification with cadence context
+                        $patient->notify(new PatientAppointmentReminder($appointment, $cadence->days));
+
+                        // Log Audit Trail
+                        $patient->logAudit('notification_sent', [
+                            'type' => 'APPOINTMENT_REMINDER',
+                            'appointment_id' => $appointment->id,
+                            'days' => $cadence->days,
+                            'channel' => 'EMAIL'
+                        ]);
+
+                        // Update timestamp
+                        $appointment->update(['last_reminder_sent_at' => now()]);
+                        $totalSent++;
+
+                    } catch (\Exception $e) {
+                        $this->error("Failed to send {$cadence->description} for Appointment #{$appointment->id}: " . $e->getMessage());
+                        Log::error("Reminder failure ({$cadence->description}): " . $e->getMessage());
+                    }
                 }
-
-                // Update timestamp
-                $appointment->update(['last_reminder_sent_at' => now()]);
-                $sentCount++;
-
-            } catch (\Exception $e) {
-                $this->error("Failed to send reminder for Appointment #{$appointment->id}: " . $e->getMessage());
-                Log::error("Reminder failure: " . $e->getMessage());
             }
         }
 
-        $this->info("Successfully sent {$sentCount} reminders.");
+        $this->info("Successfully sent {$totalSent} reminders in total.");
         return Command::SUCCESS;
     }
 }

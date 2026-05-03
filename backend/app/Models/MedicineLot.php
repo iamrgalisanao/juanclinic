@@ -8,6 +8,7 @@ class MedicineLot extends Model
 {
     protected $fillable = [
         'medicine_id',
+        'medicine_form_id',
         'lot_number',
         'manufacturer',
         'vis_edition_date',
@@ -20,4 +21,10 @@ class MedicineLot extends Model
     {
         return $this->belongsTo(Medicine::class);
     }
+
+    public function medicineForm()
+    {
+        return $this->belongsTo(MedicineForm::class);
+    }
+
 }

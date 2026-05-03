@@ -14,6 +14,19 @@ class Prescription extends Model
     use HasFactory, BelongsToTenant, AuditLogTrait, HasAmendments, BelongsToBranch;
 
     protected $fillable = [
+        'patient_id',
+        'medicine_id',
+        'medicine_form_id',
+        'physician_id',
+        'medication_name',
+        'quantity',
+        'dosage',
+        'frequency',
+        'duration',
+        'instructions',
+        'status',
+        'branch_id',
+        'tenant_id',
         'dispensed_at',
         'dispensed_by',
         'qr_uuid',
@@ -42,6 +55,11 @@ class Prescription extends Model
     public function medicine()
     {
         return $this->belongsTo(Medicine::class);
+    }
+
+    public function medicineForm()
+    {
+        return $this->belongsTo(MedicineForm::class);
     }
 
     public function dispenser()

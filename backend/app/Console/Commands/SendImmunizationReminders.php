@@ -29,41 +29,81 @@ class SendImmunizationReminders extends Command
      */
     public function handle(PediatricService $pediatricService)
     {
-        $this->info('Starting multi-tenant immunization reminder scan...');
+        $this->info('Starting multi-tenant immunization reminder scan (Upcoming & Overdue)...');
 
         $tenants = \App\Models\Tenant::all();
         $remindersSent = 0;
 
         foreach ($tenants as $tenant) {
-            // Bind current tenant to the application container for scoping
             app()->instance('tenant', $tenant);
-            
             $this->line("Scanning Tenant: {$tenant->name}...");
 
-            // Scoped patient query (via BelongsToTenant trait)
+            // Fetch active vaccination cadences
+            $cadences = \App\Models\NotificationCadence::where('category', 'VACCINATION')
+                ->where('is_active', true)
+                ->get();
+
+            // Fallback to default T-7 if none configured
+            if ($cadences->isEmpty()) {
+                $cadences = collect([
+                    (object)['trigger_type' => 'BEFORE_DUE', 'days' => 7, 'description' => 'Default 7-day Reminder']
+                ]);
+            }
+
             $patients = Patient::where('dob', '>=', now()->subYears(6))->get();
 
             foreach ($patients as $patient) {
                 $roadmap = $pediatricService->getImmunizationRoadmap($patient);
                 
                 foreach ($roadmap as $milestone) {
-                    if ($milestone['status'] === 'OVERDUE' || (isset($milestone['due_date']) && $milestone['due_date'] === now()->toDateString())) {
-                        
-                        // Check if already notified within tenant context
-                        $alreadyNotified = $patient->notifications()
-                            ->where('type', ImmunizationReminder::class)
-                            ->where('data->vaccine_name', $milestone['vaccine_name'])
-                            ->where('data->dose_number', $milestone['dose_number'])
-                            ->where('created_at', '>=', now()->subDays(7))
-                            ->exists();
+                    if (!isset($milestone['due_date'])) continue;
 
-                        if (!$alreadyNotified) {
-                            $patient->notify(new ImmunizationReminder($patient, [
-                                'vaccine_name' => $milestone['vaccine_name'],
-                                'dose_number' => $milestone['dose_number'],
-                                'due_date' => $milestone['due_date']
-                            ]));
-                            $remindersSent++;
+                    foreach ($cadences as $cadence) {
+                        $isTriggered = false;
+                        $tier = 'UPCOMING';
+
+                        if ($cadence->trigger_type === 'BEFORE_DUE') {
+                            $targetDate = now()->addDays($cadence->days)->toDateString();
+                            $isTriggered = ($milestone['due_date'] === $targetDate);
+                            $tier = 'UPCOMING';
+                        } elseif ($cadence->trigger_type === 'ON_DUE') {
+                            $isTriggered = ($milestone['due_date'] === now()->toDateString());
+                            $tier = 'DUE_TODAY';
+                        } elseif ($cadence->trigger_type === 'AFTER_DUE') {
+                            $targetDate = now()->subDays($cadence->days)->toDateString();
+                            $isTriggered = ($milestone['due_date'] === $targetDate && $milestone['status'] === 'OVERDUE');
+                            $tier = 'OVERDUE';
+                        }
+
+                        if ($isTriggered) {
+                            // Check if already notified within tenant context to prevent spam
+                            $alreadyNotified = $patient->notifications()
+                                ->where('type', ImmunizationReminder::class)
+                                ->where('data->vaccine_name', $milestone['vaccine_name'])
+                                ->where('data->dose_number', $milestone['dose_number'] ?? null)
+                                ->where('data->tier', $tier) // Check tier specifically
+                                ->where('created_at', '>=', now()->subDays(7))
+                                ->exists();
+
+                            if (!$alreadyNotified) {
+                                $patient->notify(new ImmunizationReminder($patient, [
+                                    'vaccine_name' => $milestone['vaccine_name'],
+                                    'dose_number' => $milestone['dose_number'] ?? 1,
+                                    'due_date' => $milestone['due_date'],
+                                    'tier' => $tier
+                                ]));
+
+                                // Log Audit Trail
+                                $patient->logAudit('notification_sent', [
+                                    'type' => 'IMMUNIZATION_REMINDER',
+                                    'vaccine_name' => $milestone['vaccine_name'],
+                                    'dose_number' => $milestone['dose_number'] ?? 1,
+                                    'tier' => $tier,
+                                    'channel' => 'EMAIL'
+                                ]);
+
+                                $remindersSent++;
+                            }
                         }
                     }
                 }

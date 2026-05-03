@@ -12,8 +12,8 @@ class PrescriptionPolicy
      */
     public function viewAny(User $user): bool
     {
-        // Admins, Doctors, and Techs (Pharmacy) can view the worklist
-        return in_array($user->role, ['ADMIN', 'DOCTOR', 'TECH', 'DIAGNOSTIC_APPROVER']);
+        // Admins, Doctors, Techs (Pharmacy), and Front Desk can view prescriptions
+        return in_array($user->role, ['ADMIN', 'DOCTOR', 'TECH', 'DIAGNOSTIC_APPROVER', 'FRONT_DESK']);
     }
 
     /**
@@ -21,7 +21,7 @@ class PrescriptionPolicy
      */
     public function view(User $user, Prescription $prescription): bool
     {
-        return in_array($user->role, ['ADMIN', 'DOCTOR', 'TECH', 'DIAGNOSTIC_APPROVER']);
+        return in_array($user->role, ['ADMIN', 'DOCTOR', 'TECH', 'DIAGNOSTIC_APPROVER', 'FRONT_DESK']);
     }
 
     /**

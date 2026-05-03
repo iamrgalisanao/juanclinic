@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 use App\Traits\AuditLogTrait;
 
@@ -17,7 +18,7 @@ use Illuminate\Notifications\Notifiable;
  */
 class Patient extends Model
 {
-    use HasFactory, BelongsToTenant, AuditLogTrait, HasAmendments, \App\Traits\BelongsToBranch, Notifiable;
+    use HasFactory, BelongsToTenant, AuditLogTrait, HasAmendments, \App\Traits\BelongsToBranch, Notifiable, SoftDeletes;
 
     protected $fillable = [
         'tenant_id',
@@ -37,11 +38,15 @@ class Patient extends Model
         'tin',
         'metadata',
         'branch_id',
+        'communication_preferences',
+        'last_notification_audit_at',
     ];
 
     protected $casts = [
         'dob' => 'date',
         'metadata' => 'array',
+        'communication_preferences' => 'array',
+        'last_notification_audit_at' => 'datetime',
     ];
 
     /**
@@ -85,6 +90,22 @@ class Patient extends Model
         return $this->hasMany(Vital::class);
     }
 
+    public function referrals()
+    {
+        return $this->hasMany(Referral::class);
+    }
+
+    public function diagnoses()
+    {
+        return $this->hasMany(PatientDiagnosis::class)->latest('diagnosed_at');
+    }
+
+    public function problemList()
+    {
+        return $this->hasMany(PatientDiagnosis::class)->where('is_problem_list', true)->where('clinical_status', 'ACTIVE');
+    }
+
+
     /**
      * Calculate corrected age in days for premature infants (<37 weeks).
      * Formula: Corrected Age = Chronological Age - (40 - Gestational Weeks)
@@ -101,7 +122,21 @@ class Patient extends Model
 
         $weeksEarly = 40 - $this->gestational_weeks;
         $daysEarly = $weeksEarly * 7;
-        
         return max(0, $chronologicalAgeDays - $daysEarly);
+    }
+
+    /**
+     * Check if the patient has consented to a specific communication channel.
+     * 
+     * @param string $channel 'email' or 'sms'
+     */
+    public function canReceiveNotification(string $channel): bool
+    {
+        $prefs = $this->communication_preferences ?? [
+            'email' => (bool) $this->receive_email_reminders,
+            'sms' => (bool) $this->receive_sms_reminders
+        ];
+
+        return (bool) ($prefs[$channel] ?? false);
     }
 }

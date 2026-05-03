@@ -26,6 +26,8 @@ class Order extends Model
         'performed_at',
         'approved_by',
         'approved_at',
+        'acknowledged_at',
+        'acknowledged_by',
         'branch_id',
     ];
 
@@ -34,7 +36,18 @@ class Order extends Model
         'result_data' => 'array',
         'performed_at' => 'datetime',
         'approved_at' => 'datetime',
+        'acknowledged_at' => 'datetime',
     ];
+
+    public function results()
+    {
+        return $this->hasMany(DiagnosticResult::class);
+    }
+
+    public function acknowledgedBy()
+    {
+        return $this->belongsTo(User::class, 'acknowledged_by');
+    }
 
     /**
      * Get the branch for the order.

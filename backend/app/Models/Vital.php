@@ -32,12 +32,15 @@ class Vital extends Model
         'bp_position',
         'bp_arm',
         'recorded_at',
+        'acknowledged_at',
+        'acknowledged_by',
         'remarks',
         'metadata',
     ];
 
     protected $casts = [
         'recorded_at' => 'datetime',
+        'acknowledged_at' => 'datetime',
         'metadata' => 'json',
         'weight_kg' => 'decimal:3',
         'height_cm' => 'decimal:2',
