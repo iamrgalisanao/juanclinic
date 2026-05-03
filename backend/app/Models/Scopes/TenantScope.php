@@ -17,11 +17,13 @@ class TenantScope implements Scope
      */
     public function apply(Builder $builder, Model $model)
     {
-        // HIS Multi-Tenant Context: The User model lookup must bypass the TenantScope
-        // to support Global Admin authentication during impersonation sessions.
-        // Isolation is subsequently enforced by the 'tenant_user' (EnsureUserBelongsToTenant) middleware.
-        if ($model instanceof \App\Models\User) {
-            return;
+        // HIS Multi-Tenant Context: Platform Administrators bypass isolation
+        // to support tenant orchestration and impersonation.
+        $user = auth()->user();
+        if ($user && in_array($user->role, ['ADMIN', 'GLOBAL_ADMIN'])) {
+            if (is_null($user->tenant_id) || (int) $user->tenant_id === \App\Models\Tenant::SYSTEM_ID) {
+                return;
+            }
         }
 
         $tenantId = null;

@@ -53,9 +53,13 @@ class EntitlementService
             Cache::forget("tenant_{$tenantId}_feature_{$feature}");
         } else {
             // If no feature specified, clear common specialty gates to be safe
-            $commonGates = ['pacs_enabled', 'pediatrics_enabled', 'empi_sync_enabled'];
+            $commonGates = [
+                'pacs_enabled', 'pediatrics_enabled', 'empi_sync_enabled', 
+                'laboratory_enabled', 'radiology_enabled', 'pharmacy_enabled',
+                'billing_enabled', 'portal_enabled', 'telehealth_enabled'
+            ];
             foreach ($commonGates as $gate) {
-                Cache::forget("tenant_{$tenantId}_feature_{$gate}");
+                $this->clearCache($tenantId, $gate);
             }
         }
     }
