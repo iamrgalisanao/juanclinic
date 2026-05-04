@@ -31,7 +31,7 @@ class SuperAdminController extends Controller
         $tenant = Tenant::findOrFail($tenantId);
         
         $payload = $request->validate([
-            'plan_tier' => 'nullable|string|in:BRONZE,SILVER,GOLD,TRIAL',
+            'plan_tier' => 'nullable|string|in:BRONZE,SILVER,GOLD,TRIAL,SUSPENDED',
             'pediatrics_enabled' => 'nullable|boolean',
             'inventory_enabled' => 'nullable|boolean',
             'pharmacy_enabled' => 'nullable|boolean',
@@ -49,10 +49,29 @@ class SuperAdminController extends Controller
             'referrals_enabled' => 'nullable|boolean',
             'queue_enabled' => 'nullable|boolean',
             'claims_enabled' => 'nullable|boolean',
-            'trial_ends_at' => 'nullable|date'
+            'trial_ends_at' => 'nullable|date',
+            'purge_after_days' => 'nullable|integer|min:1'
         ]);
 
-        $tenant->update(collect($payload)->filter(fn($val) => !is_null($val))->toArray());
+        $filteredPayload = collect($payload)->except(['purge_after_days'])->filter(fn($val) => !is_null($val))->toArray();
+        
+        // Handle suspension timestamps
+        if (isset($filteredPayload['plan_tier'])) {
+            if ($filteredPayload['plan_tier'] === 'SUSPENDED' && $tenant->plan_tier !== 'SUSPENDED') {
+                $filteredPayload['suspended_at'] = now();
+            } elseif ($filteredPayload['plan_tier'] !== 'SUSPENDED' && $tenant->plan_tier === 'SUSPENDED') {
+                $filteredPayload['suspended_at'] = null;
+            }
+        }
+
+        // Handle purge_after_days in admin_settings
+        if (isset($payload['purge_after_days'])) {
+            $adminSettings = $tenant->admin_settings ?? [];
+            $adminSettings['purge_after_days'] = (int) $payload['purge_after_days'];
+            $filteredPayload['admin_settings'] = $adminSettings;
+        }
+
+        $tenant->update($filteredPayload);
 
         // Clear all relevant feature caches to ensure immediate real-time enforcement
         $gates = [

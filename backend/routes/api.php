@@ -43,10 +43,10 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 Route::get('tenants', [\App\Http\Controllers\Api\TenantController::class, 'index'])->middleware(['auth:sanctum']);
 Route::get('tenants/{tenant}', [\App\Http\Controllers\Api\TenantController::class, 'show'])->middleware(['auth:sanctum']);
 Route::apiResource('tenants', \App\Http\Controllers\Api\TenantController::class)->only(['store', 'update', 'destroy'])->middleware(['auth:sanctum', 'role:ADMIN']);
-Route::get('branches', [\App\Http\Controllers\Api\BranchController::class, 'index'])->middleware(['auth:sanctum', 'tenant_user']);
-Route::apiResource('branches', \App\Http\Controllers\Api\BranchController::class)->except(['index'])->middleware(['auth:sanctum', 'tenant_user', 'role:ADMIN']);
+Route::get('branches', [\App\Http\Controllers\Api\BranchController::class, 'index'])->middleware(['auth:sanctum', 'tenant_active', 'tenant_user']);
+Route::apiResource('branches', \App\Http\Controllers\Api\BranchController::class)->except(['index'])->middleware(['auth:sanctum', 'tenant_active', 'tenant_user', 'role:ADMIN']);
 
-Route::group(['middleware' => ['auth:sanctum', 'tenant_user', 'branch_user']], function () {
+Route::group(['middleware' => ['auth:sanctum', 'tenant_active', 'tenant_user', 'branch_user']], function () {
     Route::apiResource('patients', \App\Http\Controllers\Api\PatientController::class)->middleware('role:DOCTOR,ADMIN,FRONT_DESK,DIAGNOSTIC_APPROVER');
     Route::apiResource('clinical-notes', \App\Http\Controllers\Api\ClinicalNoteController::class)->middleware('role:DOCTOR,ADMIN');
     Route::get('clinical-templates', [\App\Http\Controllers\Api\ClinicalTemplateController::class, 'index'])->middleware('role:DOCTOR,ADMIN');
@@ -156,7 +156,7 @@ Route::group(['middleware' => ['auth:sanctum', 'tenant_user', 'branch_user']], f
 });
 
 // Reporting Endpoints (Tenant-wide visibility, bypassing branch-isolation)
-Route::group(['middleware' => ['auth:sanctum', 'tenant_user', 'entitled:analytics_enabled']], function () {
+Route::group(['middleware' => ['auth:sanctum', 'tenant_active', 'tenant_user', 'entitled:analytics_enabled']], function () {
     Route::get('reports/dashboard', [\App\Http\Controllers\Api\ReportController::class, 'dashboard'])->middleware('role:ADMIN,FRONT_DESK,DOCTOR,DIAGNOSTIC_APPROVER');
     Route::get('reports/benchmarking', [\App\Http\Controllers\Api\ReportController::class, 'benchmarking'])->middleware('role:ADMIN,FRONT_DESK,DOCTOR,DIAGNOSTIC_APPROVER');
     Route::get('reports/clinical-outcomes', [\App\Http\Controllers\Api\ReportController::class, 'getClinicalOutcomes'])->middleware('role:ADMIN,DOCTOR,DIAGNOSTIC_APPROVER');
@@ -173,7 +173,7 @@ Route::post('hl7/ingest', [\App\Http\Controllers\Api\HL7Controller::class, 'stor
 Route::prefix('empi')->middleware('entitled:empi_enabled')->group(function () {
     Route::post('sync/submit', [\App\Http\Controllers\Api\EMPISyncController::class, 'submit']);
 
-    Route::middleware(['auth:sanctum', 'tenant_user'])->group(function () {
+    Route::middleware(['auth:sanctum', 'tenant_active', 'tenant_user'])->group(function () {
         Route::get('hardware', [\App\Http\Controllers\Api\EMPISyncController::class, 'listHardware'])
             ->middleware('role:ADMIN');
         Route::post('hardware/register', [\App\Http\Controllers\Api\EMPISyncController::class, 'registerHardware'])
@@ -184,7 +184,7 @@ Route::prefix('empi')->middleware('entitled:empi_enabled')->group(function () {
 // ---------------------------------------------------------------------------
 // RIS/PACS (Imaging) & Super Admin
 // ---------------------------------------------------------------------------
-Route::middleware(['auth:sanctum', 'tenant_user'])->group(function () {
+Route::middleware(['auth:sanctum', 'tenant_active', 'tenant_user'])->group(function () {
     Route::middleware('entitled:pacs_enabled')->prefix('imaging')->group(function () {
         Route::get('patients/{patientId}', [\App\Http\Controllers\Api\ImagingController::class, 'patientStudies']);
         Route::get('instances/{instanceId}', [\App\Http\Controllers\Api\ImagingController::class, 'showInstance']);

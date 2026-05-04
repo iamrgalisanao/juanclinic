@@ -13,6 +13,10 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule): void
     {
         $schedule->command('clinic:send-immunization-reminders')->daily();
+        
+        // Tenant Orchestration
+        $schedule->command('app:orchestrate-trial-lifecycles')->dailyAt('00:00');
+        $schedule->command('app:orchestrate-tenant-purging')->dailyAt('01:00');
     }
 
     /**
