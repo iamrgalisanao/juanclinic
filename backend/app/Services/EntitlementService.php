@@ -36,12 +36,11 @@ class EntitlementService
         // Cache the feature lookup for high-traffic clinical endpoints
         $cacheKey = "tenant_{$tenant->id}_feature_{$feature}";
         
-        return Cache::remember($cacheKey, 3600, function () use ($tenant, $feature) {
+        return Cache::remember($cacheKey, 60, function () use ($tenant, $feature) {
             // Priority 1: High-Tier & Active Trial Bypass (Enterprise Governance)
-            // TRIAL and GOLD tiers have all features unlocked by default
             if ($tenant->plan_tier === 'GOLD' || $tenant->plan_tier === 'TRIAL') {
-                // If on trial, ensure it hasn't explicitly expired (though OrchestrateTrialLifecycles handles this)
                 if ($tenant->plan_tier === 'TRIAL' && $tenant->trial_ends_at && $tenant->trial_ends_at->isPast()) {
+                    \Log::info("Entitlement: Feature '{$feature}' DENIED for Tenant #{$tenant->id} (Trial Expired)");
                     return false;
                 }
                 return true;
@@ -49,12 +48,20 @@ class EntitlementService
 
             // Priority 2: Explicit Commercial Columns (Phase 12)
             if (isset($tenant->{$feature})) {
-                return (bool) $tenant->{$feature};
+                $allowed = (bool) $tenant->{$feature};
+                if (!$allowed) {
+                    \Log::info("Entitlement: Feature '{$feature}' DENIED for Tenant #{$tenant->id} (Column flag is false)");
+                }
+                return $allowed;
             }
 
             // Priority 3: JSON Admin Settings fallback
             $settings = $tenant->admin_settings;
-            return (bool) ($settings['features'][$feature] ?? false);
+            $allowed = (bool) ($settings['features'][$feature] ?? false);
+            if (!$allowed) {
+                \Log::info("Entitlement: Feature '{$feature}' DENIED for Tenant #{$tenant->id} (No settings/fallback found)");
+            }
+            return $allowed;
         });
     }
 
