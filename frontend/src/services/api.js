@@ -19,21 +19,30 @@ if (initialToken) {
 api.interceptors.response.use(
     (response) => response,
     (error) => {
-        if (error.response && error.response.status === 401) {
-            const url = error.config.url;
-            // Only clear and redirect if not on the login call itself
-            const isLoginRequest = url.includes('/auth/login');
-            if (!isLoginRequest) {
-                console.warn(`Unauthorized request to [${url}] detected. Clearing session and redirecting...`);
-                localStorage.removeItem('auth_token');
-                localStorage.removeItem('auth_user');
-                delete api.defaults.headers.common['Authorization'];
-                
-                // We force a page reload to reset the app state to the login view
-                // This is a robust way to ensure all background syncs and intervals stop
+        if (error.response) {
+            if (error.response.status === 401) {
+                const url = error.config.url;
+                // Only clear and redirect if not on the login call itself
+                const isLoginRequest = url.includes('/auth/login');
+                if (!isLoginRequest) {
+                    console.warn(`Unauthorized request to [${url}] detected. Clearing session and redirecting...`);
+                    localStorage.removeItem('auth_token');
+                    localStorage.removeItem('auth_user');
+                    delete api.defaults.headers.common['Authorization'];
+                    
+                    // We force a page reload to reset the app state to the login view
+                    // This is a robust way to ensure all background syncs and intervals stop
+                    if (typeof window !== 'undefined') {
+                        window.location.hash = '#dashboard'; // Reset hash
+                        window.location.reload();
+                    }
+                }
+            }
+
+            if (error.response.status === 403 && error.response.data?.error_code === 'TENANT_SUSPENDED') {
+                console.warn('Tenant is suspended. Redirecting to suspended view...');
                 if (typeof window !== 'undefined') {
-                    window.location.hash = '#dashboard'; // Reset hash
-                    window.location.reload();
+                    window.location.hash = '#suspended';
                 }
             }
         }

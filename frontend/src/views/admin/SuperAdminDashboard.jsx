@@ -107,7 +107,7 @@ const SuperAdminDashboard = () => {
                         
                         <div className="flex justify-between items-start mb-8 relative z-10">
                             <div>
-                                <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${tenant.plan_tier === 'GOLD' ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
+                                <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${tenant.plan_tier === 'GOLD' ? 'bg-amber-50 text-amber-600 border-amber-100' : tenant.plan_tier === 'SUSPENDED' ? 'bg-rose-50 text-rose-600 border-rose-100' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
                                     {tenant.plan_tier} Plan
                                 </span>
                                 <h3 className="text-2xl font-black text-slate-900 mt-3">{tenant.name}</h3>
@@ -169,8 +169,8 @@ const SuperAdminDashboard = () => {
             {/* Orchestration Modal */}
             {selectedTenant && (
                 <div className="fixed inset-0 z-[60] bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-6 animate-in fade-in duration-300">
-                    <div className="bg-white rounded-[3rem] p-12 max-w-2xl w-full shadow-2xl relative overflow-hidden animate-in zoom-in-95 duration-300">
-                        <div className="flex justify-between items-start mb-10">
+                    <div className="bg-white rounded-[3rem] p-8 md:p-12 max-w-2xl w-full shadow-2xl relative flex flex-col max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-300">
+                        <div className="flex justify-between items-start mb-8 shrink-0">
                             <div>
                                 <h2 className="text-2xl font-black text-slate-900 tracking-tight">Commercial Orchestration</h2>
                                 <p className="text-xs font-bold text-slate-400 mt-2 uppercase tracking-widest">Target: {selectedTenant.name}</p>
@@ -180,17 +180,17 @@ const SuperAdminDashboard = () => {
                                     setSelectedTenant(null);
                                     setStagedTenant(null);
                                 }}
-                                className="w-12 h-12 rounded-2xl bg-his-slate-50 text-slate-400 hover:bg-rose-50 hover:text-rose-500 transition-all flex items-center justify-center"
+                                className="w-12 h-12 rounded-2xl bg-his-slate-50 text-slate-400 hover:bg-rose-50 hover:text-rose-500 transition-all flex items-center justify-center shrink-0"
                             >
                                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
                             </button>
                         </div>
 
-                        <div className="space-y-8">
+                        <div className="space-y-8 overflow-y-auto pr-4 flex-1">
                             <div className="space-y-4">
                                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Subscription Tier</label>
-                                <div className="grid grid-cols-4 gap-3">
-                                    {['TRIAL', 'BRONZE', 'SILVER', 'GOLD'].map(tier => (
+                                <div className="grid grid-cols-5 gap-3">
+                                    {['TRIAL', 'BRONZE', 'SILVER', 'GOLD', 'SUSPENDED'].map(tier => (
                                         <button 
                                             key={tier}
                                             onClick={() => setStagedTenant({ ...stagedTenant, plan_tier: tier })}
@@ -202,7 +202,20 @@ const SuperAdminDashboard = () => {
                                 </div>
                             </div>
 
-                            <div className="space-y-6 pt-6 border-t border-slate-50 overflow-y-auto max-h-[50vh] pr-4">
+                            <div className={`space-y-4 pt-4 border-t border-slate-50 transition-opacity ${stagedTenant.plan_tier === 'TRIAL' ? 'opacity-100' : 'opacity-50'}`}>
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Data Purge Grace Period (Days)</label>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    value={stagedTenant.purge_after_days || stagedTenant.admin_settings?.purge_after_days || ''}
+                                    onChange={(e) => setStagedTenant({ ...stagedTenant, purge_after_days: parseInt(e.target.value, 10) || null })}
+                                    disabled={stagedTenant.plan_tier !== 'TRIAL'}
+                                    className="w-full px-4 py-3 rounded-2xl bg-slate-50 border-none text-sm font-bold text-slate-900 focus:ring-2 focus:ring-his-slate-900 disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
+                                    placeholder="Fallback to default (90 days)"
+                                />
+                            </div>
+
+                            <div className="space-y-6 pt-6 border-t border-slate-50">
                                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Enterprise Feature Matrix</label>
                                 
                                 {[
@@ -263,8 +276,9 @@ const SuperAdminDashboard = () => {
                                     </div>
                                 ))}
                             </div>
+                        </div>
 
-                            <div className="flex gap-4 pt-8 border-t border-slate-100">
+                        <div className="flex gap-4 pt-6 border-t border-slate-100 mt-6 shrink-0">
                                 <button 
                                     onClick={() => {
                                         setSelectedTenant(null);
@@ -282,7 +296,6 @@ const SuperAdminDashboard = () => {
                                     {isUpdating ? 'Saving Changes...' : 'Save Orchestration'}
                                 </button>
                             </div>
-                        </div>
                     </div>
                 </div>
             )}
