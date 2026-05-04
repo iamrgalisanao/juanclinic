@@ -33,6 +33,14 @@ class EntitlementService
             return false;
         }
 
+        return $this->hasFeatureForTenant($tenant, $feature);
+    }
+
+    /**
+     * Check if a specific tenant has access to a feature, regardless of current user.
+     */
+    public function hasFeatureForTenant(Tenant $tenant, string $feature): bool
+    {
         // Cache the feature lookup for high-traffic clinical endpoints
         $cacheKey = "tenant_{$tenant->id}_feature_{$feature}";
         

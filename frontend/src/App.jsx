@@ -465,28 +465,42 @@ function App() {
         }
 
         const rolePermissions = {
-            'dashboard': ['ADMIN', 'DOCTOR', 'TECH', 'DIAGNOSTIC_APPROVER', 'FRONT_DESK'],
-            'worklist': ['ADMIN', 'DOCTOR', 'TECH', 'DIAGNOSTIC_APPROVER'],
-            'messages': ['ADMIN', 'DOCTOR', 'TECH', 'DIAGNOSTIC_APPROVER', 'FRONT_DESK'],
-            'appointments': ['ADMIN', 'DOCTOR', 'FRONT_DESK'],
-            'pharmacy': ['ADMIN', 'DOCTOR', 'TECH'],
-            'medicine_management': ['ADMIN', 'DOCTOR', 'TECH'],
-            'billing': ['ADMIN', 'FRONT_DESK'],
-            'clinical_notes': ['ADMIN', 'DOCTOR'],
-            'patients': ['ADMIN', 'DOCTOR', 'FRONT_DESK', 'DIAGNOSTIC_APPROVER'],
-            'doctors': ['ADMIN', 'DOCTOR'],
-            'reports': ['ADMIN', 'FRONT_DESK', 'DOCTOR', 'DIAGNOSTIC_APPROVER'],
-            'audit': ['ADMIN', 'DOCTOR'],
-            'tenant_management': ['ADMIN'],
-            'branch_management': ['ADMIN'],
-            'patient_profile': ['ADMIN', 'DOCTOR', 'FRONT_DESK', 'DIAGNOSTIC_APPROVER'],
-            'hl7_transport': ['ADMIN'],
-            'superadmin': ['GLOBAL_ADMIN'],
-            'terminology_review': ['ADMIN', 'GLOBAL_ADMIN']
+            'dashboard': { roles: ['ADMIN', 'DOCTOR', 'TECH', 'DIAGNOSTIC_APPROVER', 'FRONT_DESK'] },
+            'worklist': { roles: ['ADMIN', 'DOCTOR', 'TECH', 'DIAGNOSTIC_APPROVER'], feature: 'laboratory_enabled' },
+            'messages': { roles: ['ADMIN', 'DOCTOR', 'TECH', 'DIAGNOSTIC_APPROVER', 'FRONT_DESK'], feature: 'telehealth_enabled' },
+            'appointments': { roles: ['ADMIN', 'DOCTOR', 'FRONT_DESK'] },
+            'pharmacy': { roles: ['ADMIN', 'DOCTOR', 'TECH'], feature: 'pharmacy_enabled' },
+            'medicine_management': { roles: ['ADMIN', 'DOCTOR', 'TECH'], feature: 'pharmacy_enabled' },
+            'billing': { roles: ['ADMIN', 'FRONT_DESK'], feature: 'billing_enabled' },
+            'clinical_notes': { roles: ['ADMIN', 'DOCTOR'] },
+            'patients': { roles: ['ADMIN', 'DOCTOR', 'FRONT_DESK', 'DIAGNOSTIC_APPROVER'] },
+            'doctors': { roles: ['ADMIN', 'DOCTOR'] },
+            'reports': { roles: ['ADMIN', 'FRONT_DESK', 'DOCTOR', 'DIAGNOSTIC_APPROVER'], feature: 'analytics_enabled' },
+            'audit': { roles: ['ADMIN', 'DOCTOR'] },
+            'tenant_management': { roles: ['ADMIN'] },
+            'branch_management': { roles: ['ADMIN'] },
+            'patient_profile': { roles: ['ADMIN', 'DOCTOR', 'FRONT_DESK', 'DIAGNOSTIC_APPROVER'] },
+            'hl7_transport': { roles: ['ADMIN'] },
+            'superadmin': { roles: ['GLOBAL_ADMIN'] },
+            'terminology_review': { roles: ['ADMIN', 'GLOBAL_ADMIN'] }
         };
-        const allowedRoles = rolePermissions[view];
-        if (!allowedRoles) return false;
-        return !allowedRoles.includes(currentUser.role);
+        const config = rolePermissions[view];
+        if (!config) return false;
+
+        // Check Role
+        const roleAllowed = config.roles.includes(currentUser.role);
+        if (!roleAllowed) return true;
+
+        // Check Feature Entitlement
+        if (config.feature && activeTenant) {
+            const isEntitled = activeTenant.entitlements?.[config.feature] ?? true;
+            if (!isEntitled) {
+                console.warn(`[RBAC] Feature Gate: ${view} requires ${config.feature} (Disabled for Tenant)`);
+                return true;
+            }
+        }
+
+        return false;
     };
 
     // Auto-redirect if unauthorized view (useEffect must be before early return)

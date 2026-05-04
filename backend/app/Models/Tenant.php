@@ -45,11 +45,30 @@ class Tenant extends Model
         'suspended_at'
     ];
 
-    protected $appends = ['logo_url'];
+    protected $appends = ['logo_url', 'entitlements'];
+    protected $hidden = ['admin_settings', 'subscription_data']; // Protect sensitive backend config
 
     public function getLogoUrlAttribute()
     {
         return $this->logo_path ? asset('storage/' . $this->logo_path) : null;
+    }
+
+    public function getEntitlementsAttribute()
+    {
+        $service = app(\App\Services\EntitlementService::class);
+        $features = [
+            'pediatrics_enabled', 'inventory_enabled', 'pharmacy_enabled', 'pacs_enabled', 
+            'laboratory_enabled', 'radiology_enabled', 'workforce_enabled', 'sms_enabled', 
+            'email_enabled', 'billing_enabled', 'portal_enabled', 'empi_enabled', 
+            'telehealth_enabled', 'analytics_enabled', 'offline_sync_enabled', 
+            'referrals_enabled', 'queue_enabled', 'claims_enabled'
+        ];
+        
+        $results = [];
+        foreach ($features as $feature) {
+            $results[$feature] = $service->hasFeatureForTenant($this, $feature);
+        }
+        return $results;
     }
 
     protected $casts = [

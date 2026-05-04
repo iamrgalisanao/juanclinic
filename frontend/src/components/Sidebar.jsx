@@ -5,14 +5,15 @@ const Sidebar = ({ activeTenant, impersonatedTenant, activeView, setActiveView, 
 
     const allItems = [
         { id: 'dashboard', name: 'Dashboard', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6', roles: ['ADMIN', 'DOCTOR', 'TECH', 'DIAGNOSTIC_APPROVER', 'FRONT_DESK'] },
-        { id: 'worklist', name: 'Worklist', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z', roles: ['ADMIN', 'TECH', 'DIAGNOSTIC_APPROVER'] },
-        { id: 'messages', name: 'Message', icon: 'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z', roles: ['ADMIN', 'DOCTOR', 'TECH', 'DIAGNOSTIC_APPROVER', 'FRONT_DESK'] },
+        { id: 'worklist', name: 'Worklist', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z', roles: ['ADMIN', 'TECH', 'DIAGNOSTIC_APPROVER'], feature: 'laboratory_enabled' },
+        { id: 'messages', name: 'Message', icon: 'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z', roles: ['ADMIN', 'DOCTOR', 'TECH', 'DIAGNOSTIC_APPROVER', 'FRONT_DESK'], feature: 'telehealth_enabled' },
         { id: 'appointments', name: 'Appointment', icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z', roles: ['ADMIN', 'DOCTOR', 'FRONT_DESK'] },
         {
             id: 'pharmacy_parent',
             name: 'Pharmacy',
             icon: 'M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.022.547l-2.387 2.387a2 2 0 102.828 2.828l2.387-2.387a2 2 0 011.022-.547l2.387-.477a6 6 0 013.86-.517l.318-.158a6 6 0 003.86-.517l2.387.477a2 2 0 011.022.547l2.387 2.387a2 2 0 102.828-2.828l-2.387-2.387z',
             roles: ['ADMIN', 'DOCTOR', 'TECH'],
+            feature: 'pharmacy_enabled',
             subItems: [
                 { id: 'pharmacy', name: 'Dispensing' },
                 { id: 'medicine_management', name: 'Medicines' },
@@ -20,12 +21,12 @@ const Sidebar = ({ activeTenant, impersonatedTenant, activeView, setActiveView, 
             ]
 
         },
-        { id: 'billing', name: 'Billing', icon: 'M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z', roles: ['ADMIN', 'FRONT_DESK'] },
+        { id: 'billing', name: 'Billing', icon: 'M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z', roles: ['ADMIN', 'FRONT_DESK'], feature: 'billing_enabled' },
         { id: 'clinical_notes', name: 'Clinical Notes', icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', roles: ['ADMIN', 'DOCTOR'] },
         { id: 'patients', name: 'Patients', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z', roles: ['ADMIN', 'DOCTOR', 'FRONT_DESK', 'DIAGNOSTIC_APPROVER'] },
         { id: 'doctors', name: 'Doctors', icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z', roles: ['ADMIN'] },
-        { id: 'reports', name: 'Reports', icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z', roles: ['ADMIN', 'FRONT_DESK', 'DOCTOR', 'DIAGNOSTIC_APPROVER', 'GLOBAL_ADMIN'] },
-        { id: 'referrals', name: 'Referrals', icon: 'M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4', roles: ['ADMIN', 'DOCTOR', 'FRONT_DESK'] },
+        { id: 'reports', name: 'Reports', icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z', roles: ['ADMIN', 'FRONT_DESK', 'DOCTOR', 'DIAGNOSTIC_APPROVER', 'GLOBAL_ADMIN'], feature: 'analytics_enabled' },
+        { id: 'referrals', name: 'Referrals', icon: 'M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4', roles: ['ADMIN', 'DOCTOR', 'FRONT_DESK'], feature: 'referrals_enabled' },
         { id: 'tenant_management', name: 'Organization Settings', icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4', roles: ['ADMIN', 'GLOBAL_ADMIN'], globalOnly: true },
         { id: 'branch_management', name: 'Branch Settings', icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4', roles: ['ADMIN'] },
         { id: 'notification_settings', name: 'Notification Rules', icon: 'M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9', roles: ['ADMIN'] },
@@ -54,6 +55,18 @@ const Sidebar = ({ activeTenant, impersonatedTenant, activeView, setActiveView, 
 
         if (!item.roles.includes(currentUser.role)) return false;
         
+        // Feature Entitlement Check:
+        // Hide module if it requires a commercial feature that is not enabled for the active tenant
+        // GLOBAL_ADMIN bypasses this during impersonation for orchestration purposes
+        if (item.feature && activeTenant) {
+            const isImpersonating = !!effectiveImpersonation && currentUser.role === 'GLOBAL_ADMIN';
+            const isEntitled = activeTenant.entitlements?.[item.feature] ?? true;
+            
+            if (!isEntitled && !isImpersonating) {
+                return false;
+            }
+        }
+
         // Organization Settings: Restricted to Global Admin at Home OR Local Admin in their tenant
         // If marked as globalOnly, it only shows if we are in the System context (tenant_id 888)
         if (item.globalOnly && currentUser.tenant_id !== 888 && currentUser.tenant_id !== null) return false;
