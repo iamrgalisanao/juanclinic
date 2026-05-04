@@ -41,7 +41,8 @@ class Tenant extends Model
         'queue_enabled',
         'claims_enabled',
         'subscription_data',
-        'trial_ends_at'
+        'trial_ends_at',
+        'suspended_at'
     ];
 
     protected $appends = ['logo_url'];
@@ -73,6 +74,7 @@ class Tenant extends Model
         'queue_enabled' => 'boolean',
         'claims_enabled' => 'boolean',
         'trial_ends_at' => 'datetime',
+        'suspended_at' => 'datetime',
     ];
 
     /**
