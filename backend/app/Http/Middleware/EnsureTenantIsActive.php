@@ -19,6 +19,7 @@ class EnsureTenantIsActive
             $tenant = app('tenant');
             
             if ($tenant->plan_tier === 'SUSPENDED') {
+                \Log::warning("Access denied: Tenant #{$tenant->id} ({$tenant->name}) is SUSPENDED. Requested: " . $request->fullUrl());
                 return response()->json([
                     'message' => 'Your tenant has been suspended. Please contact administration.',
                     'error_code' => 'TENANT_SUSPENDED'
