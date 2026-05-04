@@ -16,15 +16,15 @@ class TenantController extends Controller
         $isSystemTenant = is_null($user->tenant_id) || (int) $user->tenant_id === \App\Models\Tenant::SYSTEM_ID;
 
         if ($isGlobalAdmin && $isSystemTenant) {
-            return \App\Models\Tenant::all();
+            return \App\Models\Tenant::withCount('branches')->get();
         }
 
         // Clinic Admins only see their own organization
         if ($user->tenant_id) {
-            return \App\Models\Tenant::where('id', $user->tenant_id)->get();
+            return \App\Models\Tenant::where('id', $user->tenant_id)->withCount('branches')->get();
         }
 
-        return \App\Models\Tenant::all();
+        return \App\Models\Tenant::withCount('branches')->get();
     }
 
     public function store(Request $request)
@@ -132,6 +132,12 @@ class TenantController extends Controller
 
         $tenant->delete();
         return response()->json(null, 204);
+    }
+
+    public function listTenants()
+    {
+        \Log::info("Global Admin requested all tenants list.");
+        return Tenant::withCount('branches')->get();
     }
 
     /**
