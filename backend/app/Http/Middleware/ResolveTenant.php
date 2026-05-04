@@ -15,6 +15,11 @@ class ResolveTenant
      */
     public function handle(Request $request, Closure $next): Response
     {
+        // Bypass for Super Admin routes to avoid tenant resolution interference
+        if ($request->is('api/sa/*')) {
+            return $next($request);
+        }
+
         $tenantId = $request->header('X-Tenant-ID');
 
         // Fallback 1: Input param

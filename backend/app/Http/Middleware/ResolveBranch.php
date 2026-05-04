@@ -15,6 +15,11 @@ class ResolveBranch
      */
     public function handle(Request $request, Closure $next): Response
     {
+        // Bypass for Super Admin routes
+        if ($request->is('api/sa/*')) {
+            return $next($request);
+        }
+
         $branchId = $request->header('X-Branch-ID');
 
         if (!$branchId && $request->hasSession()) {
