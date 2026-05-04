@@ -20,6 +20,7 @@ class SuperAdminController extends Controller
      */
     public function listTenants()
     {
+        \Log::info("Global Admin requested all tenants list.");
         return Tenant::withCount('branches')->get();
     }
 

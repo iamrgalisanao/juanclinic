@@ -77,3 +77,35 @@
 2026-05-03 03:23:06,112 INFO mcp.server.lowlevel.server: Processing request of type ListResourcesRequest
 2026-05-03 03:41:54,857 INFO mcp.server.lowlevel.server: Processing request of type ListResourcesRequest
 2026-05-03 07:43:48,103 INFO mcp.server.lowlevel.server: Processing request of type ListResourcesRequest
+2026-05-04 02:28:35,944 INFO hermes_cli.plugins: Plugin 'openai' registered image_gen provider: openai
+2026-05-04 02:28:35,946 INFO hermes_cli.plugins: Plugin 'openai-codex' registered image_gen provider: openai-codex
+2026-05-04 02:28:36,006 INFO hermes_cli.plugins: Plugin 'xai' registered image_gen provider: xai
+2026-05-04 02:28:36,072 INFO hermes_cli.plugins: Plugin discovery complete: 5 found, 4 enabled
+2026-05-04 02:28:36,425 INFO mcp.server.lowlevel.server: Processing request of type ListToolsRequest
+2026-05-04 02:28:44,305 INFO hermes_cli.plugins: Plugin 'openai' registered image_gen provider: openai
+2026-05-04 02:28:44,305 INFO hermes_cli.plugins: Plugin 'openai-codex' registered image_gen provider: openai-codex
+2026-05-04 02:28:44,383 INFO hermes_cli.plugins: Plugin 'xai' registered image_gen provider: xai
+2026-05-04 02:28:44,529 INFO hermes_cli.plugins: Plugin discovery complete: 5 found, 4 enabled
+2026-05-04 02:28:45,663 INFO mcp.server.lowlevel.server: Processing request of type ListToolsRequest
+2026-05-04 02:28:48,342 INFO hermes_cli.plugins: Plugin 'openai' registered image_gen provider: openai
+2026-05-04 02:28:48,342 INFO hermes_cli.plugins: Plugin 'openai-codex' registered image_gen provider: openai-codex
+2026-05-04 02:28:48,441 INFO hermes_cli.plugins: Plugin 'xai' registered image_gen provider: xai
+2026-05-04 02:28:48,542 INFO hermes_cli.plugins: Plugin discovery complete: 5 found, 4 enabled
+2026-05-04 02:28:48,920 INFO mcp.server.lowlevel.server: Processing request of type ListToolsRequest
+2026-05-04 02:31:47,847 INFO mcp.server.lowlevel.server: Processing request of type ListResourcesRequest
+2026-05-04 05:23:18,327 INFO hermes_cli.plugins: Plugin 'openai' registered image_gen provider: openai
+2026-05-04 05:23:18,328 INFO hermes_cli.plugins: Plugin 'openai-codex' registered image_gen provider: openai-codex
+2026-05-04 05:23:18,388 INFO hermes_cli.plugins: Plugin 'xai' registered image_gen provider: xai
+2026-05-04 05:23:18,470 INFO hermes_cli.plugins: Plugin discovery complete: 5 found, 4 enabled
+2026-05-04 05:23:18,818 INFO mcp.server.lowlevel.server: Processing request of type ListToolsRequest
+2026-05-04 05:23:27,432 INFO hermes_cli.plugins: Plugin 'openai' registered image_gen provider: openai
+2026-05-04 05:23:27,433 INFO hermes_cli.plugins: Plugin 'openai-codex' registered image_gen provider: openai-codex
+2026-05-04 05:23:27,521 INFO hermes_cli.plugins: Plugin 'xai' registered image_gen provider: xai
+2026-05-04 05:23:27,607 INFO hermes_cli.plugins: Plugin discovery complete: 5 found, 4 enabled
+2026-05-04 05:23:28,175 INFO mcp.server.lowlevel.server: Processing request of type ListToolsRequest
+2026-05-04 05:23:32,603 INFO hermes_cli.plugins: Plugin 'openai' registered image_gen provider: openai
+2026-05-04 05:23:32,604 INFO hermes_cli.plugins: Plugin 'openai-codex' registered image_gen provider: openai-codex
+2026-05-04 05:23:32,694 INFO hermes_cli.plugins: Plugin 'xai' registered image_gen provider: xai
+2026-05-04 05:23:32,786 INFO hermes_cli.plugins: Plugin discovery complete: 5 found, 4 enabled
+2026-05-04 05:23:33,111 INFO mcp.server.lowlevel.server: Processing request of type ListToolsRequest
+2026-05-04 05:24:28,457 INFO mcp.server.lowlevel.server: Processing request of type ListResourcesRequest

@@ -11,20 +11,26 @@ const SuperAdminDashboard = () => {
     const [isUpdating, setIsUpdating] = useState(false);
     const [pendingImpersonation, setPendingImpersonation] = useState(null);
     const [isImpersonating, setIsImpersonating] = useState(false);
+    const [error, setError] = useState(null);
+    const [refreshing, setRefreshing] = useState(false);
 
     useEffect(() => {
         fetchData();
     }, []);
 
-    const fetchData = async () => {
-        setLoading(true);
+    const fetchData = async (isManual = false) => {
+        if (isManual) setRefreshing(true);
+        else setLoading(true);
+        setError(null);
         try {
             const data = await getSATenants();
             setTenants(Array.isArray(data) ? data : []);
         } catch (err) {
             console.error("Master data fetch failed", err);
+            setError("Failed to synchronize with Platform Node. Access to orchestration ledger is currently restricted.");
         } finally {
             setLoading(false);
+            setRefreshing(false);
         }
     };
 
@@ -85,6 +91,15 @@ const SuperAdminDashboard = () => {
                     </p>
                 </div>
                 <div className="flex gap-4">
+                    <button 
+                        onClick={() => fetchData(true)}
+                        disabled={refreshing || loading}
+                        className={`bg-white px-6 py-4 rounded-3xl border border-slate-100 shadow-sm flex items-center gap-3 transition-all hover:bg-his-slate-50 ${refreshing ? 'animate-pulse' : ''}`}
+                    >
+                        <svg className={`w-4 h-4 text-slate-400 ${refreshing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                        <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">{refreshing ? 'Syncing...' : 'Refresh Status'}</span>
+                    </button>
+
                     <div className="bg-white px-6 py-4 rounded-3xl border border-slate-100 shadow-sm flex items-center gap-4">
                         <div className="text-right">
                             <p className="text-[10px] font-black text-slate-300 uppercase">Live Environments</p>
@@ -98,6 +113,18 @@ const SuperAdminDashboard = () => {
                     </div>
                 </div>
             </div>
+
+            {error && (
+                <div className="bg-rose-50 border-2 border-rose-100 p-8 rounded-[2rem] flex items-center gap-6 animate-in slide-in-from-top-4 duration-500">
+                    <div className="w-12 h-12 rounded-2xl bg-white border border-rose-200 flex items-center justify-center shrink-0">
+                        <svg className="w-6 h-6 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                    </div>
+                    <div>
+                        <p className="text-sm font-black text-rose-900">Synchronization Error</p>
+                        <p className="text-xs font-bold text-rose-600 mt-1">{error}</p>
+                    </div>
+                </div>
+            )}
 
             {/* Tenant Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">

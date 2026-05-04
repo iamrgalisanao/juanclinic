@@ -192,10 +192,12 @@ Route::middleware(['auth:sanctum', 'tenant_active', 'tenant_user'])->group(funct
         Route::post('studies/{studyId}/report', [\App\Http\Controllers\Api\ImagingController::class, 'submitReport'])->middleware('role:DOCTOR,DIAGNOSTIC_APPROVER');
         Route::post('studies/{studyId}/finalize', [\App\Http\Controllers\Api\ImagingController::class, 'finalizeStudy'])->middleware('role:DOCTOR,DIAGNOSTIC_APPROVER');
     });
+});
 
-    Route::prefix('sa')->middleware('global_admin')->group(function () {
-        Route::get('tenants', [\App\Http\Controllers\Api\SuperAdminController::class, 'listTenants']);
-        Route::patch('tenants/{tenantId}/plan', [\App\Http\Controllers\Api\SuperAdminController::class, 'updateCommercialPlan']);
-        Route::post('tenants/{tenantId}/impersonate', [\App\Http\Controllers\Api\SuperAdminController::class, 'impersonate']);
-    });
+// Platform Command Center (SuperAdmin Only)
+// Decoupled from tenant isolation middleware to ensure global visibility
+Route::middleware(['auth:sanctum', 'global_admin'])->prefix('sa')->group(function () {
+    Route::get('tenants', [\App\Http\Controllers\Api\SuperAdminController::class, 'listTenants']);
+    Route::patch('tenants/{tenantId}/plan', [\App\Http\Controllers\Api\SuperAdminController::class, 'updateCommercialPlan']);
+    Route::post('tenants/{tenantId}/impersonate', [\App\Http\Controllers\Api\SuperAdminController::class, 'impersonate']);
 });

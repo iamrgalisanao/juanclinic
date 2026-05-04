@@ -18,6 +18,7 @@ class EnsureUserBelongsToTenant
         $user = $request->user();
 
         // 2. Master Admin bypass: Role ADMIN or GLOBAL_ADMIN with either null tenant_id or SYSTEM_ID (888)
+        // This bypasses both the binding check and the ownership check
         if ($user && in_array($user->role, ['ADMIN', 'GLOBAL_ADMIN'])) {
             if (is_null($user->tenant_id) || (int) $user->tenant_id === \App\Models\Tenant::SYSTEM_ID) {
                 return $next($request);

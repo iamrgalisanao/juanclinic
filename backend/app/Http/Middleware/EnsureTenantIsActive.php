@@ -15,6 +15,15 @@ class EnsureTenantIsActive
      */
     public function handle(Request $request, Closure $next): Response
     {
+        $user = $request->user();
+
+        // Platform Administrators bypass suspension checks to allow for recovery and un-suspension
+        if ($user && in_array($user->role, ['ADMIN', 'GLOBAL_ADMIN'])) {
+            if (is_null($user->tenant_id) || (int) $user->tenant_id === \App\Models\Tenant::SYSTEM_ID) {
+                return $next($request);
+            }
+        }
+
         if (app()->bound('tenant')) {
             $tenant = app('tenant');
             
