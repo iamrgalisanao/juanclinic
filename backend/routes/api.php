@@ -127,7 +127,7 @@ Route::group(['middleware' => ['auth:sanctum', 'tenant_active', 'tenant_user', '
 
     // Inventory Management
     Route::middleware('entitled:inventory_enabled')->group(function () {
-        Route::apiResource('inventory-items', \App\Http\Controllers\Api\InventoryController::class);
+        // Route::apiResource('inventory-items', \App\Http\Controllers\Api\InventoryController::class);
         // Note: Stocks are sub-resources or separate endpoints managed by controller
     });
 
