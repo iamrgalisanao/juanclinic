@@ -19,6 +19,21 @@ import {
 
 const Appointments = ({ activeTenant, currentUser }) => {
     const [currentDate, setCurrentDate] = useState(new Date());
+    const [viewType, setViewType] = useState(window.innerWidth < 1024 ? 'day' : 'week');
+    const [viewMonth, setViewMonth] = useState(currentDate.getMonth());
+    const [viewYear, setViewYear] = useState(currentDate.getFullYear());
+    const [showTimePicker, setShowTimePicker] = useState(false);
+
+    // Handle resize to switch viewType automatically if needed (optional, but good for testing)
+    useEffect(() => {
+        const handleResize = () => {
+            if (window.innerWidth < 1024 && viewType === 'week') {
+                // setViewType('day'); // Don't force it, but good to know
+            }
+        };
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, [viewType]);
 
     const formatDate = (date) => {
         const d = new Date(date);
@@ -103,15 +118,23 @@ const Appointments = ({ activeTenant, currentUser }) => {
         return date;
     });
 
-    const handlePrevWeek = () => {
+    const handleNextWeek = () => {
         const newDate = new Date(currentDate);
-        newDate.setDate(currentDate.getDate() - 7);
+        if (viewType === 'day') {
+            newDate.setDate(currentDate.getDate() + 1);
+        } else {
+            newDate.setDate(currentDate.getDate() + 7);
+        }
         setCurrentDate(newDate);
     };
 
-    const handleNextWeek = () => {
+    const handlePrevWeek = () => {
         const newDate = new Date(currentDate);
-        newDate.setDate(currentDate.getDate() + 7);
+        if (viewType === 'day') {
+            newDate.setDate(currentDate.getDate() - 1);
+        } else {
+            newDate.setDate(currentDate.getDate() - 7);
+        }
         setCurrentDate(newDate);
     };
 
@@ -143,6 +166,42 @@ const Appointments = ({ activeTenant, currentUser }) => {
         const firstDayOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
         const pastDaysOfMonth = date.getDate() - 1;
         return Math.ceil((pastDaysOfMonth + firstDayOfMonth.getDay() + 1) / 7) || 1;
+    };
+
+    const getDaysInMonth = (year, month) => {
+        const date = new Date(year, month, 1);
+        const days = [];
+        const firstDay = date.getDay(); // 0 for Sun, 1 for Mon...
+
+        // Padding for the start of the week (assuming week starts on Sunday for simplified view)
+        for (let i = 0; i < firstDay; i++) {
+            days.push(null);
+        }
+
+        const lastDay = new Date(year, month + 1, 0).getDate();
+        for (let i = 1; i <= lastDay; i++) {
+            days.push(new Date(year, month, i));
+        }
+
+        return days;
+    };
+
+    const handleMonthChange = (direction) => {
+        if (direction === 'prev') {
+            if (viewMonth === 0) {
+                setViewMonth(11);
+                setViewYear(viewYear - 1);
+            } else {
+                setViewMonth(viewMonth - 1);
+            }
+        } else {
+            if (viewMonth === 11) {
+                setViewMonth(0);
+                setViewYear(viewYear + 1);
+            } else {
+                setViewMonth(viewMonth + 1);
+            }
+        }
     };
 
     // --- Styling Helpers ---
@@ -302,34 +361,128 @@ const Appointments = ({ activeTenant, currentUser }) => {
         setShowModal(false);
     };
 
+    const renderMobilePicker = () => {
+        const monthDays = getDaysInMonth(viewYear, viewMonth);
+        const monthName = new Date(viewYear, viewMonth).toLocaleString('en-US', { month: 'long' });
+        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const selectedDateStr = formatDate(currentDate);
+        const dayAppointments = appointments.filter(a => a.date === selectedDateStr);
+
+        return (
+            <div className="space-y-6 md:hidden pb-20">
+                {/* Monthly Calendar Picker */}
+                <div className="bg-white rounded-[2rem] p-6 shadow-xl shadow-slate-200/50 border border-slate-100">
+                    <div className="flex justify-between items-center mb-8 px-2">
+                        <h3 className="text-xl font-black text-slate-900">{monthName} {viewYear}</h3>
+                        <div className="flex gap-2">
+                            <button onClick={() => handleMonthChange('prev')} className="w-10 h-10 flex items-center justify-center bg-slate-50 rounded-xl text-his-green-600 hover:bg-his-green-50 transition-all active:scale-90"><ChevronLeft className="w-5 h-5" /></button>
+                            <button onClick={() => handleMonthChange('next')} className="w-10 h-10 flex items-center justify-center bg-slate-50 rounded-xl text-his-green-600 hover:bg-his-green-50 transition-all active:scale-90"><ChevronRight className="w-5 h-5" /></button>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-7 gap-y-2 text-center">
+                        {dayNames.map(d => (
+                            <span key={d} className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">{d}</span>
+                        ))}
+                        {monthDays.map((dateObj, i) => {
+                            if (!dateObj) return <div key={`empty-${i}`} />;
+                            const isSelected = formatDate(dateObj) === selectedDateStr;
+                            const isToday = formatDate(dateObj) === formatDate(new Date());
+
+                            return (
+                                <button
+                                    key={i}
+                                    onClick={() => {
+                                        setCurrentDate(dateObj);
+                                        // Also update picker month/year if jumping via click
+                                        setViewMonth(dateObj.getMonth());
+                                        setViewYear(dateObj.getFullYear());
+                                    }}
+                                    className={`relative w-10 h-10 mx-auto flex items-center justify-center text-sm font-black rounded-2xl transition-all ${isSelected ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30 scale-110 z-10' : isToday ? 'bg-his-green-50 text-his-green-600' : 'text-slate-600 hover:bg-slate-50'}`}
+                                >
+                                    {dateObj.getDate()}
+                                    {isSelected && <div className="absolute -bottom-1 w-1 h-1 bg-white rounded-full" />}
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                {/* Time Selection Button */}
+                <div className="flex gap-4">
+                    <button
+                        onClick={() => setShowTimePicker(true)}
+                        className="flex-1 flex items-center gap-4 bg-white border border-slate-100 rounded-[2rem] p-5 shadow-sm active:scale-[0.98] transition-all group"
+                    >
+                        <div className="w-14 h-14 bg-slate-50 group-hover:bg-his-green-50 transition-colors rounded-2xl flex items-center justify-center text-slate-400 group-hover:text-his-green-500">
+                            <Clock className="w-7 h-7" />
+                        </div>
+                        <div className="text-left">
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Appointment Time</p>
+                            <p className="text-base font-black text-slate-900">Choose Available Slot</p>
+                        </div>
+                    </button>
+                </div>
+
+                {/* Daily Appointments List */}
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between px-2">
+                        <h4 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Daily Schedule</h4>
+                        <span className="text-[10px] font-bold text-his-green-600 bg-his-green-50 px-2 py-1 rounded-lg">{dayAppointments.length} Booked</span>
+                    </div>
+                    {dayAppointments.length > 0 ? (
+                        dayAppointments.map(appt => (
+                            <div key={appt.id} onClick={(e) => handleApptClick(e, appt)} className="bg-white p-5 rounded-[2rem] border border-slate-100 shadow-sm flex items-center justify-between group active:scale-[0.98] transition-all">
+                                <div className="flex items-center gap-4">
+                                    <div className={`w-2 h-12 rounded-full ${getStatusColor(appt.status).split(' ')[0].replace('bg-', 'bg-')}`} />
+                                    <div>
+                                        <p className="text-xs font-black text-slate-900">{appt.patient}</p>
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{formatHourRange(appt.hour)} • {appt.type}</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span className={`text-[9px] font-black px-2 py-1 rounded-lg uppercase tracking-tighter ${getStatusColor(appt.status)}`}>{appt.status}</span>
+                                    <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-slate-600 transition-colors" />
+                                </div>
+                            </div>
+                        ))
+                    ) : (
+                        <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-[2.5rem] p-12 text-center">
+                            <div className="w-16 h-16 bg-white rounded-3xl flex items-center justify-center text-slate-200 mx-auto mb-4">
+                                <CalendarIcon className="w-8 h-8" />
+                            </div>
+                            <p className="text-sm font-bold text-slate-400">No appointments for this day</p>
+                            <button onClick={() => setShowTimePicker(true)} className="mt-4 text-his-green-600 text-[10px] font-black uppercase tracking-widest hover:underline">Book New</button>
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+    };
+
     return (
-        <div className="p-6 space-y-6 animate-fade-in relative z-0">
+        <div className="md:p-6 p-4 space-y-6 animate-fade-in relative z-0 pb-24 md:pb-6">
             {/* Header */}
             <div className="flex justify-between items-center">
                 <div>
-                    <h1 className="text-2xl font-black text-slate-900 tracking-tight">Appointments</h1>
-                    <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mt-1">Drag and Drop Scheduling</p>
+                    <h1 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">Appointments</h1>
+                    <p className="text-slate-500 text-[10px] md:text-xs font-bold uppercase tracking-widest mt-1">Drag and Drop Scheduling</p>
                 </div>
                 <button
                     onClick={handleNewBooking}
-                    className="flex items-center gap-2 bg-his-green-500 hover:bg-his-green-600 active:scale-95 text-white px-5 py-2.5 rounded-2xl font-black text-sm transition-all shadow-xl shadow-his-green-500/20"
+                    className="flex items-center gap-2 bg-his-green-500 hover:bg-his-green-600 active:scale-95 text-white px-4 md:px-5 py-2.5 rounded-xl md:rounded-2xl font-black text-xs md:text-sm transition-all shadow-xl shadow-his-green-500/20"
                 >
                     <Plus className="w-4 h-4" />
-                    <span>Book Appointment</span>
+                    <span>Book <span className="hidden md:inline">Appointment</span></span>
                 </button>
             </div>
 
-            {/* Notification Toast */}
-            {notification && (
-                <div className={`fixed top-6 right-8 z-[9999] px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 animate-slide-in-right ${notification.type === 'success' ? 'bg-his-green-500 text-white' : 'bg-rose-500 text-white'
-                    }`}>
-                    {notification.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <XCircle className="w-5 h-5" />}
-                    <span className="text-sm font-bold tracking-tight">{notification.message}</span>
-                </div>
-            )}
+            {/* Mobile View Branch */}
+            {renderMobilePicker()}
 
-            {/* Todays Schedule Strip */}
-            <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-4 flex flex-col gap-3">
+            {/* Today's Schedule Strip - Desktop Only */}
+            <div className="hidden md:block">
+                <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-4 flex flex-col gap-3">
                 <div className="flex items-center justify-between">
                     <div>
                         <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Today's Schedule</p>
@@ -415,11 +568,13 @@ const Appointments = ({ activeTenant, currentUser }) => {
                 )}
             </div>
 
-            {/* Calendar Grid Section */}
-            <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden select-none">
+            </div>
+
+            {/* Calendar Grid Section - Desktop Only */}
+            <div className="hidden md:block bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden select-none">
                 {/* Calendar Nav */}
-                <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-                    <div className="flex items-center gap-4">
+                <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row items-center justify-between bg-slate-50/50 gap-4">
+                    <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-start">
                         <div
                             className="flex items-center gap-2 cursor-pointer hover:bg-slate-100 px-3 py-1.5 rounded-xl transition-all select-none group"
                             onDoubleClick={() => {
@@ -430,52 +585,71 @@ const Appointments = ({ activeTenant, currentUser }) => {
                             }}
                             title="Double click to quickly select month or week"
                         >
-                            <h2 className="text-lg font-black text-slate-900 group-hover:text-his-green-600 transition-colors">
-                                {currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                            <h2 className="text-base md:text-lg font-black text-slate-900 group-hover:text-his-green-600 transition-colors">
+                                {currentDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                             </h2>
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-white border border-slate-200 px-2 py-0.5 rounded-lg">Wk {getWeekOfMonth(currentDate)}</span>
+                            {viewType === 'week' && (
+                                <span className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-white border border-slate-200 px-2 py-0.5 rounded-lg">Wk {getWeekOfMonth(currentDate)}</span>
+                            )}
                         </div>
                         <div className="flex items-center bg-white rounded-xl p-1 border border-slate-200 shadow-sm">
                             <button onClick={handlePrevWeek} className="p-1.5 hover:bg-slate-50 rounded-lg transition-all text-slate-400 hover:text-slate-900"><ChevronLeft className="w-4 h-4" /></button>
                             <button onClick={handleNextWeek} className="p-1.5 hover:bg-slate-50 rounded-lg transition-all text-slate-400 hover:text-slate-900"><ChevronRight className="w-4 h-4" /></button>
                         </div>
                     </div>
+
+                    {/* View Toggle */}
+                    <div className="flex bg-slate-200/50 p-1 rounded-xl w-full sm:w-auto">
+                        <button
+                            onClick={() => setViewType('day')}
+                            className={`flex-1 sm:flex-none px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${viewType === 'day' ? 'bg-white text-his-green-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                        >
+                            Day
+                        </button>
+                        <button
+                            onClick={() => setViewType('week')}
+                            className={`flex-1 sm:flex-none px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${viewType === 'week' ? 'bg-white text-his-green-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                        >
+                            Week
+                        </button>
+                    </div>
                 </div>
 
                 {/* Schedule View Grid */}
-                <div className="grid grid-cols-8 divide-x divide-slate-100 bg-white">
+                <div className={`grid ${viewType === 'week' ? 'grid-cols-8' : 'grid-cols-2'} divide-x divide-slate-100 bg-white`}>
                     {/* Time Column */}
                     <div className="col-span-1 border-b border-slate-100 bg-slate-50/30">
-                        <div className="h-14 border-b border-slate-100 flex items-center justify-center font-black uppercase text-slate-300 text-xs tracking-widest">TIME</div>
+                        <div className="h-14 border-b border-slate-100 flex items-center justify-center font-black uppercase text-slate-300 text-[9px] md:text-xs tracking-widest">TIME</div>
                         {hours.map(hour => (
-                            <div key={`label-${hour}`} className="h-24 p-2 text-right pr-4 flex items-center justify-end text-[10px] font-black uppercase text-slate-400 border-b border-slate-100 tracking-widest">
+                            <div key={`label-${hour}`} className="h-24 p-2 text-right pr-4 flex items-center justify-end text-[9px] md:text-[10px] font-black uppercase text-slate-400 border-b border-slate-100 tracking-widest">
                                 {formatHour(hour)}
                             </div>
                         ))}
                     </div>
 
-                    {/* Day Columns */}
-                    {days.map((day, dayIdx) => {
-                        const dateObj = weekDates[dayIdx];
+                    {/* Day Column(s) */}
+                    {(viewType === 'week' ? days : [days[currentDate.getDay()]]).map((day, idx) => {
+                        const dateObj = viewType === 'week' ? weekDates[idx] : currentDate;
+                        const dayName = viewType === 'week' ? day : days[currentDate.getDay()];
                         const dateNum = dateObj.getDate();
                         const isToday = new Date().toDateString() === dateObj.toDateString();
 
                         return (
-                            <div key={day} className="col-span-1 border-b border-slate-100">
+                            <div key={`${dayName}-${idx}`} className="col-span-1 border-b border-slate-100">
                                 {/* Day Header */}
                                 <div className={`h-14 border-b border-slate-100 flex flex-col items-center justify-center ${isToday ? 'bg-his-green-50/50' : ''}`}>
-                                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">{day}</span>
-                                    <span className={`text-xl font-black ${isToday ? 'text-his-green-600' : 'text-slate-900'}`}>{dateNum}</span>
+                                    <span className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">{dayName}</span>
+                                    <span className={`text-base md:text-xl font-black ${isToday ? 'text-his-green-600' : 'text-slate-900'}`}>{dateNum}</span>
                                 </div>
 
                                 {/* Time Slots for the Day */}
                                 {hours.map(hour => {
-                                    const slotDateStr = formatDate(weekDates[dayIdx]);
+                                    const slotDateStr = formatDate(dateObj);
                                     // Find appointment(s) for this slot
                                     const slotAppointments = appointments.filter(a => a.date === slotDateStr && a.hour === hour);
                                     return (
                                         <div
-                                            key={`${day}-${hour}`}
+                                            key={`${dayName}-${hour}`}
                                             className="h-24 border-b border-slate-100 relative p-1.5 transition-colors hover:bg-slate-50/50 cursor-crosshair group flex flex-col gap-1.5 overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-transparent group-hover:[&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-full"
                                             onDragOver={handleDragOver}
                                             onDrop={(e) => handleDrop(e, slotDateStr, hour)}
@@ -501,8 +675,8 @@ const Appointments = ({ activeTenant, currentUser }) => {
                                                     onClick={(e) => handleApptClick(e, appt)}
                                                     className={`relative w-full shrink-0 px-2 py-1.5 rounded-sm cursor-grab active:cursor-grabbing transition-all hover:scale-[1.02] hover:z-20 z-10 ${getStatusColor(appt.status)} ${draggedApptId === appt.id ? 'opacity-40 scale-95 border-2 border-dashed border-slate-400' : 'opacity-100'}`}
                                                 >
-                                                    <p className="text-[10px] font-black leading-tight text-slate-800">{formatHourRange(appt.hour)}</p>
-                                                    <p className="text-[11px] font-medium opacity-60 leading-tight truncate text-slate-800 mt-0.5">{appt.patient}</p>
+                                                    <p className="text-[9px] md:text-[10px] font-black leading-tight text-slate-800">{formatHourRange(appt.hour)}</p>
+                                                    <p className="text-[10px] md:text-[11px] font-medium opacity-60 leading-tight truncate text-slate-800 mt-0.5">{appt.patient}</p>
                                                 </div>
                                             ))}
                                         </div>
@@ -541,9 +715,9 @@ const Appointments = ({ activeTenant, currentUser }) => {
                         </div>
 
                         {/* Modal Body Form */}
-                        <form onSubmit={handleModalSave} className="p-8 space-y-6">
+                        <form onSubmit={handleModalSave} className="p-6 md:p-8 space-y-4 md:space-y-6">
 
-                            <div className="grid grid-cols-2 gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
                                         <User className="w-3 h-3 text-his-green-500" /> Patient Name
@@ -578,7 +752,7 @@ const Appointments = ({ activeTenant, currentUser }) => {
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Date</label>
                                     <select
@@ -607,7 +781,7 @@ const Appointments = ({ activeTenant, currentUser }) => {
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
                                         <Activity className="w-3 h-3 text-purple-500" /> Visit Type
@@ -732,6 +906,36 @@ const Appointments = ({ activeTenant, currentUser }) => {
                                 Go To Date
                             </button>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Mobile Time Selection Modal */}
+            {showTimePicker && (
+                <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+                    <div className="bg-white rounded-[2.5rem] w-full max-w-sm overflow-hidden animate-slide-up shadow-2xl">
+                        <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center">
+                            <h2 className="text-xl font-black text-slate-900 flex items-center gap-2">
+                                <Clock className="w-5 h-5 text-his-green-500" /> Select Time
+                            </h2>
+                            <button onClick={() => setShowTimePicker(false)} className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400"><X className="w-5 h-5" /></button>
+                        </div>
+                        <div className="p-6 grid grid-cols-3 gap-3">
+                            {hours.map(h => (
+                                <button
+                                    key={h}
+                                    onClick={() => {
+                                        setSelectedSlot({ date: formatDate(currentDate), hour: h });
+                                        setEditingAppt(null);
+                                        setShowModal(true);
+                                        setShowTimePicker(false);
+                                    }}
+                                    className="py-3 rounded-2xl border border-slate-100 bg-slate-50 hover:bg-his-green-500 hover:text-white transition-all text-xs font-black"
+                                >
+                                    {formatHour(h).replace(':00', '')}
+                                </button>
+                            ))}
+                        </div>
                     </div>
                 </div>
             )}

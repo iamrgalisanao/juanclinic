@@ -580,7 +580,7 @@ function App() {
                     ref={contentRef}
                     className="flex-1 overflow-y-auto overflow-x-hidden w-full custom-scrollbar scroll-smooth"
                 >
-                    <div className="p-10 space-y-10 max-w-[1600px] mx-auto min-h-full">
+                    <div className="p-4 sm:p-10 space-y-6 sm:space-y-10 max-w-[1600px] mx-auto min-h-full">
                     {(() => {
                         // Governance views that are stable even without a clinical tenant context
                         const isGovernanceView = ['superadmin', 'audit', 'hl7_transport'].includes(activeView);
@@ -627,14 +627,14 @@ function App() {
                                         return (
                                             <>
                                                 {/* Welcome Header */}
-                                                <div className="flex justify-between items-end">
+                                                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6">
                                                     <div>
-                                                        <h2 className="text-3xl font-black text-slate-900 tracking-tight">System Overview</h2>
-                                                        <p className="text-sm font-bold text-slate-400 mt-2">Welcome back, <span className="text-his-green-500">{currentUser.name.split(' ')[currentUser.name.split(' ').length - 1]}</span>. Here's what's happening today.</p>
+                                                        <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">System Overview</h2>
+                                                        <p className="text-xs sm:text-sm font-bold text-slate-400 mt-2">Welcome back, <span className="text-his-green-500">{currentUser.name.split(' ')[currentUser.name.split(' ').length - 1]}</span>. Here's what's happening today.</p>
                                                     </div>
-                                                    <div className="flex gap-3">
+                                                    <div className="flex w-full sm:w-auto gap-3">
                                                         {!(currentUser.role === 'GLOBAL_ADMIN' && !impersonatedTenant) && (
-                                                            <button onClick={() => setShowRegister(true)} className="px-6 py-3 bg-his-green-500 text-white text-xs font-black rounded-2xl hover:bg-his-green-600 transition-all uppercase tracking-widest shadow-xl shadow-his-green-500/20 flex items-center gap-2">
+                                                            <button onClick={() => setShowRegister(true)} className="flex-1 sm:flex-none px-6 py-3.5 sm:py-3 bg-his-green-500 text-white text-[10px] sm:text-xs font-black rounded-2xl hover:bg-his-green-600 transition-all uppercase tracking-widest shadow-xl shadow-his-green-500/20 flex items-center justify-center gap-2">
                                                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" /></svg>
                                                                 <span>Register Patient</span>
                                                             </button>
@@ -643,35 +643,31 @@ function App() {
                                                 </div>
 
                                                 {/* Dashboard Content */}
-                                                <div className="space-y-10">
+                                                <div className="space-y-6 sm:space-y-10">
                                                     {/* Stat Grid */}
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                                                         <StatCard
                                                             title="Total Capacity"
                                                             value={patients.length}
                                                             trend="+12% vs last month"
-                                                            color="bg-white"
                                                             icon="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
                                                         />
                                                         <StatCard
                                                             title="Doctors Active"
                                                             value={doctorsCount}
                                                             trend="Current shift"
-                                                            color="bg-white"
                                                             icon="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
                                                         />
                                                         <StatCard
                                                             title="Reports Generated"
                                                             value={dashboardStats?.stats?.total_revenue || 0}
                                                             trend="Statutory compliant"
-                                                            color="bg-white"
                                                             icon="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                                                         />
                                                         <StatCard
                                                             title="HL7 Packets"
                                                             value={orders.length}
                                                             trend="Last 24h traffic"
-                                                            color="bg-white"
                                                             icon="M13 10V3L4 14h7v7l9-11h-7z"
                                                         />
                                                     </div>
@@ -679,77 +675,79 @@ function App() {
                                                     <div className="grid grid-cols-1 xl:grid-cols-3 gap-10">
                                                         {/* Patient Registry Section */}
                                                         <div className="xl:col-span-2 space-y-10">
-                                                            <div className="bg-white rounded-[2.5rem] p-10 shadow-sleek border border-his-slate-100 hover:shadow-2xl hover:shadow-his-slate-200/40 transition-all duration-500">
-                                                                <div className="flex justify-between items-center mb-10">
+                                                            <div className="bg-white rounded-3xl sm:rounded-[2.5rem] p-6 sm:p-10 shadow-sleek border border-his-slate-100 hover:shadow-2xl hover:shadow-his-slate-200/40 transition-all duration-500">
+                                                                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-10">
                                                                     <div>
-                                                                        <h2 className="text-xl font-black text-slate-900 tracking-tight">Active Patient Registry</h2>
-                                                                        <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] mt-2">Latest clinical admissions</p>
+                                                                        <h2 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">Active Patient Registry</h2>
+                                                                        <p className="text-[9px] sm:text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] mt-2">Latest clinical admissions</p>
                                                                     </div>
-                                                                    <div className="flex gap-4">
-                                                                        <button onClick={() => setShowRegister(true)} className="px-6 py-3 bg-his-green-500 hover:bg-his-green-600 active:scale-95 text-white rounded-2xl text-[10px] font-black transition-all shadow-xl shadow-his-green-500/20 uppercase tracking-widest">Register Patient</button>
-                                                                        <button onClick={() => setActiveView('patients')} className="px-6 py-3 bg-his-slate-50 text-slate-400 rounded-2xl text-[10px] font-black hover:bg-his-slate-100 transition-all uppercase tracking-widest border border-slate-100">View All</button>
+                                                                    <div className="flex w-full sm:w-auto gap-3">
+                                                                        <button onClick={() => setShowRegister(true)} className="flex-1 sm:flex-none px-6 py-3.5 sm:py-3 bg-his-green-500 hover:bg-his-green-600 active:scale-95 text-white rounded-2xl text-[9px] sm:text-[10px] font-black transition-all shadow-xl shadow-his-green-500/20 uppercase tracking-widest">Register Patient</button>
+                                                                        <button onClick={() => setActiveView('patients')} className="flex-1 sm:flex-none px-6 py-3.5 sm:py-3 bg-his-slate-50 text-slate-400 rounded-2xl text-[9px] sm:text-[10px] font-black hover:bg-his-slate-100 transition-all uppercase tracking-widest border border-slate-100">View All</button>
                                                                     </div>
                                                                 </div>
-                                                                <div className="overflow-x-auto">
-                                                                    <table className="w-full">
-                                                                        <thead>
-                                                                            <tr className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em]">
-                                                                                <th className="pb-6 pl-2">Patient Details</th>
-                                                                                <th className="pb-6">Gender</th>
-                                                                                <th className="pb-6">DOB</th>
-                                                                                <th className="pb-6">ID System</th>
-                                                                                <th className="pb-6 text-right pr-2">Status</th>
-                                                                            </tr>
-                                                                        </thead>
-                                                                        <tbody className="divide-y divide-slate-50">
-                                                                            {patients.map(p => (
-                                                                                <tr
-                                                                                    key={p.id}
-                                                                                    onClick={() => {
-                                                                                        setSelectedPatient(p.id);
-                                                                                        setActiveView('patient_profile');
-                                                                                    }}
-                                                                                    className="group hover:bg-his-slate-100/30 transition-all duration-300 cursor-pointer"
-                                                                                >
-                                                                                    <td className="py-6 pl-2">
-                                                                                        <div className="flex items-center gap-4">
-                                                                                            <div className="w-12 h-12 rounded-2xl bg-his-slate-100 flex items-center justify-center text-slate-400 font-black text-sm group-hover:bg-his-green-50 group-hover:text-his-green-500 transition-colors duration-300">
-                                                                                                {p.first_name[0]}{p.last_name[0]}
-                                                                                            </div>
-                                                                                            <div>
-                                                                                                <p className="font-black text-sm text-slate-900 leading-tight">{p.first_name} {p.last_name}</p>
-                                                                                                <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">Medical Record</p>
-                                                                                            </div>
-                                                                                        </div>
-                                                                                    </td>
-                                                                                    <td className="py-6 text-xs text-slate-500 font-bold uppercase tracking-widest">{p.gender === 'M' ? 'Male' : 'Female'}</td>
-                                                                                    <td className="py-6 text-xs text-slate-500 font-bold uppercase tracking-widest">{p.dob}</td>
-                                                                                    <td className="py-6">
-                                                                                        <span className="text-[10px] font-mono font-bold text-slate-400 bg-his-slate-50 px-2 py-1 rounded-md border border-slate-100 italic">
-                                                                                            {p.patient_external_id}
-                                                                                        </span>
-                                                                                    </td>
-                                                                                    <td className="py-6 text-right pr-2">
-                                                                                        <div className="flex items-center justify-end gap-2">
-                                                                                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                                                                                            <span className="text-[10px] font-black uppercase text-emerald-600 tracking-widest">Active</span>
-                                                                                        </div>
-                                                                                    </td>
-                                                                                </tr>
-                                                                            ))}
-                                                                        </tbody>
-                                                                    </table>
-                                                                </div>
+                                                                <div className="overflow-x-auto -mx-6 sm:mx-0">
+                                                                     <div className="inline-block min-w-full align-middle px-6 sm:px-0">
+                                                                         <table className="w-full">
+                                                                             <thead>
+                                                                                 <tr className="text-slate-400 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em]">
+                                                                                     <th className="pb-6 pl-2 text-left">Patient Details</th>
+                                                                                     <th className="pb-6 text-left hidden md:table-cell">Gender</th>
+                                                                                     <th className="pb-6 text-left hidden lg:table-cell">DOB</th>
+                                                                                     <th className="pb-6 text-left hidden sm:table-cell">ID System</th>
+                                                                                     <th className="pb-6 text-right pr-2">Status</th>
+                                                                                 </tr>
+                                                                             </thead>
+                                                                             <tbody className="divide-y divide-slate-50">
+                                                                                 {patients.map(p => (
+                                                                                     <tr
+                                                                                         key={p.id}
+                                                                                         onClick={() => {
+                                                                                             setSelectedPatient(p.id);
+                                                                                             setActiveView('patient_profile');
+                                                                                         }}
+                                                                                         className="group hover:bg-his-slate-100/30 transition-all duration-300 cursor-pointer"
+                                                                                     >
+                                                                                         <td className="py-6 pl-2">
+                                                                                             <div className="flex items-center gap-4">
+                                                                                                 <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-his-slate-100 flex items-center justify-center text-slate-400 font-black text-xs sm:text-sm group-hover:bg-his-green-50 group-hover:text-his-green-500 transition-colors duration-300">
+                                                                                                     {p.first_name[0]}{p.last_name[0]}
+                                                                                                 </div>
+                                                                                                 <div>
+                                                                                                     <p className="font-black text-sm text-slate-900 leading-tight">{p.first_name} {p.last_name}</p>
+                                                                                                     <p className="text-[9px] sm:text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">Medical Record</p>
+                                                                                                 </div>
+                                                                                             </div>
+                                                                                         </td>
+                                                                                         <td className="py-6 text-xs text-slate-500 font-bold uppercase tracking-widest hidden md:table-cell">{p.gender === 'M' ? 'Male' : 'Female'}</td>
+                                                                                         <td className="py-6 text-xs text-slate-500 font-bold uppercase tracking-widest hidden lg:table-cell">{p.dob}</td>
+                                                                                         <td className="py-6 hidden sm:table-cell">
+                                                                                             <span className="text-[10px] font-mono font-bold text-slate-400 bg-his-slate-50 px-2 py-1 rounded-md border border-slate-100 italic">
+                                                                                                 {p.patient_external_id}
+                                                                                             </span>
+                                                                                         </td>
+                                                                                         <td className="py-6 text-right pr-2">
+                                                                                             <div className="flex items-center justify-end gap-2">
+                                                                                                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                                                                                 <span className="text-[9px] sm:text-[10px] font-black uppercase text-emerald-600 tracking-widest">Active</span>
+                                                                                             </div>
+                                                                                         </td>
+                                                                                     </tr>
+                                                                                 ))}
+                                                                             </tbody>
+                                                                         </table>
+                                                                     </div>
+                                                                 </div>
                                                             </div>
 
                                                             {/* Clinical Worklist Section */}
-                                                            <div className="bg-white rounded-[2.5rem] p-10 shadow-sleek border border-his-slate-100 hover:shadow-2xl hover:shadow-his-slate-200/40 transition-all duration-500">
+                                                            <div className="bg-white rounded-3xl sm:rounded-[2.5rem] p-6 sm:p-10 shadow-sleek border border-his-slate-100 hover:shadow-2xl hover:shadow-his-slate-200/40 transition-all duration-500">
                                                                 <div className="flex justify-between items-center mb-10">
                                                                     <div>
-                                                                        <h2 className="text-xl font-black text-slate-900 tracking-tight">Clinical Worklist</h2>
-                                                                        <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] mt-2">Real-time HL7 Feed</p>
+                                                                        <h2 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">Clinical Worklist</h2>
+                                                                        <p className="text-[9px] sm:text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] mt-2">Real-time HL7 Feed</p>
                                                                     </div>
-                                                                    <button className="w-10 h-10 rounded-xl bg-slate-50 text-slate-400 flex items-center justify-center hover:bg-his-green-50 hover:text-his-green-500 transition-all">
+                                                                    <button className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-50 text-slate-400 flex items-center justify-center hover:bg-his-green-50 hover:text-his-green-500 transition-all">
                                                                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                                                                     </button>
                                                                 </div>
@@ -795,28 +793,27 @@ function App() {
                                                             </div>
 
                                                             {activeTenant && (
-                                                                <div className="bg-slate-900 rounded-[2.5rem] p-10 text-white shadow-2xl shadow-slate-900/40 relative overflow-hidden group">
+                                                                <div className="bg-slate-900 rounded-3xl sm:rounded-[2.5rem] p-6 sm:p-10 text-white shadow-2xl shadow-slate-900/40 relative overflow-hidden group">
                                                                     <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:scale-110 transition-transform duration-700">
                                                                         <svg className="w-32 h-32" fill="currentColor" viewBox="0 0 20 20">
                                                                             <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
                                                                         </svg>
                                                                     </div>
                                                                     <div className="relative z-10">
-                                                                        <div className="flex items-center gap-2 mb-6">
+                                                                        <div className="flex items-center gap-3 mb-6">
                                                                             <div className="w-2 h-2 rounded-full bg-his-green-500 animate-pulse" />
-                                                                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-his-green-500">Security Active</span>
+                                                                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-his-green-500">Security Active</span>
                                                                         </div>
-                                                                        <h3 className="text-2xl font-black leading-tight mb-4">Multi-Tenant<br />Isolation</h3>
-                                                                        <p className="text-xs text-slate-400 font-bold leading-relaxed mb-10">All clinical data is strictly cryptographically isolated for {activeTenant.name}.</p>
-                                                                        <div className="flex -space-x-3">
-                                                                            {[1, 2, 3, 4].map(i => (
-                                                                                <div key={i} className="w-10 h-10 rounded-2xl border-4 border-slate-900 overflow-hidden shadow-xl">
-                                                                                    <img src={`https://ui-avatars.com/api/?name=User${i}&background=334155&color=fff`} className="w-full h-full object-cover" />
+                                                                        <h2 className="text-xl sm:text-2xl font-black tracking-tight leading-tight mb-4">Multi-Tenant<br />Isolation</h2>
+                                                                        <p className="text-xs font-medium text-slate-400 leading-relaxed max-w-[240px]">
+                                                                            All clinical data is strictly cryptographically isolated for <span className="text-white font-bold">{activeTenant.name}</span>.
+                                                                        </p>
+                                                                        <div className="mt-8 flex -space-x-4">
+                                                                            {['US', 'UK', 'SG', 'JP', 'PH'].map((code, i) => (
+                                                                                <div key={code} className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full border-4 border-slate-900 flex items-center justify-center text-[10px] font-black tracking-tight ${i === 4 ? 'bg-his-green-500 text-white' : 'bg-slate-800 text-slate-400'}`}>
+                                                                                    {code}
                                                                                 </div>
                                                                             ))}
-                                                                            <div className="w-10 h-10 rounded-2xl border-4 border-slate-900 bg-his-green-500 flex items-center justify-center text-[10px] font-black text-white shadow-xl">
-                                                                                +12
-                                                                            </div>
                                                                         </div>
                                                                     </div>
                                                                 </div>
