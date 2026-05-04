@@ -17,22 +17,41 @@ class ResolveTenant
     {
         $tenantId = $request->header('X-Tenant-ID');
 
+        // Fallback 1: Input param
         if (!$tenantId) {
             $tenantId = $request->input('tenant_id');
         }
 
+        // Fallback 2: Session
         if (!$tenantId && $request->hasSession()) {
             $tenantId = $request->session()->get('tenant_id');
         }
 
+        $tenant = null;
+
         if ($tenantId) {
             $tenant = \App\Models\Tenant::find($tenantId);
-            if ($tenant) {
-                app()->instance('tenant', $tenant);
+        }
 
-                if ($request->hasSession()) {
-                    session(['tenant_id' => $tenantId]);
+        // Fallback 3: Subdomain resolution (High priority for production/custom domains)
+        if (!$tenant) {
+            $host = $request->getHost();
+            $parts = explode('.', $host);
+            // Assuming subdomain.domain.com or subdomain.staging.domain.com
+            // We'll take the first part as the slug
+            if (count($parts) >= 2) {
+                $slug = $parts[0];
+                // Ignore common subdomains
+                if (!in_array($slug, ['www', 'api', 'app', 'admin'])) {
+                    $tenant = \App\Models\Tenant::where('slug', $slug)->first();
                 }
+            }
+        }
+
+        if ($tenant) {
+            app()->instance('tenant', $tenant);
+            if ($request->hasSession()) {
+                session(['tenant_id' => $tenant->id]);
             }
         }
 
