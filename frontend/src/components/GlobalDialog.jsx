@@ -1,9 +1,24 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
+import Hammer from 'hammerjs';
 import { useDialog } from '../context/DialogContext';
 import { AlertCircle, HelpCircle, Edit3, X, CheckCircle2, ChevronRight } from 'lucide-react';
 
 const GlobalDialog = () => {
     const { dialog, closeDialog, setPromptValue } = useDialog();
+    const dialogRef = useRef(null);
+
+    useEffect(() => {
+        if (!dialog.isOpen || !dialogRef.current) return;
+
+        const mc = new Hammer(dialogRef.current);
+        mc.get('swipe').set({ direction: Hammer.DIRECTION_VERTICAL });
+
+        mc.on('swipedown', () => {
+            closeDialog(dialog.type === 'CONFIRM' ? false : null);
+        });
+
+        return () => mc.destroy();
+    }, [dialog.isOpen, dialog.type, closeDialog]);
 
     if (!dialog.isOpen) return null;
 
@@ -37,8 +52,13 @@ const GlobalDialog = () => {
     };
 
     return (
-        <div className="fixed inset-0 z-[10001] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
-            <div className="bg-white rounded-[2rem] p-8 max-w-md w-full shadow-[0_24px_48px_-12px_rgba(0,0,0,0.4)] relative overflow-hidden border border-slate-100 animate-in zoom-in-95 duration-500">
+        <div className="fixed inset-0 z-[10001] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
+            <div 
+                ref={dialogRef}
+                className="bg-white rounded-t-[2.5rem] sm:rounded-[2.5rem] p-8 pb-12 sm:pb-8 max-w-md w-full shadow-[0_24px_48px_-12px_rgba(0,0,0,0.4)] relative overflow-hidden border border-slate-100 animate-in slide-in-from-bottom-full sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-500 touch-pan-y"
+            >
+                {/* Drag Handle (Mobile) */}
+                <div className="w-12 h-1.5 bg-slate-100 rounded-full mx-auto mb-6 sm:hidden" />
                 
                 {/* Close Button */}
                 <button 

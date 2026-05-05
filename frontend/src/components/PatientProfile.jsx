@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import Hammer from 'hammerjs';
 import api, { getPatientHistory, updatePatient, deletePatient } from '../services/api';
 import PrescriptionForm from './PrescriptionForm';
 import AttachmentManager from './AttachmentManager';
@@ -38,6 +39,18 @@ const PatientProfile = ({ patientId, onBack, activeTenant, stagedPrescription, s
     const [safetyStatus, setSafetyStatus] = useState(null);
     const [showErasureModal, setShowErasureModal] = useState(false);
     const [showExternalReferralForm, setShowExternalReferralForm] = useState(false);
+    const contentAreaRef = useRef(null);
+
+    const TABS = [
+        { id: 'CHRONICLE', label: 'Clinical Chronicle (v1)', color: 'his-slate-900' },
+        { id: 'TIMELINE', label: 'Longitudinal History', color: 'his-green-500' },
+        { id: 'ATTACHMENTS', label: 'Clinical Folders', color: 'blue-500' },
+        { id: 'NOTES', label: 'Clinical Notes & Encounters', color: 'purple-500' },
+        { id: 'VITALS', label: 'Vitals & Triage', color: 'rose-500' },
+        { id: 'PEDIATRICS', label: 'Pediatrics / Growth', color: 'his-green-500' },
+        { id: 'PRESCRIPTIONS', label: 'Medication & RX History', color: 'amber-500' },
+        ...(activeTenant?.radiology_enabled ? [{ id: 'IMAGING', label: 'Imaging & PACS', color: 'purple-500' }] : [])
+    ];
 
     useEffect(() => {
         if (patientId) {
@@ -102,6 +115,24 @@ const PatientProfile = ({ patientId, onBack, activeTenant, stagedPrescription, s
             console.error("Acknowledgment failed", err);
         }
     };
+
+    useEffect(() => {
+        if (!contentAreaRef.current) return;
+
+        const mc = new Hammer(contentAreaRef.current);
+        mc.get('swipe').set({ direction: Hammer.DIRECTION_HORIZONTAL });
+
+        mc.on('swipeleft swiperight', (ev) => {
+            const currentIndex = TABS.findIndex(t => t.id === activeTab);
+            if (ev.type === 'swipeleft' && currentIndex < TABS.length - 1) {
+                setActiveTab(TABS[currentIndex + 1].id);
+            } else if (ev.type === 'swiperight' && currentIndex > 0) {
+                setActiveTab(TABS[currentIndex - 1].id);
+            }
+        });
+
+        return () => mc.destroy();
+    }, [activeTab, TABS]);
 
     const handleErasureTrigger = () => {
         setShowErasureModal(true);
@@ -568,59 +599,18 @@ const PatientProfile = ({ patientId, onBack, activeTenant, stagedPrescription, s
             )}
 
             <div className="flex gap-4 border-b border-slate-100 px-4 overflow-x-auto scrollbar-hide">
-                <button
-                    onClick={() => setActiveTab('CHRONICLE')}
-                    className={`pb-4 px-4 text-[11px] font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === 'CHRONICLE' ? 'text-his-slate-900 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-his-slate-900' : 'text-slate-400 hover:text-slate-600'}`}
-                >
-                    Clinical Chronicle (v1)
-                </button>
-                <button
-                    onClick={() => setActiveTab('TIMELINE')}
-                    className={`pb-4 px-4 text-[11px] font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === 'TIMELINE' ? 'text-his-green-500 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-his-green-500' : 'text-slate-400 hover:text-slate-600'}`}
-                >
-                    Longitudinal History
-                </button>
-                <button
-                    onClick={() => setActiveTab('ATTACHMENTS')}
-                    className={`pb-4 px-4 text-[11px] font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === 'ATTACHMENTS' ? 'text-blue-500 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-blue-500' : 'text-slate-400 hover:text-slate-600'}`}
-                >
-                    Clinical Folders
-                </button>
-                <button
-                    onClick={() => setActiveTab('NOTES')}
-                    className={`pb-4 px-4 text-[11px] font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === 'NOTES' ? 'text-purple-500 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-purple-500' : 'text-slate-400 hover:text-slate-600'}`}
-                >
-                    Clinical Notes & Encounters
-                </button>
-                <button
-                    onClick={() => setActiveTab('VITALS')}
-                    className={`pb-4 px-4 text-[11px] font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === 'VITALS' ? 'text-rose-500 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-rose-500' : 'text-slate-400 hover:text-slate-600'}`}
-                >
-                    Vitals & Triage
-                </button>
-                <button
-                    onClick={() => setActiveTab('PEDIATRICS')}
-                    className={`pb-4 px-4 text-[11px] font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === 'PEDIATRICS' ? 'text-his-green-500 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-his-green-500' : 'text-slate-400 hover:text-slate-600'}`}
-                >
-                    Pediatrics / Growth
-                </button>
-                <button
-                    onClick={() => setActiveTab('PRESCRIPTIONS')}
-                    className={`pb-4 px-4 text-[11px] font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === 'PRESCRIPTIONS' ? 'text-amber-500 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-amber-500' : 'text-slate-400 hover:text-slate-600'}`}
-                >
-                    Medication & RX History
-                </button>
-                {activeTenant?.radiology_enabled && (
+                {TABS.map(tab => (
                     <button
-                        onClick={() => setActiveTab('IMAGING')}
-                        className={`pb-4 px-4 text-[11px] font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === 'IMAGING' ? 'text-purple-500 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-purple-500' : 'text-slate-400 hover:text-slate-600'}`}
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id)}
+                        className={`pb-4 px-4 text-[11px] font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === tab.id ? `text-${tab.color} after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-${tab.color}` : 'text-slate-400 hover:text-slate-600'}`}
                     >
-                        Imaging & PACS
+                        {tab.label}
                     </button>
-                )}
+                ))}
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 md:gap-10">
+            <div ref={contentAreaRef} className="grid grid-cols-1 lg:grid-cols-3 gap-8 md:gap-10 touch-pan-x">
                 {/* Unified Chronicle */}
                 {activeTab === 'CHRONICLE' && (
                     <div className="lg:col-span-3">
