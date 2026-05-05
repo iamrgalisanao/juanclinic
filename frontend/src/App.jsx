@@ -35,6 +35,7 @@ import { DialogProvider } from './context/DialogContext';
 import GlobalDialog from './components/GlobalDialog';
 import DrugDiscovery from './pages/DrugDiscovery';
 import TerminologyReviewDashboard from './components/admin/TerminologyReviewDashboard';
+import MobileNav from './components/MobileNav';
 
 
 // Authentication persistence helpers
@@ -594,7 +595,7 @@ function App() {
 
                 <div 
                     ref={contentRef}
-                    className="flex-1 overflow-y-auto overflow-x-hidden w-full custom-scrollbar scroll-smooth"
+                    className="flex-1 overflow-y-auto overflow-x-hidden w-full custom-scrollbar scroll-smooth pb-32 lg:pb-0"
                 >
                     <div className="p-4 sm:p-10 space-y-6 sm:space-y-10 max-w-[1600px] mx-auto min-h-full">
                     {(() => {
@@ -936,6 +937,12 @@ function App() {
                     </div>
                 </div>
             </main>
+
+            <MobileNav 
+                activeView={activeView} 
+                setActiveView={setActiveView} 
+                onOpenSidebar={() => setIsSidebarOpen(true)} 
+            />
 
                 {showRegister && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md transition-opacity duration-300">
