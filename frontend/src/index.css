@@ -4,17 +4,42 @@
 
 @layer base {
     body {
-        @apply bg-slate-900 text-slate-100 antialiased;
+        @apply bg-slate-900 text-slate-100 antialiased selection:bg-his-green-500/30;
     }
 }
 
-.glass {
-    @apply bg-white/10 backdrop-blur-md border border-white/20 shadow-xl;
+@layer utilities {
+    /* Fluid Typography (WDS Standard) */
+    .text-fluid-xs { font-size: clamp(0.7rem, 0.8vw, 0.875rem); }
+    .text-fluid-sm { font-size: clamp(0.8rem, 1vw, 0.95rem); }
+    .text-fluid-base { font-size: clamp(0.875rem, 1.2vw, 1rem); }
+    .text-fluid-lg { font-size: clamp(1rem, 1.5vw, 1.125rem); }
+    .text-fluid-xl { font-size: clamp(1.125rem, 2vw, 1.25rem); }
+    .text-fluid-2xl { font-size: clamp(1.25rem, 2.5vw, 1.5rem); }
+    .text-fluid-3xl { font-size: clamp(1.5rem, 4vw, 2.25rem); }
+    .text-fluid-4xl { font-size: clamp(2rem, 5vw, 3.5rem); }
+
+    /* Premium Scaling Tokens */
+    .rounded-premium { border-radius: clamp(1.5rem, 3vw, 2.5rem); }
+    .rounded-premium-sm { border-radius: clamp(1rem, 2vw, 1.5rem); }
+
+    .glass {
+        @apply bg-white/10 backdrop-blur-md border border-white/20 shadow-xl;
+    }
+    
+    .glass-dark {
+        @apply bg-slate-900/40 backdrop-blur-md border border-slate-700/50 shadow-2xl;
+    }
+
+    .shimmer {
+        @apply relative overflow-hidden before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_2s_infinite] before:bg-gradient-to-r before:from-transparent before:via-white/10 before:to-transparent;
+    }
 }
 
 /* Premium Custom Scrollbar */
 .custom-scrollbar::-webkit-scrollbar {
-    width: 5px;
+    width: 6px;
+    height: 6px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
@@ -24,12 +49,13 @@
 .custom-scrollbar::-webkit-scrollbar-thumb {
     background: #334155; /* slate-700 */
     border-radius: 10px;
-    opacity: 0;
-    transition: opacity 0.3s;
+    border: 2px solid transparent;
+    background-clip: content-box;
 }
 
 .custom-scrollbar:hover::-webkit-scrollbar-thumb {
     background: #475569; /* slate-600 */
+    background-clip: content-box;
 }
 
 /* Sidebar Transitions */
@@ -39,4 +65,10 @@
 
 .main-content-transition {
     transition: margin-left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes shimmer {
+    100% {
+        transform: translateX(100%);
+    }
 }
