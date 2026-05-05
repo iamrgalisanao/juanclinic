@@ -82,7 +82,9 @@ function App() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isSidebarSlim, setIsSidebarSlim] = useState(() => {
         const saved = localStorage.getItem('sidebar_slim');
-        return saved === 'true';
+        if (saved !== null) return saved === 'true';
+        // Auto-slim on tablets (iPad Pro 1024px) and below to save space
+        return window.innerWidth <= 1024;
     });
     const [isTransitioning, setIsTransitioning] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');

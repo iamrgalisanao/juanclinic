@@ -79,8 +79,8 @@ const Patients = ({ onOpenPatient, onNewPatient, activeTenant, refreshTrigger })
     const filteredPatients = patients;
 
     return (
-        <div className="bg-white rounded-3xl md:rounded-[2.5rem] p-4 md:p-10 shadow-sleek border border-his-slate-100 flex flex-col gap-6 md:gap-8">
-            <div className="flex flex-col lg:flex-row lg:justify-between lg:items-end gap-6">
+        <div className="bg-white rounded-3xl md:rounded-[2.5rem] p-4 md:p-8 xl:p-10 shadow-sleek border border-his-slate-100 flex flex-col gap-6 md:gap-8">
+            <div className="flex flex-col xl:flex-row xl:justify-between xl:items-end gap-6">
                 <div className="flex-1">
                     <div className="flex flex-wrap items-center gap-3 mb-2">
                         <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight italic">Patients</h1>
@@ -98,7 +98,7 @@ const Patients = ({ onOpenPatient, onNewPatient, activeTenant, refreshTrigger })
                         </span>
                     </div>
                 </div>
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full xl:w-auto">
                     <div className="relative flex-1 sm:w-80">
                         <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300">
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
@@ -187,8 +187,8 @@ const Patients = ({ onOpenPatient, onNewPatient, activeTenant, refreshTrigger })
                                 <tr className="text-slate-400 text-[10px] font-black uppercase tracking-[0.25em]">
                                     <th className="pb-8 pl-4 font-black">Patient Identity</th>
                                     <th className="pb-8 font-black">Sex/Gender</th>
-                                    <th className="pb-8 font-black">Date of Birth</th>
-                                    <th className="pb-8 font-black">Clinical ID</th>
+                                    <th className="pb-8 font-black hidden lg:table-cell">Date of Birth</th>
+                                    <th className="pb-8 font-black hidden xl:table-cell">Clinical ID</th>
                                     <th className="pb-8 text-right pr-4 font-black">Record Status</th>
                                 </tr>
                             </thead>
@@ -215,10 +215,10 @@ const Patients = ({ onOpenPatient, onNewPatient, activeTenant, refreshTrigger })
                                                 {p.gender === 'M' ? 'Male' : p.gender === 'F' ? 'Female' : 'Other'}
                                             </span>
                                         </td>
-                                        <td className="py-6 text-[11px] text-slate-500 font-black uppercase tracking-widest">
+                                        <td className="py-6 hidden lg:table-cell text-[11px] text-slate-500 font-black uppercase tracking-widest">
                                             {formatDate(p.dob)}
                                         </td>
-                                        <td className="py-6">
+                                        <td className="py-6 hidden xl:table-cell">
                                             <span className="text-[11px] font-mono font-black text-slate-400 bg-his-slate-50 px-3 py-1.5 rounded-xl border border-slate-100 group-hover:border-his-green-200 group-hover:text-his-green-500 transition-all">
                                                 {p.patient_external_id || 'PENDING'}
                                             </span>
