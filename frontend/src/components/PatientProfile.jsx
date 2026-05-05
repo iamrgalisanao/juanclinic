@@ -118,7 +118,25 @@ const PatientProfile = ({ patientId, onBack, activeTenant, stagedPrescription, s
         }
     };
 
-    if (loading) return <div className="p-20 text-center font-black text-slate-400 animate-pulse">Loading Longitudinal Record...</div>;
+    if (loading) {
+        return (
+            <div className="space-y-10 animate-in fade-in duration-500">
+                <div className="h-24 w-full bg-slate-800 rounded-[2.5rem] shimmer opacity-20" />
+                <div className="bg-white rounded-[2.5rem] p-10 space-y-8 shadow-sleek border border-his-slate-100">
+                    <div className="flex items-center gap-6">
+                        <div className="w-20 h-20 bg-slate-100 rounded-3xl shimmer" />
+                        <div className="space-y-3 flex-1">
+                            <div className="h-8 w-1/3 bg-slate-100 rounded-xl shimmer" />
+                            <div className="h-4 w-1/4 bg-slate-100 rounded-lg shimmer" />
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-4 gap-6">
+                        {[1, 2, 3, 4].map(i => <div key={i} className="h-24 bg-slate-50 rounded-3xl shimmer" />)}
+                    </div>
+                </div>
+            </div>
+        );
+    }
     if (!data) return <div className="p-20 text-center text-rose-500 font-black">Patient not found or access denied.</div>;
 
     const { patient, history } = data;
@@ -142,84 +160,61 @@ const PatientProfile = ({ patientId, onBack, activeTenant, stagedPrescription, s
             {/* Safety Governance Banner */}
             <PatientSafetyBanner status={safetyStatus} onAcknowledge={handleAcknowledgeAll} />
 
-            {/* Header / Demographics */}
-            <header className="bg-white rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-10 shadow-sleek border border-his-slate-100 flex flex-col lg:flex-row justify-between lg:items-center gap-6 md:gap-8">
-                <div className="flex flex-col md:flex-row md:items-center gap-6 md:gap-8">
+            {/* Header / Demographics - Adaptive Grid Refactor */}
+            <header className="bg-white rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8 shadow-sleek border border-his-slate-100 grid grid-cols-1 md:grid-cols-12 items-center gap-8">
+                {/* Left: Identity */}
+                <div className="md:col-span-12 lg:col-span-4 flex items-center gap-6">
                     <button onClick={onBack} className="w-12 h-12 rounded-2xl bg-his-slate-50 text-slate-400 flex items-center justify-center hover:bg-his-green-50 hover:text-his-green-500 transition-all group shrink-0">
                         <svg className="w-6 h-6 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" /></svg>
                     </button>
-                    <div>
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-3 md:mb-2">
-                            <h2 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">{patient.first_name} {patient.last_name}</h2>
-                            <div className="flex flex-wrap gap-2">
-                                <span className="px-3 py-1 bg-his-green-50 text-his-green-600 text-[9px] md:text-[10px] font-black rounded-full uppercase tracking-widest border border-his-green-100/30">
-                                    ID: {patient.patient_external_id}
-                                </span>
-                                <span className="px-3 py-1 bg-his-slate-50 text-slate-400 text-[9px] md:text-[10px] font-black rounded-full uppercase tracking-widest border border-slate-100">
-                                    {window.location.hostname.split('.')[0] || 'Default'} Tenant
-                                </span>
-                            </div>
+                    <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-3 mb-1">
+                            <h2 className="text-2xl md:text-2xl font-black text-slate-900 tracking-tight truncate max-w-[200px] sm:max-w-none">{patient.first_name} {patient.last_name}</h2>
+                            <span className="px-2 py-0.5 bg-his-green-50 text-his-green-600 text-[8px] font-black rounded-full uppercase tracking-widest border border-his-green-100/30">
+                                {patient.patient_external_id}
+                            </span>
                         </div>
-                        <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-widest">
-                            <div className="flex items-center gap-2">
-                                <span className="text-slate-900">{patient.gender === 'M' ? 'Male' : 'Female'}</span>
-                                <span className="text-slate-200">•</span>
-                                <span className="text-slate-900">DOB: {new Date(patient.dob).toLocaleDateString()}</span>
-                            </div>
-                            <span className="hidden md:inline text-slate-200">•</span>
-                            <span className="text-slate-900">Contact: {patient.contact}</span>
-                            <span className="flex items-center gap-2 text-his-green-500 bg-his-green-50 px-2 py-0.5 rounded-lg border border-his-green-100/30 w-fit">
-                                <div className="w-1.5 h-1.5 rounded-full bg-his-green-500 animate-pulse" />
-                                PHI Access Logged: {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                            <span>{patient.gender === 'M' ? 'M' : 'F'}</span>
+                            <span className="text-slate-200">•</span>
+                            <span>{new Date(patient.dob).toLocaleDateString()}</span>
+                            <span className="flex items-center gap-1.5 text-his-green-500 font-black">
+                                <div className="w-1 h-1 rounded-full bg-his-green-500 animate-pulse" />
+                                PHI OK
                             </span>
                         </div>
                     </div>
                 </div>
 
-                {/* Last Vitals Quick Summary */}
-                {history.vitals && history.vitals.length > 0 && (
-                    <div className="flex flex-wrap items-center gap-6 p-4 rounded-3xl bg-slate-50/50 border border-slate-100/50">
-                        <div className="flex flex-col gap-0.5">
-                            <span className="text-[8px] font-black text-rose-500 uppercase tracking-[0.15em]">Last BP</span>
-                            <span className="text-xs font-black text-slate-900">{history.vitals[0].bp_systolic}/{history.vitals[0].bp_diastolic} <span className="text-[9px] text-slate-400 font-bold ml-0.5">mmHg</span></span>
+                {/* Middle: Last Vitals Quick Summary - Highly Compact on Tablets */}
+                <div className="md:col-span-8 lg:col-span-5">
+                    {history.vitals && history.vitals.length > 0 && (
+                        <div className="flex items-center justify-between lg:justify-start lg:gap-8 p-3 px-5 rounded-[1.5rem] bg-slate-50/50 border border-slate-100/50 overflow-x-auto scrollbar-hide">
+                            <div className="flex flex-col gap-0.5 shrink-0">
+                                <span className="text-[7px] font-black text-rose-500 uppercase tracking-widest">BP</span>
+                                <span className="text-[11px] font-black text-slate-900 whitespace-nowrap">{history.vitals[0].bp_systolic}/{history.vitals[0].bp_diastolic}</span>
+                            </div>
+                            <div className="w-px h-4 bg-slate-200 shrink-0" />
+                            <div className="flex flex-col gap-0.5 shrink-0">
+                                <span className="text-[7px] font-black text-amber-500 uppercase tracking-widest">TEMP</span>
+                                <span className="text-[11px] font-black text-slate-900 whitespace-nowrap">{history.vitals[0].temp_c}°C</span>
+                            </div>
+                            <div className="w-px h-4 bg-slate-200 shrink-0" />
+                            <div className="flex flex-col gap-0.5 shrink-0">
+                                <span className="text-[7px] font-black text-blue-500 uppercase tracking-widest">O2</span>
+                                <span className="text-[11px] font-black text-slate-900 whitespace-nowrap">{history.vitals[0].spo2}%</span>
+                            </div>
+                            <div className="w-px h-4 bg-slate-200 shrink-0" />
+                            <div className="flex flex-col gap-0.5 shrink-0">
+                                <span className="text-[7px] font-black text-emerald-500 uppercase tracking-widest">BMI</span>
+                                <span className="text-[11px] font-black text-slate-900 whitespace-nowrap">{history.vitals[0].bmi || '--'}</span>
+                            </div>
                         </div>
-                        <div className="w-px h-6 bg-slate-200 hidden sm:block" />
-                        <div className="flex flex-col gap-0.5">
-                            <span className="text-[8px] font-black text-amber-500 uppercase tracking-[0.15em]">Temp</span>
-                            <span className="text-xs font-black text-slate-900">{history.vitals[0].temp_c}°C</span>
-                        </div>
-                        <div className="w-px h-6 bg-slate-200 hidden sm:block" />
-                        <div className="flex flex-col gap-0.5">
-                            <span className="text-[8px] font-black text-blue-500 uppercase tracking-[0.15em]">O2 Sat</span>
-                            <span className="text-xs font-black text-slate-900">{history.vitals[0].spo2}%</span>
-                        </div>
-                        <div className="w-px h-6 bg-slate-200 hidden sm:block" />
-                        <div className="flex flex-col gap-0.5">
-                            <span className="text-[8px] font-black text-emerald-500 uppercase tracking-[0.15em]">BMI</span>
-                            <span className="text-xs font-black text-slate-900">{history.vitals[0].bmi || '--'}</span>
-                        </div>
-                        {history.vitals[0].pain_score !== null && (
-                            <>
-                                <div className="w-px h-6 bg-slate-200 hidden sm:block" />
-                                <div className="flex flex-col gap-0.5">
-                                    <span className="text-[8px] font-black text-rose-600 uppercase tracking-[0.15em]">Pain</span>
-                                    <span className="text-xs font-black text-slate-900">{history.vitals[0].pain_score}/10</span>
-                                </div>
-                            </>
-                        )}
-                        {history.vitals[0].blood_glucose_mgdl && (
-                            <>
-                                <div className="w-px h-6 bg-slate-200 hidden sm:block" />
-                                <div className="flex flex-col gap-0.5">
-                                    <span className="text-[8px] font-black text-blue-600 uppercase tracking-[0.15em]">Glucose</span>
-                                    <span className="text-xs font-black text-slate-900">{history.vitals[0].blood_glucose_mgdl} <span className="text-[9px] text-slate-400 font-bold ml-0.5">mg/dL</span></span>
-                                </div>
-                            </>
-                        )}
-                    </div>
-                )}
+                    )}
+                </div>
 
-                <div className="flex flex-col sm:flex-row gap-3">
+                {/* Right: Actions */}
+                <div className="md:col-span-4 lg:col-span-3 flex flex-row md:flex-col lg:flex-row items-center gap-3">
                     <button
                         onClick={() => setIsEditing(true)}
                         className="px-6 py-3 bg-white text-slate-600 text-[10px] md:text-xs font-black rounded-2xl border border-slate-100 hover:bg-slate-50 transition-all uppercase tracking-widest text-center"
