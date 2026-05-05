@@ -48,7 +48,6 @@ class EntitlementService
             // Priority 1: High-Tier & Active Trial Bypass (Enterprise Governance)
             if ($tenant->plan_tier === 'GOLD' || $tenant->plan_tier === 'TRIAL') {
                 if ($tenant->plan_tier === 'TRIAL' && $tenant->trial_ends_at && $tenant->trial_ends_at->isPast()) {
-                    \Log::info("Entitlement: Feature '{$feature}' DENIED for Tenant #{$tenant->id} (Trial Expired)");
                     return false;
                 }
                 return true;
@@ -56,20 +55,12 @@ class EntitlementService
 
             // Priority 2: Explicit Commercial Columns (Phase 12)
             if (isset($tenant->{$feature})) {
-                $allowed = (bool) $tenant->{$feature};
-                if (!$allowed) {
-                    \Log::info("Entitlement: Feature '{$feature}' DENIED for Tenant #{$tenant->id} (Column flag is false)");
-                }
-                return $allowed;
+                return (bool) $tenant->{$feature};
             }
 
             // Priority 3: JSON Admin Settings fallback
             $settings = $tenant->admin_settings;
-            $allowed = (bool) ($settings['features'][$feature] ?? false);
-            if (!$allowed) {
-                \Log::info("Entitlement: Feature '{$feature}' DENIED for Tenant #{$tenant->id} (No settings/fallback found)");
-            }
-            return $allowed;
+            return (bool) ($settings['features'][$feature] ?? false);
         });
     }
 
