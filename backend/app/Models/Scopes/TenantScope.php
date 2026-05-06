@@ -30,8 +30,6 @@ class TenantScope implements Scope
 
         if (app()->bound('tenant')) {
             $tenantId = app('tenant')->id;
-        } elseif (request()->hasSession() && session()->has('tenant_id')) {
-            $tenantId = session('tenant_id');
         }
 
         if ($tenantId) {

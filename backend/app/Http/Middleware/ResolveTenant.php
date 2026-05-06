@@ -27,10 +27,7 @@ class ResolveTenant
             $tenantId = $request->input('tenant_id');
         }
 
-        // Fallback 2: Session
-        if (!$tenantId && $request->hasSession()) {
-            $tenantId = $request->session()->get('tenant_id');
-        }
+
 
         $tenant = null;
 

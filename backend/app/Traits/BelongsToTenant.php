@@ -21,8 +21,6 @@ trait BelongsToTenant
 
             if (app()->bound('tenant')) {
                 $tenantId = app('tenant')->id;
-            } elseif (request()->hasSession() && session()->has('tenant_id')) {
-                $tenantId = session('tenant_id');
             }
 
             if ($tenantId && !$model->tenant_id) {
