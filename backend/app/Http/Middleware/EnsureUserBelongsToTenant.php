@@ -26,14 +26,25 @@ class EnsureUserBelongsToTenant
         }
 
         if (!app()->bound('tenant')) {
-            return response()->json(['message' => 'Tenant context missing.'], 403);
+            // Attempt recovery if user has a tenant_id
+            if ($user && $user->tenant_id) {
+                $tenantModel = \App\Models\Tenant::find($user->tenant_id);
+                if ($tenantModel) {
+                    app()->instance('tenant', $tenantModel);
+                    \Log::info("Recovery: Bound tenant from user ID {$user->id} in EnsureUserBelongsToTenant");
+                } else {
+                    return response()->json(['message' => 'Tenant context missing and recovery failed.'], 403);
+                }
+            } else {
+                return response()->json(['message' => 'Tenant context missing.'], 403);
+            }
         }
 
         $tenant = app('tenant');
 
         // 3. Ownership Check: User must belong to the tenant they are accessing
         if (!$tenant || $user->tenant_id != $tenant->id) {
-            \Log::warning("Tenant access denied: User ID {$user->id} (User Tenant: {$user->tenant_id}) attempted to access Tenant Context: " . ($tenant ? $tenant->id : 'null'));
+            \Log::warning("Tenant access denied: User ID {$user->id} (User Tenant: " . ($user->tenant_id ?? 'NULL') . ") attempted to access Tenant Context: " . ($tenant ? $tenant->id : 'null'));
             return response()->json([
                 'message' => 'User does not belong to this tenant.',
                 'debug_context' => [

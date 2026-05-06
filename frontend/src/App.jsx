@@ -25,6 +25,7 @@ import Referrals from './components/Referrals';
 import BranchManagement from './views/BranchManagement';
 import TenantManagement from './views/TenantManagement';
 import NotificationSettings from './views/settings/NotificationSettings';
+import SettingsGovernance from './views/SettingsGovernance';
 import SuperAdminDashboard from './views/admin/SuperAdminDashboard';
 import HelpCenter from './views/HelpCenter';
 import HL7OutboxViewer from './components/admin/HL7OutboxViewer';
@@ -205,6 +206,9 @@ function App() {
                     console.log(`[Tenant Sync] Successfully aligned to ${targetTenant.name}`);
                 } catch (err) {
                     console.error("[Tenant Sync] Alignment failure", err);
+                    // In case of total failure, we must release the transition lock
+                    // so the user isn't stuck on the overlay forever.
+                    setIsTransitioning(false);
                 } finally {
                     syncLockRef.current.isSyncing = false;
                     setIsTransitioning(false);
@@ -233,7 +237,7 @@ function App() {
 
     const [activeView, setActiveView] = useState(() => {
         const hash = window.location.hash.replace('#', '').split('?')[0];
-        return ['dashboard', 'worklist', 'messages', 'message', 'appointments', 'appointment', 'patients', 'doctors', 'reports', 'audit', 'patient_profile', 'pharmacy', 'billing', 'clinical_notes', 'medicine_management', 'referrals', 'branch_management', 'hl7_transport', 'portal', 'superadmin', 'drug_discovery', 'terminology_review'].includes(hash) ? hash : 'dashboard';
+        return ['dashboard', 'worklist', 'messages', 'message', 'appointments', 'appointment', 'patients', 'doctors', 'reports', 'audit', 'patient_profile', 'pharmacy', 'billing', 'clinical_notes', 'medicine_management', 'referrals', 'branch_management', 'hl7_transport', 'portal', 'superadmin', 'drug_discovery', 'terminology_review', 'settings_governance'].includes(hash) ? hash : 'dashboard';
     });
 
 
@@ -485,7 +489,8 @@ function App() {
             'patient_profile': { roles: ['ADMIN', 'DOCTOR', 'FRONT_DESK', 'DIAGNOSTIC_APPROVER'] },
             'hl7_transport': { roles: ['ADMIN'] },
             'superadmin': { roles: ['GLOBAL_ADMIN'] },
-            'terminology_review': { roles: ['ADMIN', 'GLOBAL_ADMIN'] }
+            'terminology_review': { roles: ['ADMIN', 'GLOBAL_ADMIN'] },
+            'settings_governance': { roles: ['ADMIN'] }
         };
         const config = rolePermissions[view];
         if (!config) return false;
@@ -595,7 +600,7 @@ function App() {
 
                 <div 
                     ref={contentRef}
-                    className="flex-1 overflow-y-auto overflow-x-hidden w-full custom-scrollbar scroll-smooth pb-32 lg:pb-0"
+                    className="flex-1 overflow-y-auto overflow-x-hidden w-full custom-scrollbar scroll-smooth pb-44 lg:pb-0"
                 >
                     <div className="p-4 sm:p-10 space-y-6 sm:space-y-10 max-w-[1600px] mx-auto min-h-full">
                     {(() => {
@@ -726,13 +731,13 @@ function App() {
                                                                                          className="group hover:bg-his-slate-100/30 transition-all duration-300 cursor-pointer"
                                                                                      >
                                                                                          <td className="py-6 pl-2">
-                                                                                             <div className="flex items-center gap-4">
-                                                                                                 <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-his-slate-100 flex items-center justify-center text-slate-400 font-black text-xs sm:text-sm group-hover:bg-his-green-50 group-hover:text-his-green-500 transition-colors duration-300">
+                                                                                             <div className="flex items-center gap-4 min-w-0">
+                                                                                                 <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-his-slate-100 shrink-0 flex items-center justify-center text-slate-400 font-black text-xs sm:text-sm group-hover:bg-his-green-50 group-hover:text-his-green-500 transition-colors duration-300">
                                                                                                      {p.first_name[0]}{p.last_name[0]}
                                                                                                  </div>
-                                                                                                 <div>
-                                                                                                     <p className="font-black text-sm text-slate-900 leading-tight">{p.first_name} {p.last_name}</p>
-                                                                                                     <p className="text-[9px] sm:text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">Medical Record</p>
+                                                                                                 <div className="min-w-0 flex-1">
+                                                                                                     <p className="font-black text-sm text-slate-900 leading-tight truncate">{p.first_name} {p.last_name}</p>
+                                                                                                     <p className="text-[9px] sm:text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest truncate">Medical Record</p>
                                                                                                  </div>
                                                                                              </div>
                                                                                          </td>
@@ -822,7 +827,7 @@ function App() {
                                                                             <span className="text-[10px] font-black uppercase tracking-[0.3em] text-his-green-500">Security Active</span>
                                                                         </div>
                                                                         <h2 className="text-xl sm:text-2xl font-black tracking-tight leading-tight mb-4">Multi-Tenant<br />Isolation</h2>
-                                                                        <p className="text-xs font-medium text-slate-400 leading-relaxed max-w-[240px]">
+                                                                        <p className="text-xs font-medium text-slate-400 leading-relaxed max-w-[240px] truncate">
                                                                             All clinical data is strictly cryptographically isolated for <span className="text-white font-bold">{activeTenant.name}</span>.
                                                                         </p>
                                                                         <div className="mt-8 flex -space-x-4">
@@ -903,7 +908,9 @@ function App() {
                                     case 'branch_management':
                                         return <BranchManagement activeTenant={activeTenant} tenants={tenants} />;
                                     case 'tenant_management':
-                                        return <TenantManagement onTenantUpdate={fetchInitialData} />;
+                                        return <SettingsGovernance activeTenant={activeTenant} onTenantUpdate={fetchInitialData} />;
+                                    case 'settings_governance':
+                                        return <SettingsGovernance activeTenant={activeTenant} onTenantUpdate={fetchInitialData} />;
                                     case 'notification_settings':
                                         return <NotificationSettings />;
                                     case 'hl7_transport':
@@ -929,8 +936,8 @@ function App() {
                                                 </div>
                                             </div>
                                         );
-                                    }
-                                })()}
+                                }
+                            })()}
                             </div>
                         );
                     })()}
@@ -944,10 +951,10 @@ function App() {
                 onOpenSidebar={() => setIsSidebarOpen(true)} 
             />
 
-                {showRegister && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md transition-opacity duration-300">
-                        <div className="bg-white rounded-[3rem] p-12 max-w-2xl w-full shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] relative overflow-hidden">
-                            <div className="absolute top-0 right-0 p-8">
+            {showRegister && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-slate-900/80 backdrop-blur-xl transition-opacity duration-300">
+                        <div className="bg-white rounded-[2.5rem] sm:rounded-[3rem] p-6 sm:p-12 max-w-2xl w-full shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] relative overflow-hidden">
+                            <div className="absolute top-0 right-0 p-4 sm:p-8">
                                 <button onClick={() => setShowRegister(false)} className="w-12 h-12 flex items-center justify-center rounded-2xl bg-his-slate-50 text-slate-400 hover:bg-rose-50 hover:text-rose-500 transition-all group">
                                     <svg className="w-6 h-6 group-hover:rotate-90 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />

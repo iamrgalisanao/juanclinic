@@ -53,11 +53,21 @@ class ResolveTenant
             }
         }
 
+        if (!$tenant && auth()->check()) {
+            $user = auth()->user();
+            if ($user->tenant_id) {
+                $tenant = \App\Models\Tenant::find($user->tenant_id);
+            }
+        }
+
         if ($tenant) {
             app()->instance('tenant', $tenant);
+            \Log::debug("Tenant resolved: ID {$tenant->id} ({$tenant->slug})");
             if ($request->hasSession()) {
                 session(['tenant_id' => $tenant->id]);
             }
+        } else {
+            \Log::debug("No tenant context found for request: " . $request->fullUrl());
         }
 
         // Proceed without binding if no tenant context found
