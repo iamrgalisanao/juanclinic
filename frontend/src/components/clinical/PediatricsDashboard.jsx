@@ -91,7 +91,7 @@ const PediatricsDashboard = ({ patientId, patient }) => {
                       </p>
                   </div>
               </div>
-              <div className="flex -space-x-2">
+              <div className="flex flex-wrap gap-2 justify-center md:justify-end">
                   {overdue.slice(0, 5).map((m, i) => (
                       <div key={i} className="px-3 py-1.5 bg-white rounded-full border border-rose-100 text-[9px] font-black text-rose-500 uppercase tracking-tighter shadow-sm whitespace-nowrap">
                           {m.vaccine_name || m.name}
@@ -106,9 +106,10 @@ const PediatricsDashboard = ({ patientId, patient }) => {
           </div>
       )}
 
-      {/* Executive Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sleek relative overflow-hidden group hover:border-his-green-500/30 transition-all flex flex-col justify-between">
+      {/* Executive Summary Cards - Flex-to-Stack for fluid density */}
+      <div className="flex flex-col lg:flex-row gap-6">
+        {/* Vital Status Card */}
+        <div className="flex-1 bg-white rounded-[2rem] p-6 sm:p-8 border border-slate-100 shadow-sleek relative overflow-hidden group hover:border-his-green-500/30 transition-all flex flex-col justify-between min-w-0">
             <div className="absolute top-0 right-0 p-6 opacity-[0.03] group-hover:scale-110 transition-transform duration-500">
                 <Activity size={80} />
             </div>
@@ -135,7 +136,7 @@ const PediatricsDashboard = ({ patientId, patient }) => {
             </p>
         </div>
 
-        <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sleek relative overflow-hidden group hover:border-blue-500/30 transition-all">
+        <div className="flex-1 bg-white rounded-[2rem] p-6 sm:p-8 border border-slate-100 shadow-sleek relative overflow-hidden group hover:border-blue-500/30 transition-all min-w-0">
             <div className="absolute top-0 right-0 p-6 opacity-[0.03] group-hover:scale-110 transition-transform duration-500">
                 <BarChart3 size={80} />
             </div>
@@ -166,7 +167,7 @@ const PediatricsDashboard = ({ patientId, patient }) => {
             </div>
         </div>
 
-        <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sleek relative overflow-hidden group hover:border-rose-500/30 transition-all">
+        <div className="flex-1 bg-white rounded-[2rem] p-6 sm:p-8 border border-slate-100 shadow-sleek relative overflow-hidden group hover:border-rose-500/30 transition-all min-w-0">
             <div className="absolute top-0 right-0 p-6 opacity-[0.03] group-hover:scale-110 transition-transform duration-500">
                 <Shield size={80} />
             </div>
@@ -190,7 +191,7 @@ const PediatricsDashboard = ({ patientId, patient }) => {
       </div>
 
       {/* Main Interface */}
-      <div className="flex gap-4 border-b border-slate-100 px-4">
+      <div className="flex gap-2 sm:gap-4 border-b border-slate-100 px-2 sm:px-4 overflow-x-auto no-scrollbar">
         {isNeonatal && (
             <button
                 onClick={() => setActiveView('NEONATAL')}
@@ -222,7 +223,7 @@ const PediatricsDashboard = ({ patientId, patient }) => {
         </button>
       </div>
 
-      <div className="bg-white rounded-[2.5rem] p-8 md:p-10 border border-his-slate-100 shadow-sleek min-h-[500px]">
+      <div className="bg-white rounded-[2.5rem] p-6 sm:p-8 md:p-10 border border-his-slate-100 shadow-sleek min-h-[500px]">
         {activeView === 'NEONATAL' ? (
             <NeonatalDashboard patientId={patientId} patient={patient} />
         ) : activeView === 'GROWTH' ? (
@@ -261,7 +262,7 @@ const PediatricsDashboard = ({ patientId, patient }) => {
                     </div>
                 </div>
                 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-12">
                    <GrowthChart data={data.growth} type="weight" gender={patient?.gender || 'M'} />
                    <GrowthChart data={data.growth} type="height" gender={patient?.gender || 'M'} />
                    <GrowthChart data={data.growth} type="bmi" gender={patient?.gender || 'M'} />

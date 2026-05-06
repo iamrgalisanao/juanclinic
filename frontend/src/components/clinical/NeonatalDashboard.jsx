@@ -40,7 +40,7 @@ const NeonatalDashboard = ({ patientId, patient }) => {
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       {/* Header Stat Area */}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-slate-900 rounded-[2.5rem] p-8 md:p-10 text-white shadow-2xl relative overflow-hidden">
+      <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-slate-900 rounded-[2.5rem] p-6 md:p-10 text-white shadow-2xl relative overflow-hidden">
         <div className="absolute top-0 right-0 p-10 opacity-10 rotate-12">
             <Baby size={160} />
         </div>
@@ -50,7 +50,7 @@ const NeonatalDashboard = ({ patientId, patient }) => {
                 <Baby size={40} />
             </div>
             <div>
-                <h2 className="text-3xl font-black tracking-tighter">Neonatal Care Unit</h2>
+                <h2 className="text-2xl sm:text-3xl font-black tracking-tighter">Neonatal Care Unit</h2>
                 <div className="flex items-center gap-4 mt-2">
                     <span className="text-[10px] font-black uppercase tracking-[0.2em] px-3 py-1 bg-white/10 rounded-full border border-white/10">
                         {Math.floor(summary.current_age_days)} Days Chronological
@@ -86,7 +86,7 @@ const NeonatalDashboard = ({ patientId, patient }) => {
       {/* Grid of Specialized Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* APGAR Card */}
-        <div className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sleek flex flex-col justify-between">
+        <div className="bg-white rounded-[2rem] p-5 sm:p-6 border border-slate-100 shadow-sleek flex flex-col justify-between">
             <div className="flex justify-between items-start mb-4">
                 <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">APGAR Score</div>
                 <Activity size={16} className={apgarScore < 7 ? 'text-rose-500' : 'text-his-green-500'} />
@@ -105,7 +105,7 @@ const NeonatalDashboard = ({ patientId, patient }) => {
         </div>
 
         {/* Birth Weight Card */}
-        <div className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sleek flex flex-col justify-between">
+        <div className="bg-white rounded-[2rem] p-5 sm:p-6 border border-slate-100 shadow-sleek flex flex-col justify-between">
             <div className="flex justify-between items-start mb-4">
                 <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Birth Weight</div>
                 <TrendingUp size={16} className="text-blue-500" />
@@ -122,7 +122,7 @@ const NeonatalDashboard = ({ patientId, patient }) => {
         </div>
 
         {/* Weight Velocity Card */}
-        <div className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sleek flex flex-col justify-between">
+        <div className="bg-white rounded-[2rem] p-5 sm:p-6 border border-slate-100 shadow-sleek flex flex-col justify-between">
             <div className="flex justify-between items-start mb-4">
                 <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Weight Velocity</div>
                 <TrendingUp size={16} className={summary.weight_gain_g >= 0 ? 'text-his-green-300' : 'text-rose-300'} />
@@ -142,7 +142,7 @@ const NeonatalDashboard = ({ patientId, patient }) => {
         </div>
 
         {/* Status Alert Card */}
-        <div className={`rounded-[2rem] p-6 border flex flex-col justify-between ${isHighRisk ? 'bg-rose-50 border-rose-100' : 'bg-his-green-50 border-his-green-100'}`}>
+        <div className={`rounded-[2rem] p-5 sm:p-6 border flex flex-col justify-between ${isHighRisk ? 'bg-rose-50 border-rose-100' : 'bg-his-green-50 border-his-green-100'}`}>
             <div className="flex justify-between items-start mb-4">
                 <div className={`text-[10px] font-black uppercase tracking-widest ${isHighRisk ? 'text-rose-600' : 'text-his-green-600'}`}>Risk Category</div>
                 <AlertCircle size={16} className={isHighRisk ? 'text-rose-500' : 'text-his-green-500'} />

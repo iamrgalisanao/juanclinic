@@ -235,8 +235,22 @@ class PediatricService
         $standards = [];
         for ($m = 0; $m <= 24; $m++) {
             $l = 1; 
-            $median = $metric === 'weight_for_age' ? ($gender === 'M' ? 3.3 + ($m * 0.6) : 3.2 + ($m * 0.58)) : ($gender === 'M' ? 50.5 + ($m * 2) : 49.9 + ($m * 1.9));
-            $s = ($metric === 'weight_for_age') ? 0.15 : 0.05;
+            if ($metric === 'weight_for_age') {
+                $median = $gender === 'M' ? 3.3 + ($m * 0.6) : 3.2 + ($m * 0.58);
+                $s = 0.15;
+            } elseif ($metric === 'height_for_age' || $metric === 'height_for_age_z') {
+                $median = $gender === 'M' ? 50.5 + ($m * 2) : 49.9 + ($m * 1.9);
+                $s = 0.05;
+            } elseif ($metric === 'bmi_for_age') {
+                $median = 16.0 + (max(0, $m - 6) * 0.05);
+                $s = 0.1;
+            } elseif ($metric === 'head_circumference_for_age') {
+                $median = $gender === 'M' ? 34.5 + ($m * 0.5) : 33.9 + ($m * 0.48);
+                $s = 0.04;
+            } else {
+                $median = $gender === 'M' ? 3.3 + ($m * 0.6) : 3.2 + ($m * 0.58);
+                $s = 0.15;
+            }
             $standards[] = ['age_months' => $m, 'l' => $l, 'm' => round($median, 2), 's' => $s];
         }
         return $standards;
