@@ -22,10 +22,6 @@ class ResolveBranch
 
         $branchId = $request->header('X-Branch-ID');
 
-        if (!$branchId && $request->hasSession()) {
-            $branchId = $request->session()->get('branch_id');
-        }
-
         if ($branchId) {
             $query = \App\Models\Branch::where('id', $branchId);
 
@@ -38,10 +34,6 @@ class ResolveBranch
 
             if ($branch) {
                 app()->instance('branch', $branch);
-
-                if ($request->hasSession()) {
-                    session(['branch_id' => $branchId]);
-                }
             }
         }
 

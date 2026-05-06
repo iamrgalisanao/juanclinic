@@ -53,19 +53,22 @@ class ResolveTenant
             }
         }
 
-        if (!$tenant && auth()->check()) {
-            $user = auth()->user();
-            if ($user->tenant_id) {
-                $tenant = \App\Models\Tenant::find($user->tenant_id);
+        if (!$tenant && config('auth.guards.sanctum')) {
+            try {
+                if (auth()->check()) {
+                    $user = auth()->user();
+                    if ($user && $user->tenant_id) {
+                        $tenant = \App\Models\Tenant::find($user->tenant_id);
+                    }
+                }
+            } catch (\Exception $e) {
+                // Silently skip auth resolution if guard is not ready
             }
         }
 
         if ($tenant) {
             app()->instance('tenant', $tenant);
             \Log::debug("Tenant resolved: ID {$tenant->id} ({$tenant->slug})");
-            if ($request->hasSession()) {
-                session(['tenant_id' => $tenant->id]);
-            }
         } else {
             \Log::debug("No tenant context found for request: " . $request->fullUrl());
         }

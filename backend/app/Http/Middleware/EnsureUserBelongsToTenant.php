@@ -43,8 +43,8 @@ class EnsureUserBelongsToTenant
         $tenant = app('tenant');
 
         // 3. Ownership Check: User must belong to the tenant they are accessing
-        if (!$tenant || $user->tenant_id != $tenant->id) {
-            \Log::warning("Tenant access denied: User ID {$user->id} (User Tenant: " . ($user->tenant_id ?? 'NULL') . ") attempted to access Tenant Context: " . ($tenant ? $tenant->id : 'null'));
+        if (!$tenant || !$user || $user->tenant_id != $tenant->id) {
+            \Log::warning("Tenant access denied: User ID " . ($user ? $user->id : 'GUEST') . " (User Tenant: " . ($user->tenant_id ?? 'NULL') . ") attempted to access Tenant Context: " . ($tenant ? $tenant->id : 'null'));
             return response()->json([
                 'message' => 'User does not belong to this tenant.',
                 'debug_context' => [
