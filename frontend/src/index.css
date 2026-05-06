@@ -31,9 +31,36 @@
         @apply bg-slate-900/40 backdrop-blur-md border border-slate-700/50 shadow-2xl;
     }
 
+    .glass-hub {
+        @apply bg-white/90 backdrop-blur-[40px] border border-white/20 shadow-2xl;
+    }
+
+    .dark .glass-hub {
+        @apply bg-slate-900/85 border border-white/5;
+    }
+
+    .led-indicator {
+        @apply w-2 h-2 rounded-full inline-block;
+        box-shadow: 0 0 10px currentColor;
+    }
+
+    .status-pulse-badge {
+        animation: pulse-ring 2s cubic-bezier(0.455, 0.03, 0.515, 0.955) infinite;
+    }
+
+    .plan-card-gold { box-shadow: 0 0 20px -5px rgba(255, 185, 95, 0.4); }
+    .plan-card-amber { box-shadow: 0 0 20px -5px rgba(226, 145, 0, 0.4); }
+    .plan-card-rose { box-shadow: 0 0 20px -5px rgba(255, 180, 171, 0.4); }
+
     .shimmer {
         @apply relative overflow-hidden before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_2s_infinite] before:bg-gradient-to-r before:from-transparent before:via-white/10 before:to-transparent;
     }
+}
+
+@keyframes pulse-ring {
+    0% { transform: scale(0.8); opacity: 0.5; }
+    50% { transform: scale(1); opacity: 1; }
+    100% { transform: scale(0.8); opacity: 0.5; }
 }
 
 /* Premium Custom Scrollbar */

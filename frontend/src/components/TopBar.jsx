@@ -8,7 +8,7 @@ const TopBar = ({ activeTenant, impersonatedTenant, tenants, onTenantChange, act
     const showMenuDetails = isDoctor; // In this case, we hide from header and show in menu
 
     return (
-        <div className="h-20 md:h-24 flex items-center justify-between px-6 md:px-10 bg-white/90 backdrop-blur-xl border-b border-slate-100 sticky top-0 z-30">
+        <div className="h-20 md:h-24 flex items-center justify-between px-4 md:px-6 lg:px-10 bg-white/90 backdrop-blur-xl border-b border-slate-100 sticky top-0 z-30">
             <div className="flex items-center gap-4 flex-1">
                 <button
                     onClick={onSidebarToggle}
@@ -28,7 +28,7 @@ const TopBar = ({ activeTenant, impersonatedTenant, tenants, onTenantChange, act
                     </svg>
                 </button>
 
-                <div className="flex items-center gap-6 flex-1 max-w-4xl">
+                <div className="flex items-center gap-4 md:gap-6 flex-1 max-w-sm lg:max-w-4xl">
                     <div className="relative hidden sm:block flex-1 group">
                         <span className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-his-green-500 transition-colors">
                             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
@@ -77,7 +77,7 @@ const TopBar = ({ activeTenant, impersonatedTenant, tenants, onTenantChange, act
                                     const tenant = tenants.find(t => t.id === parseInt(e.target.value));
                                     if (tenant) onTenantChange(tenant);
                                 }}
-                                className={`bg-transparent border-none text-his-green-600 text-[10px] md:text-[11px] font-black uppercase tracking-widest outline-none py-0.5 max-w-[80px] md:max-w-none truncate ${currentUser.tenant_id ? 'cursor-not-allowed opacity-70' : 'cursor-pointer hover:text-his-green-700 transition-colors'}`}
+                                className={`bg-transparent border-none text-his-green-600 text-[10px] md:text-[11px] font-black uppercase tracking-widest outline-none py-0.5 max-w-[80px] lg:max-w-none truncate ${currentUser.tenant_id ? 'cursor-not-allowed opacity-70' : 'cursor-pointer hover:text-his-green-700 transition-colors'}`}
                             >
                                 {tenants.map(t => (
                                     <option key={t.id} value={t.id} className="bg-white text-slate-900 font-sans normal-case tracking-normal">{t.name}</option>
@@ -98,7 +98,7 @@ const TopBar = ({ activeTenant, impersonatedTenant, tenants, onTenantChange, act
                                     const branch = branches.find(b => b.id === parseInt(e.target.value));
                                     if (branch) onBranchChange(branch);
                                 }}
-                                className={`bg-transparent border-none text-blue-600 text-[10px] md:text-[11px] font-black uppercase tracking-widest outline-none py-0.5 max-w-[80px] md:max-w-none truncate ${currentUser.branch_id || branches.length === 0 ? 'cursor-not-allowed opacity-70' : 'cursor-pointer hover:text-blue-700 transition-colors'}`}
+                                className={`bg-transparent border-none text-blue-600 text-[10px] md:text-[11px] font-black uppercase tracking-widest outline-none py-0.5 max-w-[80px] lg:max-w-none truncate ${currentUser.branch_id || branches.length === 0 ? 'cursor-not-allowed opacity-70' : 'cursor-pointer hover:text-blue-700 transition-colors'}`}
                             >
                                 {branches.length === 0 ? (
                                     <option value="" disabled className="bg-white text-slate-400 font-sans normal-case tracking-normal">No Facilities Found</option>
@@ -123,9 +123,9 @@ const TopBar = ({ activeTenant, impersonatedTenant, tenants, onTenantChange, act
                                 <p className="text-[10px] font-bold text-his-green-500 uppercase tracking-widest mt-1.5">{currentUser.role} Control</p>
                             </div>
                         )}
-                        <div className="group relative">
+                        <div className="group relative shrink-0">
                             <div className="flex items-center gap-3 cursor-pointer">
-                                <div className="w-10 h-10 md:w-14 md:h-14 rounded-[1.25rem] bg-his-slate-100 border border-slate-100 overflow-hidden shadow-sm group-hover:ring-4 group-hover:ring-his-green-500/10 transition-all">
+                                <div className="w-10 h-10 md:w-12 lg:w-14 h-10 md:h-12 lg:h-14 rounded-[1.25rem] bg-his-slate-100 border border-slate-100 overflow-hidden shadow-sm group-hover:ring-4 group-hover:ring-his-green-500/10 transition-all">
                                     <img
                                         src={`https://ui-avatars.com/api/?name=${currentUser.name.replace(' ', '+')}&background=f8fafc&color=22c55e&bold=true`}
                                         alt="Avatar"

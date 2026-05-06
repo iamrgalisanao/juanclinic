@@ -7,6 +7,13 @@ export default {
     theme: {
         extend: {
             colors: {
+                'primary': '#4edea3',
+                'on-primary': '#003824',
+                'surface': '#0b1326',
+                'surface-container': '#171f33',
+                'tertiary': '#ffb95f',
+                'on-surface': '#dae2fd',
+                'on-surface-variant': '#bbcabf',
                 'his-green': {
                     50: '#f7fbe7',
                     100: '#edf7cc',
@@ -26,6 +33,9 @@ export default {
                     500: '#64748b',
                     900: '#0f172a',
                 },
+            },
+            borderRadius: {
+                'hub': '4rem',
             },
             boxShadow: {
                 'sleek': '0 4px 20px -2px rgba(0, 0, 0, 0.05)',

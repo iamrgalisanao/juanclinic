@@ -10,7 +10,7 @@ const MobileNav = ({ activeView, setActiveView, onOpenSidebar }) => {
 
     return (
         <div className="lg:hidden fixed bottom-6 left-6 right-6 z-[60]">
-            <div className="glass-dark rounded-3xl p-3 flex items-center justify-between shadow-2xl border border-white/5 backdrop-blur-2xl">
+            <div className="glass-dark rounded-3xl p-3 flex items-center justify-between shadow-[0_20px_50px_rgba(0,0,0,0.4)] border border-white/10 backdrop-blur-[32px]">
                 {navItems.map((item) => {
                     const isActive = activeView === item.id;
                     return (

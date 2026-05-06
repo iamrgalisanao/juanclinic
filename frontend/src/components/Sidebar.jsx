@@ -27,7 +27,7 @@ const Sidebar = ({ activeTenant, impersonatedTenant, activeView, setActiveView, 
         { id: 'doctors', name: 'Doctors', icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z', roles: ['ADMIN'] },
         { id: 'reports', name: 'Reports', icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z', roles: ['ADMIN', 'FRONT_DESK', 'DOCTOR', 'DIAGNOSTIC_APPROVER', 'GLOBAL_ADMIN'], feature: 'analytics_enabled' },
         { id: 'referrals', name: 'Referrals', icon: 'M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4', roles: ['ADMIN', 'DOCTOR', 'FRONT_DESK'], feature: 'referrals_enabled' },
-        { id: 'tenant_management', name: 'Organization Settings', icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4', roles: ['ADMIN', 'GLOBAL_ADMIN'], globalOnly: true },
+        { id: 'settings_governance', name: 'Settings & Governance', icon: 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z', roles: ['ADMIN', 'GLOBAL_ADMIN'] },
         { id: 'branch_management', name: 'Branch Settings', icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4', roles: ['ADMIN'] },
         { id: 'notification_settings', name: 'Notification Rules', icon: 'M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9', roles: ['ADMIN'] },
         { id: 'audit', name: 'Audit', icon: 'M9 17v-6a2 2 0 012-2h7m-7 0l-2-2m2 2l-2 2M5 19h14', roles: ['ADMIN', 'GLOBAL_ADMIN'] },
@@ -40,55 +40,55 @@ const Sidebar = ({ activeTenant, impersonatedTenant, activeView, setActiveView, 
         { name: 'Overview', items: ['dashboard', 'messages', 'help'] },
         { name: 'Clinical Core', items: ['patients', 'appointments', 'clinical_notes', 'referrals', 'doctors'] },
         { name: 'Operations', items: ['worklist', 'pharmacy_parent', 'billing'] },
-        { name: 'Governance', items: ['superadmin', 'terminology_review', 'reports', 'tenant_management', 'branch_management', 'notification_settings', 'audit', 'hl7_transport'] }
+        { name: 'Governance', items: ['superadmin', 'terminology_review', 'reports', 'settings_governance', 'branch_management', 'notification_settings', 'audit', 'hl7_transport'] }
     ];
 
-    const filteredItems = allItems.filter(item => {
-        // Super Admin Clinical Visibility Bypass:
-        // If GLOBAL_ADMIN is impersonating, show them ALL clinical tools
-        // We check localStorage directly to avoid state race conditions during initial boot
-        const effectiveImpersonation = impersonatedTenant || JSON.parse(localStorage.getItem('impersonated_tenant') || 'null');
-        
-        if (currentUser.role === 'GLOBAL_ADMIN' && effectiveImpersonation && item.roles.some(r => ['ADMIN', 'DOCTOR', 'TECH'].includes(r))) {
-            return true;
-        }
-
-        if (!item.roles.includes(currentUser.role)) return false;
-        
-        // Feature Entitlement Check:
-        // Hide module if it requires a commercial feature that is not enabled for the active tenant
-        // GLOBAL_ADMIN bypasses this during impersonation for orchestration purposes
-        if (item.feature && activeTenant) {
-            const isImpersonating = !!effectiveImpersonation && currentUser.role === 'GLOBAL_ADMIN';
-            const isEntitled = activeTenant.entitlements?.[item.feature] ?? true;
+    const filteredItems = React.useMemo(() => {
+        return allItems.filter(item => {
+            const effectiveImpersonation = impersonatedTenant || JSON.parse(localStorage.getItem('impersonated_tenant') || 'null');
             
-            if (!isEntitled && !isImpersonating) {
-                return false;
+            if (currentUser.role === 'GLOBAL_ADMIN' && effectiveImpersonation && item.roles.some(r => ['ADMIN', 'DOCTOR', 'TECH'].includes(r))) {
+                return true;
             }
-        }
 
-        // Organization Settings: Restricted to Global Admin at Home OR Local Admin in their tenant
-        // If marked as globalOnly, it only shows if we are in the System context (tenant_id 888)
-        if (item.globalOnly && currentUser.tenant_id !== 888 && currentUser.tenant_id !== null) return false;
-        
-        return true;
-    });
+            if (!item.roles.includes(currentUser.role)) return false;
+            
+            if (item.feature && activeTenant) {
+                const isImpersonating = !!effectiveImpersonation && currentUser.role === 'GLOBAL_ADMIN';
+                const isEntitled = activeTenant.entitlements?.[item.feature] ?? true;
+                
+                if (!isEntitled && !isImpersonating) {
+                    return false;
+                }
+            }
 
-    const groupedItems = categories.map(cat => ({
-        ...cat,
-        items: filteredItems.filter(item => cat.items.includes(item.id))
-    })).filter(cat => cat.items.length > 0);
+            if (item.globalOnly && currentUser.tenant_id !== 888 && currentUser.tenant_id !== null) return false;
+            
+            return true;
+        });
+    }, [currentUser, impersonatedTenant, activeTenant]);
+
+    const groupedItems = React.useMemo(() => {
+        return categories.map(cat => ({
+            ...cat,
+            items: filteredItems.filter(item => cat.items.includes(item.id))
+        })).filter(cat => cat.items.length > 0);
+    }, [filteredItems]);
 
     useEffect(() => {
         if (isSlim) {
             setExpandedMenus([]);
         } else {
+            const newExpanded = [];
             filteredItems.forEach(item => {
                 if (item.subItems && item.subItems.some(sub => sub.id === activeView)) {
-                    if (!expandedMenus.includes(item.id)) {
-                        setExpandedMenus(prev => [...prev, item.id]);
-                    }
+                    newExpanded.push(item.id);
                 }
+            });
+            
+            setExpandedMenus(prev => {
+                const needsUpdate = newExpanded.some(id => !prev.includes(id));
+                return needsUpdate ? [...new Set([...prev, ...newExpanded])] : prev;
             });
         }
     }, [activeView, filteredItems, isSlim]);
@@ -105,16 +105,16 @@ const Sidebar = ({ activeTenant, impersonatedTenant, activeView, setActiveView, 
     };
 
     return (
-        <div className={`${isSlim ? 'w-20' : 'w-64'} bg-his-slate-900 h-screen flex flex-col p-4 fixed z-50 sidebar-transition lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <div className={`${isSlim ? 'w-20' : 'w-64'} bg-his-slate-900 h-screen flex flex-col p-4 fixed z-[70] sidebar-transition lg:translate-x-0 pb-32 lg:pb-4 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
             <div className="flex items-center justify-between mb-10 px-2 group">
                 <div className="flex items-center gap-3 cursor-pointer overflow-hidden" onClick={() => setActiveView('dashboard')}>
                     <div className="w-10 h-10 bg-his-green-500 rounded-xl flex items-center justify-center text-white shadow-lg shadow-his-green-500/20 group-hover:scale-110 transition-transform duration-300 shrink-0">
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 21c-4.418 0-8-3.582-8-8 0-4.418 3.582-8 8-8s8 3.582 8 8c0 4.418-3.582 8-8 8z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 11c-1.105 0-2-.895-2-2s.895-2 2-2 2 .895 2 2-.895 2-2 2z" /></svg>
                     </div>
                     {!isSlim && (
-                        <div className="animate-in fade-in slide-in-from-left-2 duration-300">
-                            <h1 className="font-black text-xl tracking-tight text-white leading-none">JUAN</h1>
-                            <p className="text-[10px] font-bold text-his-green-500 tracking-[0.2em] uppercase">Clinical System</p>
+                        <div className="flex flex-col animate-in slide-in-from-left-4 duration-500">
+                            <span className="text-sm font-black tracking-tighter text-white leading-none">JUAN CLINIC</span>
+                            <span className="text-[10px] font-bold text-his-green-500 uppercase tracking-widest mt-0.5">Health System</span>
                         </div>
                     )}
                 </div>

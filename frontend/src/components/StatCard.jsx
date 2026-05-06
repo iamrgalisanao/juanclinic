@@ -7,12 +7,12 @@ const StatCard = ({ title, value, trend, icon, color = "bg-his-green-500" }) => 
     const isGreenBg = color.includes('his-green');
 
     return (
-        <div className="bg-white p-6 sm:p-8 rounded-3xl sm:rounded-[2.5rem] shadow-sleek border border-his-slate-100 flex flex-col justify-between group hover:shadow-2xl hover:shadow-his-slate-200/40 transition-all duration-500 relative overflow-hidden">
+        <div className="bg-white p-5 sm:p-8 rounded-3xl sm:rounded-[2.5rem] shadow-sleek border border-his-slate-100 flex flex-col justify-between group hover:shadow-2xl hover:shadow-his-slate-200/40 transition-all duration-500 relative overflow-hidden">
             <div className="absolute -right-4 -top-4 w-20 h-20 sm:w-24 sm:h-24 bg-his-slate-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
 
-            <div className="flex justify-between items-start mb-6 sm:mb-8 relative z-10">
-                <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl ${color} flex items-center justify-center transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 shadow-lg ${isGreenBg ? 'shadow-his-green-500/20' : 'shadow-slate-100'}`}>
-                    <svg className={`w-6 h-6 sm:w-7 sm:h-7 ${isGreenBg ? 'text-white' : 'text-slate-400'} transition-colors`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="flex justify-between items-start mb-5 sm:mb-8 relative z-10">
+                <div className={`w-10 h-10 sm:w-14 sm:h-14 rounded-2xl ${color} flex items-center justify-center transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 shadow-lg ${isGreenBg ? 'shadow-his-green-500/20' : 'shadow-slate-100'}`}>
+                    <svg className={`w-5 h-5 sm:w-7 sm:h-7 ${isGreenBg ? 'text-white' : 'text-slate-400'} transition-colors`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d={icon} />
                     </svg>
                 </div>
