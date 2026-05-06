@@ -1,20 +1,20 @@
-# Current Feature: Clinical Catalog Ingestion (Phase 17)
+# Current Feature: Pediatrics Dashboard Stabilization (Hardening)
 
 ## Objective
-Ingest the high-integrity clinical catalog and mappings to power the Disease-First Drug Discovery engine, ensuring full audit compliance and data integrity.
+Eliminate persistent Recharts runtime dimension errors and resolve API request flooding (HTTP 429) during multi-tenant context shifts in the Pediatrics Dashboard.
 
 ## Active Tasks
-- [x] Implement `ClinicalCatalogService` with Regex-based Packaging Parser.
-- [x] Ingest `all_brand_details.json` (4,111 Brands / 3,384 Forms).
-- [x] Ingest `all_disease_brands.json` (208 Mappings).
-- [x] Apply `AuditLogTrait` to Medicine and MedicineForm models.
-- [x] Perform Sync-Discovery & Guardrail Audit.
+- [x] Hardened component mounting: ResizeObserver-based manual dimension gate in `GrowthChart.jsx`.
+- [x] API Rate Limit Resolution: Increased Laravel API throttle from 60 to 300 per minute.
+- [x] Request Throttling: Implemented module-level caching for WHO standards baseline.
+- [x] Expanded Clinical Datasets: Support for BMI and Head Circumference in `PediatricService.php`.
+- [x] Governance Audit: Generated `guardrail-health-report.md`.
 
 ## Success Criteria
-- [x] Catalog successfully hydrated in DB.
-- [x] Medicine forms correctly parsed (Strength/Form/Price).
-- [x] Audit trails active for all changes.
-- [x] Roadmap and Task Ledger synchronized.
+- [x] Charts render without dimension crashes on all viewports.
+- [x] Dashboard loads without 429 errors during rapid navigation.
+- [x] WHO standards shared across chart instances.
+- [x] Audit Ledger synchronized.
 
 ## Status
-🟢 **Completed (2026-05-03)**. Ready for Phase 18 or specialty hardening.
+🟢 **Completed (2026-05-06)**. Pediatrics Dashboard is stabilized and hardened for multi-tenant clinical use.

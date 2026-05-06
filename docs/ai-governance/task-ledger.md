@@ -51,6 +51,6 @@
 - [x] **2026-05-01**: MD Referral Integration (Phase 14). Implemented high-fidelity, compact autocomplete search and referral persistence. Hardened the Interactive Guide with comprehensive help documentation for HL7 Transport, Referrals, Drug Discovery, and Terminology Governance.
 - [x] **2026-05-01**: Governance Hardening. Synchronized `ROADMAP.md`, `task-ledger.md`, and performed a full Guardrail Audit.
 - [x] **2026-05-03**: Phase 17 Guardrail Audit. Verified security fixes for `DiagnosticResult`, identified `DiseaseTerm` architecture drift, and validated Phase 17 implementation readiness.
-- [x] **2026-05-03**: Clinical Catalog Ingestion (Phase 17). Implemented `ClinicalCatalogService` with Regex-based Packaging Parser. Ingested 4,111 brands, 3,384 forms, and 208 disease mappings. Hardened `Medicine`/`MedicineForm` with `AuditLogTrait`.
+- [x] **2026-05-06**: Pediatrics Dashboard & GrowthChart Stabilization (v1.37.0). Resolved Recharts runtime dimension crashes using ResizeObserver-based manual gating. Fixed 429 Rate Limiting by increasing Laravel API throttle (60 -> 300) and implementing module-level standards caching in the frontend. Expanded `PediatricService` to support BMI and Head Circumference baselines.
 
-- **Status**: 🟢 **Phase 14 Complete (v1.36.0)**. System stable and ready for Phase 15.
+- **Status**: 🟢 **Phase 18 Implementation Hardening Complete (v1.37.0)**. System stable and ready for production validation.
