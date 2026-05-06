@@ -42,17 +42,7 @@ class RouteServiceProvider extends ServiceProvider
     protected function configureRateLimiting(): void
     {
         RateLimiter::for('api', function (Request $request) {
-            // Defensive key resolution to avoid triggering auth exceptions during early boot
-            $identifier = $request->ip();
-            try {
-                if (auth()->check()) {
-                    $identifier = auth()->id();
-                }
-            } catch (\Throwable $e) {
-                // Fallback to IP
-            }
-
-            return Limit::perMinute(300)->by($identifier);
+            return Limit::perMinute(300)->by($request->user()?->id ?: $request->ip());
         });
     }
 }
