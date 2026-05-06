@@ -109,3 +109,47 @@
 2026-05-04 05:23:32,786 INFO hermes_cli.plugins: Plugin discovery complete: 5 found, 4 enabled
 2026-05-04 05:23:33,111 INFO mcp.server.lowlevel.server: Processing request of type ListToolsRequest
 2026-05-04 05:24:28,457 INFO mcp.server.lowlevel.server: Processing request of type ListResourcesRequest
+2026-05-05 13:54:32,123 INFO hermes_cli.plugins: Plugin 'openai' registered image_gen provider: openai
+2026-05-05 13:54:32,126 INFO hermes_cli.plugins: Plugin 'openai-codex' registered image_gen provider: openai-codex
+2026-05-05 13:54:32,271 INFO hermes_cli.plugins: Plugin 'xai' registered image_gen provider: xai
+2026-05-05 13:54:32,448 INFO hermes_cli.plugins: Plugin discovery complete: 5 found, 4 enabled
+2026-05-05 13:55:18,166 INFO hermes_cli.plugins: Plugin 'openai' registered image_gen provider: openai
+2026-05-05 13:55:18,169 INFO hermes_cli.plugins: Plugin 'openai-codex' registered image_gen provider: openai-codex
+2026-05-05 13:55:18,335 INFO hermes_cli.plugins: Plugin 'xai' registered image_gen provider: xai
+2026-05-05 13:55:18,639 INFO hermes_cli.plugins: Plugin discovery complete: 5 found, 4 enabled
+2026-05-05 13:55:54,614 INFO hermes_cli.plugins: Plugin 'openai' registered image_gen provider: openai
+2026-05-05 13:55:54,616 INFO hermes_cli.plugins: Plugin 'openai-codex' registered image_gen provider: openai-codex
+2026-05-05 13:55:54,670 INFO hermes_cli.plugins: Plugin 'xai' registered image_gen provider: xai
+2026-05-05 13:55:54,728 INFO hermes_cli.plugins: Plugin discovery complete: 5 found, 4 enabled
+2026-05-05 13:55:55,146 INFO mcp.server.lowlevel.server: Processing request of type ListToolsRequest
+2026-05-05 13:56:34,780 INFO mcp.server.lowlevel.server: Processing request of type ListResourcesRequest
+2026-05-05 14:08:13,839 INFO mcp.server.lowlevel.server: Processing request of type ListResourcesRequest
+2026-05-05 14:08:13,848 INFO mcp.server.lowlevel.server: Processing request of type ListResourcesRequest
+2026-05-05 14:08:13,856 INFO mcp.server.lowlevel.server: Processing request of type ListResourcesRequest
+2026-05-05 14:31:26,794 INFO hermes_cli.plugins: Plugin 'openai' registered image_gen provider: openai
+2026-05-05 14:31:26,796 INFO hermes_cli.plugins: Plugin 'openai-codex' registered image_gen provider: openai-codex
+2026-05-05 14:31:26,867 INFO hermes_cli.plugins: Plugin 'xai' registered image_gen provider: xai
+2026-05-05 14:31:26,950 INFO hermes_cli.plugins: Plugin discovery complete: 5 found, 4 enabled
+2026-05-05 14:31:28,065 INFO mcp.server.lowlevel.server: Processing request of type ListToolsRequest
+2026-05-05 14:51:25,961 INFO mcp.server.lowlevel.server: Processing request of type ListResourcesRequest
+2026-05-05 15:06:38,930 INFO mcp.server.lowlevel.server: Processing request of type ListResourcesRequest
+2026-05-05 23:29:56,250 INFO mcp.server.lowlevel.server: Processing request of type ListResourcesRequest
+2026-05-05 23:31:39,456 INFO hermes_cli.plugins: Plugin 'openai' registered image_gen provider: openai
+2026-05-05 23:31:39,457 INFO hermes_cli.plugins: Plugin 'openai-codex' registered image_gen provider: openai-codex
+2026-05-05 23:31:39,512 INFO hermes_cli.plugins: Plugin 'xai' registered image_gen provider: xai
+2026-05-05 23:31:39,576 INFO hermes_cli.plugins: Plugin discovery complete: 5 found, 4 enabled
+2026-05-05 23:31:39,910 INFO mcp.server.lowlevel.server: Processing request of type ListToolsRequest
+2026-05-05 23:32:07,686 INFO mcp.server.lowlevel.server: Processing request of type ListResourcesRequest
+2026-05-06 00:17:53,330 INFO mcp.server.lowlevel.server: Processing request of type ListResourcesRequest
+2026-05-06 00:21:52,077 INFO mcp.server.lowlevel.server: Processing request of type ListResourcesRequest
+2026-05-06 00:21:52,186 INFO mcp.server.lowlevel.server: Processing request of type ListResourcesRequest
+2026-05-06 03:13:35,253 INFO mcp.server.lowlevel.server: Processing request of type ListResourcesRequest
+2026-05-06 03:19:53,156 INFO mcp.server.lowlevel.server: Processing request of type ListResourcesRequest
+2026-05-06 03:31:44,084 INFO mcp.server.lowlevel.server: Processing request of type ListResourcesRequest
+2026-05-06 03:32:16,309 INFO mcp.server.lowlevel.server: Processing request of type CallToolRequest
+2026-05-06 07:38:46,183 INFO mcp.server.lowlevel.server: Processing request of type ListResourcesRequest
+2026-05-06 07:39:00,369 INFO mcp.server.lowlevel.server: Processing request of type CallToolRequest
+2026-05-06 07:39:04,538 INFO mcp.server.lowlevel.server: Processing request of type CallToolRequest
+2026-05-06 07:39:35,186 INFO mcp.server.lowlevel.server: Processing request of type CallToolRequest
+2026-05-06 07:39:38,476 INFO mcp.server.lowlevel.server: Processing request of type CallToolRequest
+2026-05-06 07:44:46,460 INFO mcp.server.lowlevel.server: Processing request of type ListResourcesRequest

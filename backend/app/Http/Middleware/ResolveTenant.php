@@ -50,18 +50,8 @@ class ResolveTenant
             }
         }
 
-        if (!$tenant) {
-            try {
-                if (config('auth.guards.sanctum') && auth()->guard('sanctum')->check()) {
-                    $user = auth()->guard('sanctum')->user();
-                    if ($user && $user->tenant_id) {
-                        $tenant = \App\Models\Tenant::find($user->tenant_id);
-                    }
-                }
-            } catch (\Throwable $e) {
-                // Pre-auth safety
-            }
-        }
+        // Completely removed early auth resolution.
+        // Public endpoints must not trigger guards.
 
         if ($tenant) {
             app()->instance('tenant', $tenant);
