@@ -93,7 +93,7 @@ const ClinicalNotesManager = ({ patientId, patient, activeTenant }) => {
                     <div className="mb-6">
                         <label className="block text-sm font-medium mb-1">Select Specialty Template:</label>
                         <select
-                            className="w-full p-2 border rounded-md"
+                            className="w-full p-2 border rounded-md bg-white text-slate-900"
                             onChange={(e) => {
                                 const t = templates.find(temp => temp.id === parseInt(e.target.value));
                                 setSelectedTemplate(t);
@@ -105,6 +105,39 @@ const ClinicalNotesManager = ({ patientId, patient, activeTenant }) => {
                                 <option key={t.id} value={t.id}>{t.name}</option>
                             ))}
                         </select>
+                        <div className="sm:hidden mt-2 flex flex-wrap gap-2">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setSelectedTemplate(null);
+                                    setFormData({});
+                                }}
+                                className={`px-3 py-1.5 rounded-full text-xs font-semibold border ${
+                                    !selectedTemplate
+                                        ? 'bg-indigo-600 text-white border-indigo-600'
+                                        : 'bg-white text-slate-700 border-slate-300'
+                                }`}
+                            >
+                                Generic SOAP Note
+                            </button>
+                            {templates.map((t) => (
+                                <button
+                                    key={`mobile-template-${t.id}`}
+                                    type="button"
+                                    onClick={() => {
+                                        setSelectedTemplate(t);
+                                        setFormData({});
+                                    }}
+                                    className={`px-3 py-1.5 rounded-full text-xs font-semibold border ${
+                                        selectedTemplate?.id === t.id
+                                            ? 'bg-indigo-600 text-white border-indigo-600'
+                                            : 'bg-white text-slate-700 border-slate-300'
+                                    }`}
+                                >
+                                    {t.name}
+                                </button>
+                            ))}
+                        </div>
                         {selectedTemplate && <p className="text-xs text-slate-500 mt-1 italic">{selectedTemplate.description}</p>}
                     </div>
 
